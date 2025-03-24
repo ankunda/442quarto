@@ -1,70 +1,48 @@
 ---
 title: "Cryptography"
-date: "March 24, 2025"
-title-block-banner: "#002f8b"
-toc: true
-number-sections: true
 format:
-  html:
-    code-fold: true
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
 jupyter: python3
 ---
 
-# Introduction
-
-Cryptography has always been about message confidentiality i.e. making
-sure that a message can only be understood by the sender and/or its
-intended recipient. It typically involves converting a message into an
-incomprehensible format and then that process being reversed by the
-recipient. A good cryptography system should leave a potential
-eavesdropper with a sense of helplessness i.e. they should feel like
-they don’t have the time or energy to figure out what the message is. Of
-course the standard for “time or energy” has changed drastically with
-computers and what seemed like a lot of time or energy doesn’t seem like
-a lot if you have a computer and know how to write a few scripts.
-However, computers also allow us to create even more complicated
-encryption systems. Another thing to consider is that even with
-computers, there are categories of problems or algorithms that are
-difficult for a computer to solve. Recall how complex it was to solve a
-towers of hanoi problem (from CSC 220 and CSC/CYEN 131) even when the
-algorithm was very simple to write/understand. A good cryptography
-system might be easy to understand (i.e. how it works), but should still
-leave us (and our computers) feeling like there isn’t enough time/RAM to
-figure out the original message. 
-
+Cryptography has always been about message confidentiality i.e. making sure
+that a message can only be understood by the sender and/or its intended
+recipient. It typically involves converting a message into an incomprehensible
+format and then that process being reversed by the recipient. A good
+cryptography system should leave a potential eavesdropper with a sense of
+helplessness i.e. they should feel like they don’t have the time or energy to figure out what the message is. Of course the standard for “time or energy” has
+changed drastically with computers and what seemed like a lot of time or
+energy doesn’t seem like a lot if you have a computer and know how to write a
+few scripts. However, computers also allow us to create even more complicated
+encryption systems. Another thing to consider is that even with computers,
+there are categories of problems or algorithms that are difficult for a computer
+to solve. Recall how complex it was to solve a towers of hanoi problem (from CSC
+220 and CSC/CYEN 131) even when the algorithm was very simple to write/understand. A good cryptography system might be easy to understand
+(i.e. how it works), but should still leave us (and our computers) feeling like there
+isn’t enough time/RAM to figure out the original message. \
+\
 Definitions: 
+<ul>
+  <li>cryptology: enciphering and deciphering</li>
+  <li>cryptography: making a cipher system</li>
+  <li>cryptanalysis: breaking a cipher system</li>
+  <li>encryption: scrambling a message</li>
+  <li>decryption: unscrambling a message</li>
+  <li>plain text: original “readable” message</li>
+  <li>cipher text: encrypted “unreadable” message</li>
+  <li>cipher: algorithm for performing encryption or decryption</li>
+</ul>  
 
-* **cryptology**: enciphering and deciphering
-* **cryptography**: making a cipher system
-* **cryptanalysis**: breaking a cipher system
-* **encryption**: scrambling a message
-* **decryption**: unscrambling a message
-* **plain text**: original “readable” message
-* **cipher text**: encrypted “unreadable” message
-* **cipher**: algorithm for performing encryption or decryption
-
-# History
-
-Classic cryptography used pen, paper and perhaps simple mechanical aids.
-As we discuss them, try and see if you can figure out how we would break
-the cipher and how complicated it might be given current technology i.e.
-current definitions of “time and energy”. The highlighted encrypted
-messages are for you to try and decrypt. 
-
-## Hieroglyph
-
-This was used from around 3200BC to about 400AD. Utilized images or
-symbols to represent messages that could only be interpreted by those
-who knew what the symbols meant. Of course this is no different from
-writing in a language. The more people know that language, the less
-effective it is at keeping messages secret.
-
-## Atbash cipher
-
-This was used from about 500BC to 1300AD. Its a type of substitution
-cipher where the order of the alphabet is reversed i.e. A becomes Z, B
-becomes Y, etc. Examples of it can actually be found in the bible [^1].
-
+##### **<ins>History:</ins>**
+Classic cryptography used pen, paper and perhaps simple mechanical aids. As we discuss them, try and see if you can figure out how we would break the cipher and how complicated it might be given current technology i.e. current definitions of “time and energy”. The highlighted encrypted messages are for you to try and decrypt. \
+\
+- Hieroglyph: 3200BC to about 400AD. Utilized images or symbols to represent messages that could only be interpreted by those who knew what the symbols meant. Of course this is no different from writing in a language. The more people know that language, the less effective it is at keeping messages secret.\
+\
+- Atbash cipher: 500BC to 1300AD. Its a type of substitution cipher where the order of the alphabet is reversed i.e. A becomes Z, B becomes Y, etc. Examples of it can actually be found in the bible [^1].\
+\
 <p style="text-align:center;"><span style="background-color: #FFFF00">rhm'g xibkgltizksb ufm?</span></p>
 
 [^1]: (https://www.theology.ox.ac.uk/article/crack-the-code)
@@ -73,27 +51,10 @@ becomes Y, etc. Examples of it can actually be found in the bible [^1].
 $ echo {z..a} | tr -d ' ' # to create the character set z through a.
 $ echo "abcde" | tr a-z "zyxwvutsrqponmlkjihgfedcba"
 ```
-
-## Scytale cipher
-
-This was used around 7th century BC. Messages were written on strip of
-parchment wrapped round a rod. When strip was unwrapped, the message was
-unreadable unless it was re-wrapped around a rod of similar dimensions.
-
+- Scytale cipher: around 7th century BC. Messages were written on strip of parchment wrapped round a rod. When strip was unwrapped, the message was unreadable unless it was re-wrapped around a rod of similar dimensions.
 <p style="text-align:center;"><span style="background-color: #FFFF00">Sdeeeiootyrdnnmhdbwgzeareatostaithoattncimihhbhs</span></p>
 
-## Caesar cipher
-
-Also a substitution cipher. Named after the first famous person to use
-this technique. It typically involves replacing a character with another
-character in the same character set but identified by shifting the
-alphabet over by a specific number of positions. Caesar used to replace
-A with D, B with E, C with F, …, X with an A, Y with a B, and Z with a
-C. Because the alphabet was rotated by 3 positions, this specific
-version can be called a rot-3 cipher. One of the most common Caesar
-ciphers is the rot-13 because the alphabet is reflected i.e. it is it’s
-own inverse.
-
+- Caesar cipher: Also a substitution cipher. Named after the first famous person to use this technique. It typically involves replacing a character with another character in the same character set but identified by shifting the alphabet over by a specific number of positions. Caesar used to replace A with D, B with E, C with F, …, X with an A, Y with a B, and Z with a C. Because the alphabet was rotated by 3 positions, this specific version can be called a rot-3 cipher. One of the most common Caesar ciphers is the rot-13 because the alphabet is reflected i.e. it is it’s own inverse.
 <p style="text-align:center;"><span style="background-color: #FFFF00">diwtgh hpxs: durdjght xi xh</span></p>
 
 ```default
@@ -101,54 +62,86 @@ $ echo "abcde" | tr a-z d-za-c #rot-3
 $ echo "abcde" | tr a-z n-za-m #rot-13
 ```
 
-## Sliding shift cipher
+- Sliding shift cipher: Issue with Caesar is that it is easy to break these days. You only need to look at 25 different possibilities to decipher it visually. A sliding shift cipher attempts to make this more difficult by employing a different shift for each position in the plain text string. For example, the first letter is encoded using rot-1, second letter using rot-2, third letter using rot-3, etc. One doesn’t have to start at 1, but the increase size is typically 1. However, If I know that the cipher is the sliding shift cipher, breaking it is not that hard. \
+\
+- Vigenere cipher: 1553-1863. Each letter of the plain text was encoded by rotating the alphabet based on a key or passphrase. For example, if the key was “key”, then the first letter would be gotten from a rot-10 alphabet i.e. where a became k, b became l, c became m, etc. The second letter would be gotten from a rot-4 alphabet i.e. where a became e, b became f, c became g, etc. The key would be repeated as many times as necessary to encode the entire plain text. A cipher disk or vigenere table (such as the one shown below) can be used for manual encryption/decryption. For example, the plain text “how does this work” can be encrypted using the key “vigenere”. \
 
-The issue with Caesar is that it is easy to break these days. You only
-need to look at 25 different possibilities to decipher it visually. A
-sliding shift cipher attempts to make this more difficult by employing a
-different shift for each position in the plain text string. For example,
-the first letter is encoded using rot-1, second letter using rot-2,
-third letter using rot-3, etc. One doesn’t have to start at 1, but the
-increase size is typically 1.  However, If I know that the cipher is the
-sliding shift cipher, breaking it is not that hard. 
+<style type="text/css">
+.tg  {border-collapse:collapse;border-spacing:0;}
+.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:18px;
+  overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:18px;
+  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
+.tg .tg-baqh{text-align:center;vertical-align:top}
+</style>
+<table class="tg" align="center" style="margin: 0px auto;"><thead>
+  <tr>
+    <th class="tg-baqh">Plain text</th>
+    <th class="tg-baqh">H </th>
+    <th class="tg-baqh">O </th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">W</span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">D </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">O </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">E </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">S </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">T </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">H</span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">I </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">S </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">W </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">O </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">R </span></th>
+    <th class="tg-baqh"><span style="font-weight:400;font-style:normal">K</span></th>
+  </tr>
+</thead>
+<tbody>
+  <tr>
+    <td class="tg-baqh">key</td>
+    <td class="tg-baqh">V</td>
+    <td class="tg-baqh">I</td>
+    <td class="tg-baqh">G</td>
+    <td class="tg-baqh">E</td>
+    <td class="tg-baqh">N</td>
+    <td class="tg-baqh">E</td>
+    <td class="tg-baqh">R</td>
+    <td class="tg-baqh">E</td>
+    <td class="tg-baqh">V</td>
+    <td class="tg-baqh">I</td>
+    <td class="tg-baqh">G</td>
+    <td class="tg-baqh">E</td>
+    <td class="tg-baqh">N</td>
+    <td class="tg-baqh">E</td>
+    <td class="tg-baqh">R</td>
+  </tr>
+  <tr>
+    <td class="tg-baqh">Cipher text</td>
+    <td class="tg-baqh">C</td>
+    <td class="tg-baqh">W</td>
+    <td class="tg-baqh">C</td>
+    <td class="tg-baqh">H</td>
+    <td class="tg-baqh">B</td>
+    <td class="tg-baqh">I</td>
+    <td class="tg-baqh">J</td>
+    <td class="tg-baqh">X</td>
+    <td class="tg-baqh">C</td>
+    <td class="tg-baqh">Q</td>
+    <td class="tg-baqh">Y</td>
+    <td class="tg-baqh">A</td>
+    <td class="tg-baqh">B</td>
+    <td class="tg-baqh">V</td>
+    <td class="tg-baqh">B</td>
+  </tr>
+</tbody></table>
 
-## Vigenere cipher
+![](Plain-key.png)
 
-This was used from about 1553-1863. Each letter of the plain text was
-encoded by rotating the alphabet based on a key or passphrase. For
-example, if the key was “key”, then the first letter would be gotten
-from a rot-10 alphabet i.e. where a became k, b became l, c became m,
-etc. The second letter would be gotten from a rot-4 alphabet i.e. where
-a became e, b became f, c became g, etc. The key would be repeated as
-many times as necessary to encode the entire plain text. A cipher disk
-or vigenere table (such as the one shown below) can be used for manual
-encryption/decryption. For example, the plain text “how does this work”
-can be encrypted using the key “vigenere”. 
-
-| Plain text  | H | O | W | D | O | E | S | T | H | I | S | W | O | R | K |
-|-------------|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| Key         | V | I | G | E | N | E | R | E | V | I | G | E | N | E | R |
-| Cipher text | C | W | C | H | B | I | J | X | C | Q | Y | A | B | V | B |
-: Using the Vigenere Cipher {.bordered}
-
-
-![Vigenere Chart](Plain-key.png)
-
-In the table above, the column headers is the *plain text*, and the row
-headers is the *key*, and where the corresponding column and row intersect
-is the *cipher text*. To <span style="background-color:
-#ff9e00">encrypt</span> a plain text character **l** and key character **n**,
-identify where the column l and row n intersect which is **y**. 
-
-To <span style="background-color: #fff100">decrypt</span>, identify the
-*cipher* character on the appropriate *key* row, and then match it to the
-corresponding column header. For example, the cipher character **p** with
-the key character **x** becomes the plain text character **s**.
-
-### Why use manual when we have computers? 
-
-To take advantage of the computational power now available to us,
-however, it is significantly easier/faster if we use math. 
+In the table above, the column headers is the plain text, and the row headers is the key, and where the corresponding column and row intersect is the cipher text. To <span style="background-color: #ff9e00">encrypt</span> a plain text character l and key character n, identify where the column l and row n intersect which is n. \
+\
+To <span style="background-color: #fff100">decrypt</span>, identify the cipher character on the appropriate key row, and then match it to the corresponding column header. For example, the cipher character p with the key character x becomes the plain text character s.\
+\
+Why use manual when we have computers? \
+\
+To take advantage of the computational power now available to us, however, it is significantly easier/faster if we use math. 
 
 <style type="text/css">
 .tg  {border-collapse:collapse;border-color:#93a1a1;border-spacing:0;}

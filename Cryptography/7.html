@@ -6,6 +6,7 @@
 
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
+<meta name="dcterms.date" content="2025-03-24">
 
 <title>Cryptography</title>
 <style>
@@ -67,6 +68,12 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <script src="7_files/libs/bootstrap/bootstrap.min.js"></script>
 <link href="7_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="7_files/libs/bootstrap/bootstrap-c40a5ba31462359f55d4ba59e7a4ff32.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #002f8b;
+      }
+</style>
 
   <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -100,265 +107,203 @@ window.Quarto = {
 
 </head>
 
-<body class="fullcontent">
+<body>
 
-<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-
-<main class="content" id="quarto-document-content">
-
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">Cryptography</h1>
-</div>
-
-
-
-<div class="quarto-title-meta">
-
-    
-  
-    
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Cryptography</h1>
+                      </div>
   </div>
+    
   
+  <div class="quarto-title-meta">
+
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 24, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction"><span class="header-section-number">1</span> Introduction</a></li>
+  <li><a href="#history" id="toc-history" class="nav-link" data-scroll-target="#history"><span class="header-section-number">2</span> History</a>
+  <ul class="collapse">
+  <li><a href="#hieroglyph" id="toc-hieroglyph" class="nav-link" data-scroll-target="#hieroglyph"><span class="header-section-number">2.1</span> Hieroglyph</a></li>
+  <li><a href="#atbash-cipher" id="toc-atbash-cipher" class="nav-link" data-scroll-target="#atbash-cipher"><span class="header-section-number">2.2</span> Atbash cipher</a></li>
+  <li><a href="#scytale-cipher" id="toc-scytale-cipher" class="nav-link" data-scroll-target="#scytale-cipher"><span class="header-section-number">2.3</span> Scytale cipher</a></li>
+  <li><a href="#caesar-cipher" id="toc-caesar-cipher" class="nav-link" data-scroll-target="#caesar-cipher"><span class="header-section-number">2.4</span> Caesar cipher</a></li>
+  <li><a href="#sliding-shift-cipher" id="toc-sliding-shift-cipher" class="nav-link" data-scroll-target="#sliding-shift-cipher"><span class="header-section-number">2.5</span> Sliding shift cipher</a></li>
+  <li><a href="#vigenere-cipher" id="toc-vigenere-cipher" class="nav-link" data-scroll-target="#vigenere-cipher"><span class="header-section-number">2.6</span> Vigenere cipher</a>
+  <ul class="collapse">
+  <li><a href="#why-use-manual-when-we-have-computers" id="toc-why-use-manual-when-we-have-computers" class="nav-link" data-scroll-target="#why-use-manual-when-we-have-computers"><span class="header-section-number">2.6.1</span> Why use manual when we have computers?</a></li>
+  </ul></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content quarto-banner-title-block" id="quarto-document-content">
 
 
-</header>
 
 
-Cryptography has always been about message confidentiality i.e.&nbsp;making sure that a message can only be understood by the sender and/or its intended recipient. It typically involves converting a message into an incomprehensible format and then that process being reversed by the recipient. A good cryptography system should leave a potential eavesdropper with a sense of helplessness i.e.&nbsp;they should feel like they don’t have the time or energy to figure out what the message is. Of course the standard for “time or energy” has changed drastically with computers and what seemed like a lot of time or energy doesn’t seem like a lot if you have a computer and know how to write a few scripts. However, computers also allow us to create even more complicated encryption systems. Another thing to consider is that even with computers, there are categories of problems or algorithms that are difficult for a computer to solve. Recall how complex it was to solve a towers of hanoi problem (from CSC 220 and CSC/CYEN 131) even when the algorithm was very simple to write/understand. A good cryptography system might be easy to understand (i.e.&nbsp;how it works), but should still leave us (and our computers) feeling like there isn’t enough time/RAM to figure out the original message.<br>
-<br>
-Definitions:
+
+<section id="introduction" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Introduction</h1>
+<p>Cryptography has always been about message confidentiality i.e.&nbsp;making sure that a message can only be understood by the sender and/or its intended recipient. It typically involves converting a message into an incomprehensible format and then that process being reversed by the recipient. A good cryptography system should leave a potential eavesdropper with a sense of helplessness i.e.&nbsp;they should feel like they don’t have the time or energy to figure out what the message is. Of course the standard for “time or energy” has changed drastically with computers and what seemed like a lot of time or energy doesn’t seem like a lot if you have a computer and know how to write a few scripts. However, computers also allow us to create even more complicated encryption systems. Another thing to consider is that even with computers, there are categories of problems or algorithms that are difficult for a computer to solve. Recall how complex it was to solve a towers of hanoi problem (from CSC 220 and CSC/CYEN 131) even when the algorithm was very simple to write/understand. A good cryptography system might be easy to understand (i.e.&nbsp;how it works), but should still leave us (and our computers) feeling like there isn’t enough time/RAM to figure out the original message.</p>
+<p>Definitions:</p>
 <ul>
-<li>
-cryptology: enciphering and deciphering
-</li>
-<li>
-cryptography: making a cipher system
-</li>
-<li>
-cryptanalysis: breaking a cipher system
-</li>
-<li>
-encryption: scrambling a message
-</li>
-<li>
-decryption: unscrambling a message
-</li>
-<li>
-plain text: original “readable” message
-</li>
-<li>
-cipher text: encrypted “unreadable” message
-</li>
-<li>
-cipher: algorithm for performing encryption or decryption
-</li>
+<li><strong>cryptology</strong>: enciphering and deciphering</li>
+<li><strong>cryptography</strong>: making a cipher system</li>
+<li><strong>cryptanalysis</strong>: breaking a cipher system</li>
+<li><strong>encryption</strong>: scrambling a message</li>
+<li><strong>decryption</strong>: unscrambling a message</li>
+<li><strong>plain text</strong>: original “readable” message</li>
+<li><strong>cipher text</strong>: encrypted “unreadable” message</li>
+<li><strong>cipher</strong>: algorithm for performing encryption or decryption</li>
 </ul>
-<section id="history" class="level5">
-<h5 class="anchored" data-anchor-id="history"><strong><ins>History:</ins></strong></h5>
-Classic cryptography used pen, paper and perhaps simple mechanical aids. As we discuss them, try and see if you can figure out how we would break the cipher and how complicated it might be given current technology i.e.&nbsp;current definitions of “time and energy”. The highlighted encrypted messages are for you to try and decrypt.<br>
-<br>
-- Hieroglyph: 3200BC to about 400AD. Utilized images or symbols to represent messages that could only be interpreted by those who knew what the symbols meant. Of course this is no different from writing in a language. The more people know that language, the less effective it is at keeping messages secret.<br>
-<br>
-- Atbash cipher: 500BC to 1300AD. Its a type of substitution cipher where the order of the alphabet is reversed i.e.&nbsp;A becomes Z, B becomes Y, etc. Examples of it can actually be found in the bible <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.<br>
-<br>
-
+</section>
+<section id="history" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> History</h1>
+<p>Classic cryptography used pen, paper and perhaps simple mechanical aids. As we discuss them, try and see if you can figure out how we would break the cipher and how complicated it might be given current technology i.e. current definitions of “time and energy”. The highlighted encrypted messages are for you to try and decrypt.</p>
+<section id="hieroglyph" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="hieroglyph"><span class="header-section-number">2.1</span> Hieroglyph</h2>
+<p>This was used from around 3200BC to about 400AD. Utilized images or symbols to represent messages that could only be interpreted by those who knew what the symbols meant. Of course this is no different from writing in a language. The more people know that language, the less effective it is at keeping messages secret.</p>
+</section>
+<section id="atbash-cipher" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="atbash-cipher"><span class="header-section-number">2.2</span> Atbash cipher</h2>
+<p>This was used from about 500BC to 1300AD. Its a type of substitution cipher where the order of the alphabet is reversed i.e.&nbsp;A becomes Z, B becomes Y, etc. Examples of it can actually be found in the bible <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
 <p style="text-align:center;">
 <span style="background-color: #FFFF00">rhm’g xibkgltizksb ufm?</span>
 </p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>$ echo {z..a} | tr -d ' ' # to create the character set z through a.</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>$ echo "abcde" | tr a-z "zyxwvutsrqponmlkjihgfedcba"</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<ul>
-<li>Scytale cipher: around 7th century BC. Messages were written on strip of parchment wrapped round a rod. When strip was unwrapped, the message was unreadable unless it was re-wrapped around a rod of similar dimensions.
+</section>
+<section id="scytale-cipher" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="scytale-cipher"><span class="header-section-number">2.3</span> Scytale cipher</h2>
+<p>This was used around 7th century BC. Messages were written on strip of parchment wrapped round a rod. When strip was unwrapped, the message was unreadable unless it was re-wrapped around a rod of similar dimensions.</p>
 <p style="text-align:center;">
 <span style="background-color: #FFFF00">Sdeeeiootyrdnnmhdbwgzeareatostaithoattncimihhbhs</span>
-</p></li>
-<li>Caesar cipher: Also a substitution cipher. Named after the first famous person to use this technique. It typically involves replacing a character with another character in the same character set but identified by shifting the alphabet over by a specific number of positions. Caesar used to replace A with D, B with E, C with F, …, X with an A, Y with a B, and Z with a C. Because the alphabet was rotated by 3 positions, this specific version can be called a rot-3 cipher. One of the most common Caesar ciphers is the rot-13 because the alphabet is reflected i.e.&nbsp;it is it’s own inverse.
+</p>
+</section>
+<section id="caesar-cipher" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="caesar-cipher"><span class="header-section-number">2.4</span> Caesar cipher</h2>
+<p>Also a substitution cipher. Named after the first famous person to use this technique. It typically involves replacing a character with another character in the same character set but identified by shifting the alphabet over by a specific number of positions. Caesar used to replace A with D, B with E, C with F, …, X with an A, Y with a B, and Z with a C. Because the alphabet was rotated by 3 positions, this specific version can be called a rot-3 cipher. One of the most common Caesar ciphers is the rot-13 because the alphabet is reflected i.e.&nbsp;it is it’s own inverse.</p>
 <p style="text-align:center;">
 <span style="background-color: #FFFF00">diwtgh hpxs: durdjght xi xh</span>
-</p></li>
-</ul>
+</p>
 <div class="sourceCode" id="cb2"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>$ echo "abcde" | tr a-z d-za-c #rot-3</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>$ echo "abcde" | tr a-z n-za-m #rot-13</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<ul>
-<li>Sliding shift cipher: Issue with Caesar is that it is easy to break these days. You only need to look at 25 different possibilities to decipher it visually. A sliding shift cipher attempts to make this more difficult by employing a different shift for each position in the plain text string. For example, the first letter is encoded using rot-1, second letter using rot-2, third letter using rot-3, etc. One doesn’t have to start at 1, but the increase size is typically 1. However, If I know that the cipher is the sliding shift cipher, breaking it is not that hard.<br>
-<br>
-</li>
-<li>Vigenere cipher: 1553-1863. Each letter of the plain text was encoded by rotating the alphabet based on a key or passphrase. For example, if the key was “key”, then the first letter would be gotten from a rot-10 alphabet i.e.&nbsp;where a became k, b became l, c became m, etc. The second letter would be gotten from a rot-4 alphabet i.e.&nbsp;where a became e, b became f, c became g, etc. The key would be repeated as many times as necessary to encode the entire plain text. A cipher disk or vigenere table (such as the one shown below) can be used for manual encryption/decryption. For example, the plain text “how does this work” can be encrypted using the key “vigenere”.<br>
-</li>
-</ul>
-<style type="text/css">
-.tg  {border-collapse:collapse;border-spacing:0;}
-.tg td{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:18px;
-  overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg th{border-color:black;border-style:solid;border-width:1px;font-family:Arial, sans-serif;font-size:18px;
-  font-weight:normal;overflow:hidden;padding:10px 5px;word-break:normal;}
-.tg .tg-baqh{text-align:center;vertical-align:top}
-</style>
-<table class="tg" align="center" style="margin: 0px auto;">
+</section>
+<section id="sliding-shift-cipher" class="level2" data-number="2.5">
+<h2 data-number="2.5" class="anchored" data-anchor-id="sliding-shift-cipher"><span class="header-section-number">2.5</span> Sliding shift cipher</h2>
+<p>The issue with Caesar is that it is easy to break these days. You only need to look at 25 different possibilities to decipher it visually. A sliding shift cipher attempts to make this more difficult by employing a different shift for each position in the plain text string. For example, the first letter is encoded using rot-1, second letter using rot-2, third letter using rot-3, etc. One doesn’t have to start at 1, but the increase size is typically 1. However, If I know that the cipher is the sliding shift cipher, breaking it is not that hard.</p>
+</section>
+<section id="vigenere-cipher" class="level2" data-number="2.6">
+<h2 data-number="2.6" class="anchored" data-anchor-id="vigenere-cipher"><span class="header-section-number">2.6</span> Vigenere cipher</h2>
+<p>This was used from about 1553-1863. Each letter of the plain text was encoded by rotating the alphabet based on a key or passphrase. For example, if the key was “key”, then the first letter would be gotten from a rot-10 alphabet i.e.&nbsp;where a became k, b became l, c became m, etc. The second letter would be gotten from a rot-4 alphabet i.e.&nbsp;where a became e, b became f, c became g, etc. The key would be repeated as many times as necessary to encode the entire plain text. A cipher disk or vigenere table (such as the one shown below) can be used for manual encryption/decryption. For example, the plain text “how does this work” can be encrypted using the key “vigenere”.</p>
+<table class="table-bordered caption-top table">
+<caption>Using the Vigenere Cipher</caption>
+<colgroup>
+<col style="width: 22%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+<col style="width: 5%">
+</colgroup>
 <thead>
-<tr>
-<th class="tg-baqh">
-Plain text
-</th>
-<th class="tg-baqh">
-H
-</th>
-<th class="tg-baqh">
-O
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">W</span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">D </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">O </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">E </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">S </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">T </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">H</span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">I </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">S </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">W </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">O </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">R </span>
-</th>
-<th class="tg-baqh">
-<span style="font-weight:400;font-style:normal">K</span>
-</th>
+<tr class="header">
+<th>Plain text</th>
+<th>H</th>
+<th>O</th>
+<th>W</th>
+<th>D</th>
+<th>O</th>
+<th>E</th>
+<th>S</th>
+<th>T</th>
+<th>H</th>
+<th>I</th>
+<th>S</th>
+<th>W</th>
+<th>O</th>
+<th>R</th>
+<th>K</th>
 </tr>
 </thead>
 <tbody>
-<tr>
-<td class="tg-baqh">
-key
-</td>
-<td class="tg-baqh">
-V
-</td>
-<td class="tg-baqh">
-I
-</td>
-<td class="tg-baqh">
-G
-</td>
-<td class="tg-baqh">
-E
-</td>
-<td class="tg-baqh">
-N
-</td>
-<td class="tg-baqh">
-E
-</td>
-<td class="tg-baqh">
-R
-</td>
-<td class="tg-baqh">
-E
-</td>
-<td class="tg-baqh">
-V
-</td>
-<td class="tg-baqh">
-I
-</td>
-<td class="tg-baqh">
-G
-</td>
-<td class="tg-baqh">
-E
-</td>
-<td class="tg-baqh">
-N
-</td>
-<td class="tg-baqh">
-E
-</td>
-<td class="tg-baqh">
-R
-</td>
+<tr class="odd">
+<td>Key</td>
+<td>V</td>
+<td>I</td>
+<td>G</td>
+<td>E</td>
+<td>N</td>
+<td>E</td>
+<td>R</td>
+<td>E</td>
+<td>V</td>
+<td>I</td>
+<td>G</td>
+<td>E</td>
+<td>N</td>
+<td>E</td>
+<td>R</td>
 </tr>
-<tr>
-<td class="tg-baqh">
-Cipher text
-</td>
-<td class="tg-baqh">
-C
-</td>
-<td class="tg-baqh">
-W
-</td>
-<td class="tg-baqh">
-C
-</td>
-<td class="tg-baqh">
-H
-</td>
-<td class="tg-baqh">
-B
-</td>
-<td class="tg-baqh">
-I
-</td>
-<td class="tg-baqh">
-J
-</td>
-<td class="tg-baqh">
-X
-</td>
-<td class="tg-baqh">
-C
-</td>
-<td class="tg-baqh">
-Q
-</td>
-<td class="tg-baqh">
-Y
-</td>
-<td class="tg-baqh">
-A
-</td>
-<td class="tg-baqh">
-B
-</td>
-<td class="tg-baqh">
-V
-</td>
-<td class="tg-baqh">
-B
-</td>
+<tr class="even">
+<td>Cipher text</td>
+<td>C</td>
+<td>W</td>
+<td>C</td>
+<td>H</td>
+<td>B</td>
+<td>I</td>
+<td>J</td>
+<td>X</td>
+<td>C</td>
+<td>Q</td>
+<td>Y</td>
+<td>A</td>
+<td>B</td>
+<td>V</td>
+<td>B</td>
 </tr>
 </tbody>
 </table>
-<p><img src="Plain-key.png" class="img-fluid"></p>
-<p>In the table above, the column headers is the plain text, and the row headers is the key, and where the corresponding column and row intersect is the cipher text. To <span style="background-color: #ff9e00">encrypt</span> a plain text character l and key character n, identify where the column l and row n intersect which is n.&nbsp;<br>
-<br>
-To <span style="background-color: #fff100">decrypt</span>, identify the cipher character on the appropriate key row, and then match it to the corresponding column header. For example, the cipher character p with the key character x becomes the plain text character s.<br>
-<br>
-Why use manual when we have computers?<br>
-<br>
-To take advantage of the computational power now available to us, however, it is significantly easier/faster if we use math.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="Plain-key.png" class="img-fluid figure-img"></p>
+<figcaption>Vigenere Chart</figcaption>
+</figure>
+</div>
+<p>In the table above, the column headers is the <em>plain text</em>, and the row headers is the <em>key</em>, and where the corresponding column and row intersect is the <em>cipher text</em>. To <span style="background-color:
+#ff9e00">encrypt</span> a plain text character <strong>l</strong> and key character <strong>n</strong>, identify where the column l and row n intersect which is <strong>y</strong>.</p>
+<p>To <span style="background-color: #fff100">decrypt</span>, identify the <em>cipher</em> character on the appropriate <em>key</em> row, and then match it to the corresponding column header. For example, the cipher character <strong>p</strong> with the key character <strong>x</strong> becomes the plain text character <strong>s</strong>.</p>
+<section id="why-use-manual-when-we-have-computers" class="level3" data-number="2.6.1">
+<h3 data-number="2.6.1" class="anchored" data-anchor-id="why-use-manual-when-we-have-computers"><span class="header-section-number">2.6.1</span> Why use manual when we have computers?</h3>
+<p>To take advantage of the computational power now available to us, however, it is significantly easier/faster if we use math.</p>
 <style type="text/css">
 .tg  {border-collapse:collapse;border-color:#93a1a1;border-spacing:0;}
 .tg td{background-color:#fdf6e3;border-color:#93a1a1;border-style:solid;border-width:1px;color:#002b36;
@@ -553,58 +498,11 @@ The 26 is added just to make the math of the wrap around consistent across diffe
 <br>
 As an example, if our text is “cyberstorm is going to be bussin” and our key is “seacreatures”<br>
 </p>
-<span class="math display">\[\begin{aligned}
-P_0 = c, K_0 = s → C_0 = (2+18)%26 = 20 = u
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-P_1 = y, K_1 = e → C_1 = (24+4)%26 = 2 = c
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-P_2 = b, K_2 = a → C_2 = (1+0)%26 = 1 = b
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-P_3 = e, K_3 = c → C_3 = (4+2)%26 = 6 = g
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-P_4 = r, K_4 = r → C_4 = (17+17)%26 = 8 = i \nonumber \\
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-P_5 = s, K_5 = e → C_5 = (18+4)%26 = 22 = w \nonumber \\
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-P_6 = t, K_6 = a → C_6 = (19+0)%26 = 19 = t \nonumber \\
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-...
-\end{aligned}\]</span>
 <p><br>
 CipherText = <strong>ucbgiwthld mk ysipx xo uy sykkmn</strong><br>
 <br>
 If you wanted to decrypt “qis afyr ilfjwkwot lwew vlwkar. Hg’j ixmlr. Rg uep.” using the same key.</p>
-<span class="math display">\[\begin{aligned}
-C_0 = q, K_0 = s → P_0 = (26+16-18)%26 = 24 = y
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-C_1 = i, K_1 = e → P_1 = (26+8-4)%26 = 4 = e
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-C_2 = s, K_2 = a → P_2 = (26+18-0)%26 = 18 = s
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-C_3 = a, K_3 = c → P_3 = (26+0-2)%26 = 24 = y
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-C_4 = f, K_4 = r → P_4 = (26+5-17)%26 = 14 = o
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-C_5 = y, K_5 = e → P_5 = (26+24-4)%26 = 20 = u
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-C_6 = r, K_6 = a → P_6 = (26+17-0)%26 = 17 = r
-\end{aligned}\]</span>
-<span class="math display">\[\begin{aligned}
-…
-\end{aligned}\]</span>
+<p></p>
 <p>Plain text = <strong>yes your …</strong><br>
 <br>
 Since many programming languages actually store characters as integers, getting the numerical value of the character from the table above is often as simple as subtracting the integer value of ‘A’ or ‘a’.<br>
@@ -615,9 +513,8 @@ Historically speaking, cryptography was almost always concerned with hiding writ
 - They do things faster and so allow us to decrypt cipher text messages faster<br>
 - They also allow us to come up with more complex ciphers i.e.&nbsp;ciphers that would be too complicated to carry out by hand in a realistic time frame<br>
 - They allow us to encrypt any kind of data that can be represented by 1s and 0s. ANYTHING. Not just text but any kind of digital file. One could argue this is the main change that computers brought to the cryptography field.</p>
-</section>
-<section id="encoding." class="level5">
-<h5 class="anchored" data-anchor-id="encoding."><strong><ins>Encoding.</ins></strong></h5>
+<section id="encoding." class="level5" data-number="2.6.1.0.1">
+<h5 data-number="2.6.1.0.1" class="anchored" data-anchor-id="encoding."><span class="header-section-number">2.6.1.0.1</span> <strong><ins>Encoding.</ins></strong></h5>
 <p>Cryptography is not only about hiding information. Sometimes its just about representing information in a manner that is convenient to work with. For example, since computers only deal with 1s and 0s, we have encoding schemes to represent information like characters in 1s and 0s.<br>
 The most common encoding format is ASCII (American Standard Code for Information Interchange) which is based on the English alphabet. Its original format only required 7 bits to represent any thing that might be represented i.e.&nbsp;numbers, lower case and upper case letters, punctuation, and control characters (which were non-printable).<br>
 </p>
@@ -1198,7 +1095,8 @@ j
 </tr>
 </tbody>
 </table>
-<p>Which means it would be encoded as YWJj.<br>
+<p><br>
+Which means it would be encoded as YWJj.<br>
 <br>
 The original bits (which in this case were gotten by encoding the characters in 8-bit ASCII) are placed next to each other, grouped in 6s, and then each of those groups is converted back to a decimal number and looked up in the base-64 table.</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>$ echo -n "abc" | base64 # -n is to remove the newline character</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
@@ -1547,8 +1445,8 @@ N
 <p>We see it converts to “EN”</p>
 <div class="sourceCode" id="cb4"><pre class="sourceCode default code-with-copy"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>$ echo -n "RU4=" | base64 -d # -d is to decode base-64</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </section>
-<section id="cryptography-today." class="level5">
-<h5 class="anchored" data-anchor-id="cryptography-today.">**<ins>Cryptography today*.</ins>**</h5>
+<section id="cryptography-today." class="level5" data-number="2.6.1.0.2">
+<h5 data-number="2.6.1.0.2" class="anchored" data-anchor-id="cryptography-today."><span class="header-section-number">2.6.1.0.2</span> **<ins>Cryptography today*.</ins>**</h5>
 <p>The Internet created a need for an even more secure cryptography. We now all use a system over which no single entity has complete power and bad actors can easily get access to the information you are sending to or receiving from someone else. Additionally we also need ways of confirming that the person we are communicating with is in fact the person we intended to communicate with, or the file we requested is in fact the file we received. All these issues/problems leverage modern cryptography in some form.<br>
 Symmetric-key cryptography works like most of the classic cryptography approaches we discussed earlier i.e.&nbsp;both sender and receiver need to share the key in order to encrypt and decrypt the message. Depending on the algorithm, the input stream can be encrypted as it is experienced (stream ciphers) i.e.&nbsp;a byte or letter at a time OR it can encrypt them in blocks of bits with each block encrypted as a single unit (block ciphers).<br>
 <br>
@@ -1580,6 +1478,9 @@ MD5 (Message Digest algorithm 5) converts large data into a string of 128 bits. 
 <span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>$ echo -n “hello world” | sha256sum</span>
 <span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>$ echo -n “hello world” | sha512sum</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <p>This has been a lot of information but hopefully it is very intriguing information. Some of these topics we shall cover in more detail later in the quarter with more application. Others you’ll just have to wait till you see them in classes like CSC 444/544/CYEN 406 <a href="#fn2" class="footnote-ref" id="fnref2" role="doc-noteref"><sup>2</sup></a>.</p>
+</section>
+</section>
+</section>
 </section>
 
 
