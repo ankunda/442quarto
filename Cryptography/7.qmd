@@ -1,8 +1,10 @@
 ---
 title: "Cryptography"
 format:
-  html:
-    code-fold: true
+  pdf:
+    toc: true
+    number-sections: true
+    colorlinks: true
 jupyter: python3
 ---
 
@@ -230,74 +232,77 @@ The 26 is added just to make the math of the wrap around consistent across diffe
 \
 As an example, if our text is “cyberstorm is going to be bussin” and our key is “seacreatures” \
 
+\begin{math}
+	\begin{aligned}
+	P_0 = c, K_0 = s → C_0 = (2+18)%26 = 20 = u 
+	\end{aligned}
 
-\begin{aligned}
-P_0 = c, K_0 = s → C_0 = (2+18)%26 = 20 = u 
-\end{aligned}
+	\begin{aligned}
+	P_1 = y, K_1 = e → C_1 = (24+4)%26 = 2 = c 
+	\end{aligned}
 
-\begin{aligned}
-P_1 = y, K_1 = e → C_1 = (24+4)%26 = 2 = c 
-\end{aligned}
+	\begin{aligned}
+	P_2 = b, K_2 = a → C_2 = (1+0)%26 = 1 = b 
+	\end{aligned}
 
-\begin{aligned}
-P_2 = b, K_2 = a → C_2 = (1+0)%26 = 1 = b 
-\end{aligned}
+	\begin{aligned}
+	P_3 = e, K_3 = c → C_3 = (4+2)%26 = 6 = g 
+	\end{aligned}
 
-\begin{aligned}
-P_3 = e, K_3 = c → C_3 = (4+2)%26 = 6 = g 
-\end{aligned}
+	\begin{aligned}
+	P_4 = r, K_4 = r → C_4 = (17+17)%26 = 8 = i \nonumber \\
+	\end{aligned}
 
-\begin{aligned}
-P_4 = r, K_4 = r → C_4 = (17+17)%26 = 8 = i \nonumber \\
-\end{aligned}
+	\begin{aligned}
+	P_5 = s, K_5 = e → C_5 = (18+4)%26 = 22 = w \nonumber \\
+	\end{aligned}
 
-\begin{aligned}
-P_5 = s, K_5 = e → C_5 = (18+4)%26 = 22 = w \nonumber \\
-\end{aligned}
+	\begin{aligned}
+	P_6 = t, K_6 = a → C_6 = (19+0)%26 = 19 = t \nonumber \\
+	\end{aligned}
 
-\begin{aligned}
-P_6 = t, K_6 = a → C_6 = (19+0)%26 = 19 = t \nonumber \\
-\end{aligned}
-
-\begin{aligned}
-...
-\end{aligned}
+	\begin{aligned}
+	...
+	\end{aligned}
+\end{math}
 \
 CipherText = **ucbgiwthld mk ysipx xo uy sykkmn** \
 \
 If you wanted to decrypt “qis afyr ilfjwkwot lwew vlwkar. Hg'j ixmlr. Rg uep.” using the same key. 
 
-\begin{aligned}
-C_0 = q, K_0 = s → P_0 = (26+16-18)%26 = 24 = y
-\end{aligned}
+\begin{math}
+	\begin{aligned}
+	C_0 = q, K_0 = s → P_0 = (26+16-18)%26 = 24 = y
+	\end{aligned}
 
-\begin{aligned}
-C_1 = i, K_1 = e → P_1 = (26+8-4)%26 = 4 = e
-\end{aligned}
+	\begin{aligned}
+	C_1 = i, K_1 = e → P_1 = (26+8-4)%26 = 4 = e
+	\end{aligned}
 
-\begin{aligned}
-C_2 = s, K_2 = a → P_2 = (26+18-0)%26 = 18 = s
-\end{aligned}
+	\begin{aligned}
+	C_2 = s, K_2 = a → P_2 = (26+18-0)%26 = 18 = s
+	\end{aligned}
 
-\begin{aligned}
-C_3 = a, K_3 = c → P_3 = (26+0-2)%26 = 24 = y
-\end{aligned}
+	\begin{aligned}
+	C_3 = a, K_3 = c → P_3 = (26+0-2)%26 = 24 = y
+	\end{aligned}
 
-\begin{aligned}
-C_4 = f, K_4 = r → P_4 = (26+5-17)%26 = 14 = o
-\end{aligned}
+	\begin{aligned}
+	C_4 = f, K_4 = r → P_4 = (26+5-17)%26 = 14 = o
+	\end{aligned}
 
-\begin{aligned}
-C_5 = y, K_5 = e → P_5 = (26+24-4)%26 = 20 = u
-\end{aligned}
+	\begin{aligned}
+	C_5 = y, K_5 = e → P_5 = (26+24-4)%26 = 20 = u
+	\end{aligned}
 
-\begin{aligned}
-C_6 = r, K_6 = a → P_6 = (26+17-0)%26 = 17 = r
-\end{aligned}
+	\begin{aligned}
+	C_6 = r, K_6 = a → P_6 = (26+17-0)%26 = 17 = r
+	\end{aligned}
 
-\begin{aligned}
-… 
-\end{aligned}
+	\begin{aligned}
+	… 
+	\end{aligned}
+\end{math}
 
 Plain text = **yes your …** \
 \
@@ -577,6 +582,7 @@ Let’s say we want to convert the string “abc” from ascii to base-64.
 </tbody>
 </table>
 
+\
 Which means it would be encoded as YWJj. \
 \
 The original bits (which in this case were gotten by encoding the characters in
