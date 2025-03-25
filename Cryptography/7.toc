@@ -1,4 +1,0 @@
-\contentsline {paragraph}{\numberline {0.0.0.1}\textbf {History:}}{2}{paragraph.0.0.0.1}%
-\contentsline {paragraph}{\numberline {0.0.0.2}\textbf {Encoding.}}{10}{paragraph.0.0.0.2}%
-\contentsline {paragraph}{\numberline {0.0.0.3}**Cryptography today*.**}{19}{paragraph.0.0.0.3}%
-\providecommand \tocbasic@end@toc@file {}\tocbasic@end@toc@file 

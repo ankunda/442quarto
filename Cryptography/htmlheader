@@ -1,5 +1,9 @@
 ---
 title: "Cryptography"
+date: "March 24, 2025"
+title-block-banner: "#002f8b"
+toc: true
+number-sections: true
 format:
   html:
     code-fold: true
