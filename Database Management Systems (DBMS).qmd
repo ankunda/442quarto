@@ -1,0 +1,397 @@
+---
+title: "Database Management Systems (DBMS)"
+format:
+  html:
+    code-fold: false
+jupyter: python3
+code-copy: false
+---
+
+<style>
+  .indent {
+      margin-left: 40px; /* Indent the entire element by 40 pixels */
+      margin-top:0px
+  }
+  .indent2 {
+      margin-left: 80px; /* Indent the entire element by 40 pixels */
+      margin-top:0px
+  }
+  .indent3 {
+      margin-left: 120px; /* Indent the entire element by 40 pixels */
+      margin-top:0px
+  }
+</style>
+
+preliminaries \
+<div class="indent">mainly relational databases (so pretty much just SQL)</div>
+<div class="indent">DBMS allow us to manage databases</div>
+<div class="indent">databases store data</div> \
+
+relational databases \
+<div class="indent">store data in tables</div>
+<div class="indent">tables have columns (fields)</div>
+<div class="indent">rows are individual data items</div>
+<div class="indent">keys tag the data</div>
+<div class="indent">keys in one table can be paired or matched with keys in other tables (a relation!)</div>
+<div class="indent">usually the data is normalized (as many tables as are needed without too much detail)</div>
+<div class="indent2">with appropriate relations</div>
+<div class="indent">we try to ensure that major data items are never deleted</div>
+<div class="indent2">e.g., the last home in a zip code is removed (but we don't remove the zip code itself)</div> \
+
+MySQL \
+<div class="indent">a popular open source DBMS</div>
+\
+**install MySQL:**
+```default
+sudo apt-get install mysql-server
+```
+
+**try it out:**
+```default
+mysql -uroot -p
+```
+or 
+
+```default
+sudo mysql
+```
+
+**let's create a database, then use it:**
+```default
+CREATE DATABASE test;
+USE test;
+```
+
+**now, let's create a team table:**
+```default
+CREATE TABLE `teams` (
+  `id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL DEFAULT '',
+  `score` int(10) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+
+```
+
+**what does it look like?**
+```default
+DESCRIBE teams;
+```
+
+**and what does it contain?**
+```default
+SELECT * FROM teams;
+```
+
+so it's not a good idea to use the root user to do all of this \
+
+**so let's undo by removing the database:**
+```default
+DROP DATABASE test;
+```
+
+**let's create another user (with fewer privileges than root):**
+```default
+CREATE USER 'cyber'@'localhost' IDENTIFIED BY 'cyber';
+```
+
+so the user is cyber with password cyber (original!) \
+let's grant all privileges to this user on a new database that we will create
+
+**first, we need to create the database (we'll call it cyber):**
+```default
+CREATE DATABASE cyber;
+```
+
+
+**next, we can grant the user cyber all privileges on this new database:**
+```default
+GRANT ALL PRIVILEGES ON cyber.* TO 'cyber'@'localhost';
+```
+note that localhost implies that cyber can only connect to the DBMS locally \
+the privileges ensure that cyber can only mess around with the database cyber \
+	** cyber.* ** implies all tables in the database cyber
+
+**logout of MySQL:**
+```default
+[Ctrl+D]
+```
+
+
+**and let's login again as cyber:**
+```default
+mysql -ucyber -p cyber
+```
+
+
+**note that the format is:**
+```default
+mysql -u<user> -p<password> <database>
+```
+
+
+
+**therefore:**
+```default
+mysql -ucyber -p cyber
+```
+note that the password is left out (there's a space in between **-p** and **cyber**)
+<div class="indent">this logs in to MySQL as the user **cyber**</div>
+<div class="indent">the password to be entered at the terminal (hidden)</div>
+<div class="indent">the selected database to be **cyber**</div> \
+
+**let's see what databases we can see:**
+```default
+SHOW DATABASES;
+```
+
+
+**since we're already using the database cyber, let's see what tables exist:**
+```default
+SHOW TABLES;
+```
+
+
+**let's recreate the team table:**
+```default
+CREATE TABLE `teams` (
+  `id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) NOT NULL DEFAULT '',
+  `score` int(10) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+```
+
+
+**let's create another table:**
+```default
+CREATE TABLE `acl` (
+  `id` smallint(5) unsigned NOT NULL AUTO_INCREMENT,
+  `team_id` smallint(5) unsigned NOT NULL DEFAULT '0',
+  `password` varchar(50) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`),
+  KEY `acl_team_id` (`team_id`),
+  CONSTRAINT `acl_team_id` FOREIGN KEY (`team_id`) REFERENCES `teams` (`id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+```
+the CONSTRAINT clause means that the key **team_id** in the **acl** table \
+<div class="indent">will refer to the key **id** in the **teams** table</div>
+<div class="indent">this is a relation!</div>
+<div class="indent">if an **id** is deleted from the **teams** table</div>
+<div class="indent2">entries in the **acl** table with the same **team_id** will also be deleted</div>
+<div class="indent2">this is the CASCADE clause</div>
+
+**now, let's add some data to the teams table:**
+```default
+INSERT INTO `teams` VALUES (1,'PERSIANS',0);
+INSERT INTO `teams` VALUES (2,'ROMANS',0);
+```
+
+
+**and what does it contain now?**
+```default
+SELECT * FROM teams;
+```
+
+**let's also add some data to the acl table:**
+```default
+INSERT INTO `acl` VALUES (1,1,password('password'));
+INSERT INTO `acl` VALUES (2,2,password('123456'));
+```
+
+
+
+**and what does it contain now?**
+```default
+SELECT * FROM acl;
+```
+
+
+**let's find the password (hash) of PERSIANS:**
+```default
+SELECT `password` FROM acl WHERE `team_id`=(SELECT `id` FROM teams WHERE `name`='PERSIANS');
+```
+
+
+**it's a query with multiple parts; the first part returns the ID 1:**
+```default
+(SELECT `id` FROM teams WHERE `name`='PERSIANS');
+```
+
+
+**the second part now uses this first value:**
+```default
+SELECT `password` FROM acl WHERE `team_id`=1;
+```
+
+
+**we could get the same result with this query:**
+```default
+SELECT `password` FROM acl,teams WHERE acl.`team_id`=teams.`id` AND teams.`name`='PERSIANS';
+```
+
+
+**we can even do a bit of shorthand:**
+```default
+SELECT `password` FROM acl a,teams t WHERE a.`team_id`=t.`id` AND t.`name`='PERSIANS';
+```
+
+
+**here are some more SQL queries:** 
+
+note that <font color="red"><b>%</b></font> in SQL behaves very much like <font color="red"><b>*</b></font>  in bash
+```default
+SELECT `score` FROM teams WHERE `name` LIKE 'PER%';
+```
+
+
+**it's also case insensitive:**
+```default
+SELECT `score` FROM teams WHERE `name` LIKE 'per%';
+```
+
+
+**PERSIANS deserve 100 points for having one team member writing the code while most of the rest slack off (:P):**
+```default
+UPDATE teams SET `score`=`score`+100 WHERE `name` LIKE '%rsi%';
+```
+
+**what does the teams table look like now?**
+```default
+SELECT * FROM teams;
+```
+let's interact with MySQL from a web page (using PHP) \
+we assume that Apache2 is already installed
+
+**first, we need to install PHP (including the Apache2 PHP module):**
+```default
+sudo apt-get install php libapache2-mod-php php-mysql
+```
+
+a simple web page has been created to interact with MySQL (see the code on the class web site) \
+<div class="indent">specifically, the **cyber** database </div>
+the web page asks for a team name and returns that team's score \
+\
+to connect to the database, we'll need two configuration files \
+<div class="indent">one for useful database functions: **db.php** </div>
+
+<div class="indent">one to access the cyber database: **config.php**</div>
+to allow users to interact, we'll need a main HTML file: **index.php** \
+place the three files in **/var/www/html** \
+<div class="indent">and remove **index.html** (if it already exists)</div>
+\
+try it out... \
+
+**you can probably infer the query that it makes:**
+```default
+SELECT `name`,`score` FROM teams WHERE `name`='<whatever the user entered>'
+```
+
+
+**so if we enter <font color="red">PERSIANS</font>:**
+```default
+SELECT `name`,`score` FROM teams WHERE `name`='PERSIANS'
+```
+but what if we want to see the entire table and have no clue what the team names are?
+
+**how about if we enter <font color="red">name' or 'a'='a</font> instead?**
+```default
+SELECT `name`,`score` FROM teams WHERE `name`='name' or 'a'='a'
+```
+
+<font color="red">\`name\`='name'</font> will be false since no team in the table is called name
+but <font color="red">'a'='a'</font> is always true! \
+<div class="indent">yes, the character 'a' is always equal to the character 'a' (i.e., itself)!</div>
+so the entire WHERE clause will be true, causing the SELECT clause to be performed \
+the result is that \`name\` and \`score\` for all teams in the database will be returned! \
+<div class="indent">yes!  that's information that was probably not intended to be returned</div>
+this version of PHP prevents multiple SQL queries from being performed in a single submission \
+<div class="indent">but old version did!</div> \
+
+
+**what would <font color="red">blah'; delete from teams; --  do?</font>**
+```default
+SELECT `name`,`score` FROM teams WHERE `name`='blah'; delete from teams; -- '
+```
+-- means that whatever follows is a comment \
+the SELECT query returns nothing since there is no team named blah
+
+**but the second SQL query is performed:**
+```default
+DELETE FROM teams;
+```
+
+which, of course (and unfortunately), deletes everything from the teams table! \
+<div class="indent">oh noes!  gah!</div>
+
+**other stuff could be entered, like <font color="red">blah'; select * from acl; -- </font>:**
+```default
+SELECT `name`,`score` FROM teams WHERE `name`='blah'; select * from acl; -- '
+```
+
+this supposes that the attacker knows something about the database \
+<div class="indent">or is just guessing at other table names (e.g., acl)</div>
+the first SQL query is not performed because the WHERE clause is false 
+
+**but the second is performed:**
+```default
+SELECT * FROM acl;
+```
+
+the result is that the acl table is returned! \
+<div class="indent">and this is BAD!</div>
+
+**what about this: <font color="red">blah'; show tables; -- </font> ?**
+```default
+SELECT `name`,`score` FROM teams WHERE `name`='blah'; show tables; -- '
+```
+yup, a listing of the tables in the **cyber** database will be returned!
+
+**or this: <font color="red">blah'; show databases; -- </font> ?**
+```default
+SELECT `name`,`score` FROM teams WHERE `name`='blah'; show databases; -- '
+```
+yup, a listing of the databases accessible by the user **cyber** will be returned! \
+\
+...and we can keep going (like accessing other databases!)... \
+exploiting SQL vulnerabilities usually means just playing around and trying things \
+<div class="indent">this is what a some folks do for a living!</div>
+SQL vulnerabilities are almost always the result of badly designed backend scripts (usually PHP) \
+it is always good practice to sanitize user input and check for invalid input \
+<div class="indent">don't allow, for example, input that could alter SQL queries</div> \
+
+**you can export the contents of databases (do this outside of MySQL, at the terminal):**
+```default
+mysqldump -ucyber -p --skip-extended-insert --add-drop-database --add-drop-table --databases cyber
+```
+
+
+
+**you probably want to save this to a file:**
+```default
+mysqldump -ucyber -p --skip-extended-insert --add-drop-database --add-drop-table --databases cyber > db.sql
+```
+
+
+**let's drop the database to see how the file can be used to recreate it:**
+```default
+mysql -ucyber -p
+DROP DATABASE cyber;
+SHOW DATABASES;
+[Ctrl+D]
+```
+
+
+**and let's recreate it:**
+```default
+mysql -ucyber -p < db.sql
+mysql -ucyber -p cyber
+SHOW TABLES;
+SELECT * FROM teams;
+```
+the script **user.sql** is provided on the web site to facilitate creating the **cyber** user (the first time)
+
+**execute it this way:**
+```default
+mysql -uroot -p < user.sql
+```
