@@ -55,6 +55,11 @@ potentially using the unintended side effects of a system's operation.
 In the end, both are surreptitious ways to send a message.
 :::
 
+Covert Channels can typically be put into two categories.
+
+# Storage Covert Channels
+
+
 
 		we're simply using a channel to covertly transmit data
 
