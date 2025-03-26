@@ -1,0 +1,174 @@
+---
+title: "Covert Channels"
+date: "March 26, 2025"
+title-block-banner: "#002f8b"
+toc: true
+number-sections: true
+format:
+  html:
+    code-copy: false
+    code-fold: true
+jupyter: python3
+---
+
+A **Covert Channel** in cybersecurity is a method used to secretly transfer
+information in a way that violates security policies. These channels
+operate by exploiting legitimate communication or computing mechanisms
+in unintended ways, allowing unauthorized access or data exfiltration
+without detection.
+
+A **Covert Channel** typically implies the existence and use of an
+**overt channel**. An Overt channel is a valid or legitimate channel of
+communication that is being utilized to send the *covert message*.
+Examples of these channels include but are not limited to websites, FTP
+sites, phone conversations, chats, Facebook newsfeeds, TCP/IP packets,
+etc.
+
+:::{.callout-important title="Challenge Yourself"}
+Can you think of ways that the above mentioned overt channels can be
+used to communicate covertly?
+Suggestions include code words, preset conversation systems, puzzles and
+codes, ... 
+:::
+
+Because typical covert channels allow the transfer of information
+between entities that are supposed to be allowed to communicate, as set
+by some access control policy, covert channels are typically
+
+* hidden
+
+* hard to detect
+
+* hard to set up because they might require administrative access to
+  machines
+
+* low bandwidth i.e. they require a lot of resources (time and/or space)
+  to send a very small message. 
+
+	
+:::{.callout-note}
+Note that **steganography** (hiding data within data) is not a covert channel.
+There are a few reasons why the two are distinct but the main one is
+that Steganography requires a prior communication channel e.g. sending a
+picture, while covert channels create a channel to transmit a message
+potentially using the unintended side effects of a system's operation.
+In the end, both are surreptitious ways to send a message.
+:::
+
+
+		we're simply using a channel to covertly transmit data
+
+storage covert channels  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; communicate by modifying some storage location  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; one process writes to some resource  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; another process reads from it  
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., abuse the print queue 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sender either fills up the queue (signals a 1)  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;or leaves it alone (signals a 0)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;receiver polls the queue to receive the message  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., abuse web site log files  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;request web page A (signals a 0)  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;request web page B (signals a 1)  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;receiver reads the log file for the message  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., abuse FTP site file privileges and permissions  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <samp>drwxrwxrwx</samp> (10 bits of information!) 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;order files alphabetically, set permissions appropriately  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;concatenate bits for the message  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;can be done on an anonymous FTP with incoming permitted  
+
+
+timing covert channels  
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;communicate by affecting/modifying some observed response time (of a receiver)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., modulating usage of system resources (e.g., CPU time) that a receiver can monitor
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;time (the clock) is the shared resource
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.g., pattern of opening and closing a file (timing)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.g., using port knocking on different ports using some timing mechanism   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.g., using the hard drive head   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender has access to the entire hard drive (administrative access)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver has access to some portion of the hard drive   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender makes a file request far away from the receiver's hard drive area (signals a 1)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender does nothing (signals a 0)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver makes a request within its hard drive area   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver uses the time it takes for the head to travel to its section and finish the request   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; long time → 1   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; short time → 0
+
+network covert channels   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;information is placed in packet headers (not in the payload – that's steganography) 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., IP, offset, options, TCP checksum, sequence numbers   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;or conveyed through action/reaction   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; send a covert packet, some number of legitimate packets, another covert packet, etc   
+
+
+combination of storage and network (with a patsy)!   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender encodes a covert message in the sequence number field of a packet (or many packets)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender forges the source IP address with the IP address of the intended receiver   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender sends the packet(s) as part of the TCP handshake to a patsy   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TCP handshake: **SYN**, SYN-ACK, ACK   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; or **SYN**, SYN-RST   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; patsy: an unknown “man-in-the-middle”   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; this makes the covert channel harder to detect   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the patsy receives the packets(s) and either:   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (1) responds to the receiver (via the forged IP address) with SYN-ACK   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (2) responds to the receiver with SYN-RST   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; increments the sequence number of the packet(s) by 1 (standard procedure)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver receives the SYN-ACK or SYN-RST packet(s)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver decrements the sequence number of the packets(s)   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and decodes the covert message   
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; in either case (i.e., SYN-ACK or SYN-RST), receiver doesn't respond to the patsy   
+
+
+tutorials 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ftp (storage) 
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; chat (timing)
