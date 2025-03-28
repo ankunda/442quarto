@@ -109,10 +109,9 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#setting-up-the-server" id="toc-setting-up-the-server" class="nav-link active" data-scroll-target="#setting-up-the-server"><span class="header-section-number">1</span> Setting up the server</a>
   <ul class="collapse">
-  <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation"><span class="header-section-number">1.1</span> Installation</a></li>
-  <li><a href="#login" id="toc-login" class="nav-link" data-scroll-target="#login"><span class="header-section-number">1.2</span> Login</a></li>
-  <li><a href="#tweaking-the-ftp-server" id="toc-tweaking-the-ftp-server" class="nav-link" data-scroll-target="#tweaking-the-ftp-server"><span class="header-section-number">1.3</span> Tweaking the FTP server</a></li>
-  <li><a href="#restart-the-ftp-server" id="toc-restart-the-ftp-server" class="nav-link" data-scroll-target="#restart-the-ftp-server"><span class="header-section-number">1.4</span> Restart the FTP server</a></li>
+  <li><a href="#login" id="toc-login" class="nav-link" data-scroll-target="#login"><span class="header-section-number">1.1</span> Login</a></li>
+  <li><a href="#tweaking-the-ftp-server" id="toc-tweaking-the-ftp-server" class="nav-link" data-scroll-target="#tweaking-the-ftp-server"><span class="header-section-number">1.2</span> Tweaking the FTP server</a></li>
+  <li><a href="#restart-the-ftp-server" id="toc-restart-the-ftp-server" class="nav-link" data-scroll-target="#restart-the-ftp-server"><span class="header-section-number">1.3</span> Restart the FTP server</a></li>
   </ul></li>
   <li><a href="#storage-covert-channel" id="toc-storage-covert-channel" class="nav-link" data-scroll-target="#storage-covert-channel"><span class="header-section-number">2</span> Storage Covert Channel</a>
   <ul class="collapse">
@@ -135,6 +134,44 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>To end the message we have a couple of options to consider. We could just repeat the covert message over and over and trust the recipient to know when they have received the entire message. However, this would make our channel easy to notice and analyse. A more surreptitious option would be to add a special tag at the end of our covert message to signify that the hidden message has been received in its entirety…perhaps the string “EOF”</p>
 <section id="setting-up-the-server" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Setting up the server</h1>
+<p>Let’s create a basic TCP server using python’s socket library.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> socket</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a><span class="co"># define a host and a port</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>HOST <span class="op">=</span> <span class="st">"127.0.0.1"</span>  <span class="co"># This is the ip address for a local host</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>PORT <span class="op">=</span> <span class="dv">1337</span>     <span class="co"># Choose a port number that is not typically</span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>            <span class="co"># used by other traffic.</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Now to create a Socket object and connect it to the specific host and</span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="co"># port identified by our constants above</span></span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>s. bind((HOST, PORT))</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a>s.listen(<span class="dv">0</span>) <span class="co"># the argument determines how many connection requests</span></span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a>        <span class="co"># will be added to the queue. 0 means that it will not </span></span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a>        <span class="co"># add any new request to the queue and will reject any</span></span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a>        <span class="co"># incoming requests if it is already dealing with one.</span></span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"Server is listening on </span><span class="sc">{</span>HOST<span class="sc">}</span><span class="ss">:</span><span class="sc">{</span>PORT<span class="sc">}</span><span class="ss">"</span>)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-20"><a href="#cb1-20" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> <span class="va">True</span>:</span>
+<span id="cb1-21"><a href="#cb1-21" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Note that if you wanted your server to be able to deal with more</span></span>
+<span id="cb1-22"><a href="#cb1-22" aria-hidden="true" tabindex="-1"></a>    <span class="co"># than one client at a time, this portion would be threaded. For our</span></span>
+<span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>    <span class="co"># demonstration, you won't need to create a threaded server.</span></span>
+<span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>    c, addr <span class="op">=</span> s.accept()    <span class="co"># store client details when connection</span></span>
+<span id="cb1-26"><a href="#cb1-26" aria-hidden="true" tabindex="-1"></a>                <span class="co"># comes in. "c" is the client socket,</span></span>
+<span id="cb1-27"><a href="#cb1-27" aria-hidden="true" tabindex="-1"></a>                <span class="co"># and "addr" is the client address.</span></span>
+<span id="cb1-28"><a href="#cb1-28" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb1-29"><a href="#cb1-29" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="ss">f"Connection from </span><span class="sc">{</span>addr<span class="sc">}</span><span class="ss"> established"</span>)</span>
+<span id="cb1-30"><a href="#cb1-30" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-31"><a href="#cb1-31" aria-hidden="true" tabindex="-1"></a>    <span class="co"># the b in the sendall command below ensures that the message is</span></span>
+<span id="cb1-32"><a href="#cb1-32" aria-hidden="true" tabindex="-1"></a>    <span class="co"># sent as bytes, which is the form that sendall requires.</span></span>
+<span id="cb1-33"><a href="#cb1-33" aria-hidden="true" tabindex="-1"></a>    c.sendall(<span class="st">b"Hello from the other side. I must have called a thousand times"</span>)</span>
+<span id="cb1-34"><a href="#cb1-34" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-35"><a href="#cb1-35" aria-hidden="true" tabindex="-1"></a>    <span class="co"># make sure to close the connection</span></span>
+<span id="cb1-36"><a href="#cb1-36" aria-hidden="true" tabindex="-1"></a>    c.close()</span>
+<span id="cb1-37"><a href="#cb1-37" aria-hidden="true" tabindex="-1"></a>    </span></code></pre></div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -145,16 +182,49 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>Depending on how far you went with a previous lab, you might not need to do the <code>Setting up an FTP server</code> section at all.</p>
+<p>If you haven’t done any socket programming before, this is a good place to stop and test your server. Its always fun to see how your code could work over a network.</p>
+<p>Later on in this lab, we’ll design a programmatic client that will connect to our server. But you don’t need one for now. You can use in built tools in the terminal that allow you to connect to a client/port.</p>
+<ol type="1">
+<li>Using <strong>telnet</strong></li>
+</ol>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="ex">telnet</span> 127.0.0.1 1337   <span class="co"># general form is telnet server_ip server_port</span></span></code></pre></div>
+<p>Telnet is used for plain text communication and is unencrypted so don’t use it for sensitive data.</p>
+<ol start="2" type="1">
+<li>Using <strong>netcat</strong></li>
+</ol>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="ex">nc</span> 127.0.0.1 1337</span></code></pre></div>
+<p>Hit <code>Ctrl + C</code> or type <code>exit</code> to exit. Netcat is used to test and debug network services.</p>
 </div>
 </div>
-<section id="installation" class="level2" data-number="1.1">
-<h2 data-number="1.1" class="anchored" data-anchor-id="installation"><span class="header-section-number">1.1</span> Installation</h2>
-<p>We shall be using vsftpd (Very Secure FTP Daemon). To do that run the following commands in the terminal</p>
-<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update     <span class="co"># to update your software listings</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install vsftpd <span class="co"># to actually install vsftpd</span></span></code></pre></div>
+<p>The code above is a very simple server example. We need to tweak it to send one character at a time with a delay between each character where the delay is actually our covert channel.</p>
+<p>In order to do this, we shall have to make a couple of changes to our code above starting with importing the <code>sleep</code> command from the <code>time</code> library.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> time <span class="im">import</span> sleep</span></code></pre></div>
+<p>To make our code easier to adjust, we should probably put some time constants at the top of our code too.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ZERO <span class="op">=</span> <span class="fl">0.025</span>    <span class="co"># How long to wait for a zero</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ONE <span class="op">=</span> <span class="fl">0.1</span>   <span class="co"># How long to wait for a one</span></span></code></pre></div>
+<p>Our algorithm for sending the message is also going to change a little bit. Instead of using <code>sendall</code>, we shall use <code>send</code> which allows us to send smaller chunks of the message.</p>
+<p>Our loop for sending the cover</p>
+<p>and then create a socket object that we can then bind to a specific port. That means that it will be listening to that port and will be required to do something when a connection comes in on that port.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>port <span class="op">=</span> <span class="dv">1337</span> <span class="co"># choose a port number that should typically be available</span></span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>s.bind((<span class="st">""</span>, port))</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>:::{.callout<span class="op">-</span>tip}</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>Depending on how far you went <span class="cf">with</span> a previous lab, you might <span class="kw">not</span> need to</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>do the `Setting up an FTP server` section at <span class="bu">all</span>.</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>:::</span>
+<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">## Installation</span></span>
+<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>We shall be using vsftpd (Very Secure FTP Daemon). To do that run the</span>
+<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>following commands <span class="kw">in</span> the terminal</span>
+<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>```sh</span>
+<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>sudo apt update     <span class="co"># to update your software listings</span></span>
+<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>sudo apt install vsftpd <span class="co"># to actually install vsftpd</span></span></code></pre></div>
 <p>Once the installation is done, you should be able to confirm that it is installed and running correctly with the following command.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> netstat <span class="at">-alpn</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">' LISTEN '</span></span></code></pre></div>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> netstat <span class="at">-alpn</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">' LISTEN '</span></span></code></pre></div>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -166,7 +236,7 @@ Tip
 </div>
 <div class="callout-body-container callout-body">
 <p>if the <code>netstat</code> command above doesn’t work, you might need to install it using the command</p>
-<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install net-tools</span></code></pre></div>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install net-tools</span></code></pre></div>
 <p>Once installed, re-run the <em>netstat | grep</em> command from earlier.</p>
 </div>
 </div>
@@ -177,11 +247,10 @@ Tip
 <figcaption>The last line in this Screenshot shows vsftpd is installed and working on my system</figcaption>
 </figure>
 </div>
-</section>
-<section id="login" class="level2" data-number="1.2">
-<h2 data-number="1.2" class="anchored" data-anchor-id="login"><span class="header-section-number">1.2</span> Login</h2>
+<section id="login" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="login"><span class="header-section-number">1.1</span> Login</h2>
 <p>Now try logging in to your ftp server from the same computer/system.</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> localhost</span></code></pre></div>
+<div class="sourceCode" id="cb9"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> localhost</span></code></pre></div>
 <p>Running the command above should allow you to log in to your own system using the username and password of your system. Feel free to navigate and see what you have access to.</p>
 <p>Some commands that might be of help to you include:</p>
 <pre><code>ls
@@ -190,28 +259,28 @@ cd foldername
 cd ..
 Ctrl + D</code></pre>
 </section>
-<section id="tweaking-the-ftp-server" class="level2" data-number="1.3">
-<h2 data-number="1.3" class="anchored" data-anchor-id="tweaking-the-ftp-server"><span class="header-section-number">1.3</span> Tweaking the FTP server</h2>
+<section id="tweaking-the-ftp-server" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="tweaking-the-ftp-server"><span class="header-section-number">1.2</span> Tweaking the FTP server</h2>
 <p>We can make some few modifications to make it a better experience. These modifications include adjusting the welcome message, and adjusting the folder that an ftp user is automatically sent to.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> vim /etc/vsftpd.conf   <span class="co"># feel free to use another editor other than vim</span></span></code></pre></div>
+<div class="sourceCode" id="cb11"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> vim /etc/vsftpd.conf   <span class="co"># feel free to use another editor other than vim</span></span></code></pre></div>
 <p>When inside the config file, look for and adjust the following lines accordingly.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>anonymous_enable=YES</span>
-<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>local_enable=NO</span>
-<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>ftpd_banner=My first and Best FTP server # feel free to adjust this</span>
-<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>anon_root=***   # where *** is the path to an appropriate folder with</span>
-<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    # appropriate permissions. A suggestion is /home/ftp which you </span>
-<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    # will need to create if it doesn't already exist.</span></code></pre></div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>anonymous_enable=YES</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>local_enable=NO</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>ftpd_banner=My first and Best FTP server # feel free to adjust this</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>anon_root=***   # where *** is the path to an appropriate folder with</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    # appropriate permissions. A suggestion is /home/ftp which you </span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    # will need to create if it doesn't already exist.</span></code></pre></div>
 </section>
-<section id="restart-the-ftp-server" class="level2" data-number="1.4">
-<h2 data-number="1.4" class="anchored" data-anchor-id="restart-the-ftp-server"><span class="header-section-number">1.4</span> Restart the FTP server</h2>
+<section id="restart-the-ftp-server" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="restart-the-ftp-server"><span class="header-section-number">1.3</span> Restart the FTP server</h2>
 <p>Restart the server and log in again. This time, you don’t need to use your system’s credentials to log in. You should be able to log in <strong>anonymously</strong>. That means your username is <em>anonymous</em> and your password is blank i.e.&nbsp;just hit <code>Enter</code></p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> service vsftpd restart</span>
-<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> localhost</span></code></pre></div>
+<div class="sourceCode" id="cb13"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> service vsftpd restart</span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> localhost</span></code></pre></div>
 <p>You can also try to ftp into your ftp server from another computer. All you’ll need is the ip address of the computer on which the ftp server is located.</p>
 <p>If you set up this server on a virtual machine and set up the network correctly, then your virtual machine will have a different IP address from your host computer and you can do this part from your host computer.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> 138.47.something.something  <span class="co"># recall you are running this command on your</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># host computer but using the ip address of your virtual machine (or</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># whatever computer the server is on)</span></span></code></pre></div>
+<div class="sourceCode" id="cb14"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> 138.47.something.something  <span class="co"># recall you are running this command on your</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># host computer but using the ip address of your virtual machine (or</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># whatever computer the server is on)</span></span></code></pre></div>
 </section>
 </section>
 <section id="storage-covert-channel" class="level1" data-number="2">
@@ -222,7 +291,7 @@ Ctrl + D</code></pre>
 <section id="bits" class="level2" data-number="2.1">
 <h2 data-number="2.1" class="anchored" data-anchor-id="bits"><span class="header-section-number">2.1</span> 7 bits</h2>
 <p>We could ignore the first three bits and only embed ASCII letters with the latter 7 bits of each file’s permissions.</p>
-<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>---xrwxrwx</span></code></pre></div>
+<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>---xrwxrwx</span></code></pre></div>
 <p>The file permission above would be translated to 1111111.</p>
 <p>Unfortunately, a list of files where the first 3 bits of file permissions were consistently not being used would rouse too much suspicion. So in order to make it look more convincing/surreptitious, we could add random files as noise into the file list. These “noise” files would have to have at least one of their first 3 bits set so that they could be differentiated from the actual hidden message.</p>
 <p>Here is an example of what we’re trying to do.</p>
@@ -253,42 +322,42 @@ g = 147
 o = 157
 d = 144</code></pre>
 <p>We shall now create a bunch of random files (with the <code>touch</code> command), and adjust their permissions (with the <code>chmod</code> command) using the numbers identified above.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file1</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 104 file1</span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file2</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 145 file2</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file3</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 155 file3</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file4</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 151 file4</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file5</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 147 file5</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file6</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 157 file6</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file7</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 144 file7</span></code></pre></div>
+<div class="sourceCode" id="cb19"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file1</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 104 file1</span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file2</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 145 file2</span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file3</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 155 file3</span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file4</span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 151 file4</span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file5</span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 147 file5</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file6</span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 157 file6</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file7</span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 144 file7</span></code></pre></div>
 <p>This should produce something like this in your folder.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*</span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*</span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3*</span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>---xr-x--x 1 prof prof 0 Mar 27 16:15 file4*</span>
-<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>---xr--rwx 1 prof prof 0 Mar 27 16:15 file5*</span>
-<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6*</span>
-<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>---xr--r-- 1 prof prof 0 Mar 27 16:15 file7*</span></code></pre></div>
+<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*</span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3*</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>---xr-x--x 1 prof prof 0 Mar 27 16:15 file4*</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>---xr--rwx 1 prof prof 0 Mar 27 16:15 file5*</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6*</span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>---xr--r-- 1 prof prof 0 Mar 27 16:15 file7*</span></code></pre></div>
 <p>Like we mentioned before, note that all the files that actually have something in their permissions do not have any of the first 3 flags set.</p>
 <p>We should now add some noise to the files, making sure that every file that is termed as <em>noise</em> has at least one of the first 3 flags set. This will make our file server contents look more believable.</p>
-<div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*</span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>d--xrw-r-- 1 prof prof 0 Mar 27 16:15 file1.5*</span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*</span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3*</span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>-r-xrwxrwx 1 prof prof 0 Mar 27 16:15 file3.5*</span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>---xr-x--x 1 prof prof 0 Mar 27 16:15 file4*</span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>---xr--rwx 1 prof prof 0 Mar 27 16:15 file5*</span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>-rwx--xr-x 1 prof prof 0 Mar 27 16:15 file5.5*</span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6*</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>-rw-r---wx 1 prof prof 0 Mar 27 16:15 file6.5*</span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>---xr--r-- 1 prof prof 0 Mar 27 16:15 file7*</span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>drwxr-xrw- 1 prof prof 0 Mar 27 16:15 file7.5*</span></code></pre></div>
+<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>d--xrw-r-- 1 prof prof 0 Mar 27 16:15 file1.5*</span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*</span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3*</span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>-r-xrwxrwx 1 prof prof 0 Mar 27 16:15 file3.5*</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>---xr-x--x 1 prof prof 0 Mar 27 16:15 file4*</span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>---xr--rwx 1 prof prof 0 Mar 27 16:15 file5*</span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>-rwx--xr-x 1 prof prof 0 Mar 27 16:15 file5.5*</span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6*</span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>-rw-r---wx 1 prof prof 0 Mar 27 16:15 file6.5*</span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>---xr--r-- 1 prof prof 0 Mar 27 16:15 file7*</span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>drwxr-xrw- 1 prof prof 0 Mar 27 16:15 file7.5*</span></code></pre></div>
 <p>SUCCESS. Covert channel has been set up and hidden message has been embedded.</p>
 <p>How would we go about retrieving the message?</p>
 <pre><code>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*
@@ -305,22 +374,22 @@ d--x---r-- 1 prof prof 0 Mar 27 16:15 file1.5*
 <p>There are a few implications we need to know though chief of which is that we can no longer afford to include noise files. This is because there is no way to differentiate the noise files from the files that have legitimate portions of the message embedded in their permissions.</p>
 <p>To create the message, we’ll need to 1. order the files in the server alphabetically, 2. Create a complete message by appending all the bits of the hidden message together, and then splitting them into groups of 10. Each 10 bit grouping will be applied to a single file. 3. If the message we are trying to embed isn’t made up of a perfect multiple of 10bits, then we pad the message with extra 0’s. 4. During the decoding process, we should collect all the bits into a single stream, split them into groups of 7s (since we are using basic ASCII), and then convert each group of 7 into its associated character, and then reassemble the message.</p>
 <p>try to decode the following</p>
-<div class="sourceCode" id="cb18"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>-r-xrw--w- 1 prof prof  0 Mar 27 20:57 17c455d90e49</span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>-rw--w-r-x 1 prof prof  0 Mar 27 20:57 302289542768697c</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>-rw---x--- 1 prof prof  0 Mar 27 20:57 4bdf419390d83b860cec</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>--wxr-xrwx 1 prof prof  0 Mar 27 20:57 51451ddb647ff3566601f232</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>d-w---xr-- 2 prof prof 4K Mar 27 20:57 6e8dd5f0924ce30b35aeaed9</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>d-wxrw--w- 2 prof prof 4K Mar 27 20:57 70a8cbb30</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>dr--r-x-w- 2 prof prof 4K Mar 27 20:57 79bf30d265cbd436079e</span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>-rwxrwx--x 1 prof prof  0 Mar 27 20:57 81052541de641ff1ed7ca40</span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>d-w-----wx 2 prof prof 4K Mar 27 20:57 a8b18ffb171e161c753ab8d</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>-rw-rwxrw- 1 prof prof  0 Mar 27 20:57 c52eda933ff95be8f914eaf62</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>-r-x-----x 1 prof prof  0 Mar 27 20:57 daf9509999adb4f6e6b49c7e91</span>
-<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>d---rwxr-- 2 prof prof 4K Mar 27 20:57 f35c8e8ed0fb8a609</span>
-<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>--wxrw--w- 1 prof prof  0 Mar 27 20:57 f4ed4ab4e61c850de968</span>
-<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>-rwxrwx-w- 1 prof prof  0 Mar 27 20:57 f59a77545fe6d10</span>
-<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>---x------ 1 prof prof  0 Mar 27 20:57 fce47615d2</span></code></pre></div>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>-r-xrw--w- 1 prof prof  0 Mar 27 20:57 17c455d90e49</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>-rw--w-r-x 1 prof prof  0 Mar 27 20:57 302289542768697c</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>-rw---x--- 1 prof prof  0 Mar 27 20:57 4bdf419390d83b860cec</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>--wxr-xrwx 1 prof prof  0 Mar 27 20:57 51451ddb647ff3566601f232</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>d-w---xr-- 2 prof prof 4K Mar 27 20:57 6e8dd5f0924ce30b35aeaed9</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>d-wxrw--w- 2 prof prof 4K Mar 27 20:57 70a8cbb30</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>dr--r-x-w- 2 prof prof 4K Mar 27 20:57 79bf30d265cbd436079e</span>
+<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>-rwxrwx--x 1 prof prof  0 Mar 27 20:57 81052541de641ff1ed7ca40</span>
+<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>d-w-----wx 2 prof prof 4K Mar 27 20:57 a8b18ffb171e161c753ab8d</span>
+<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>-rw-rwxrw- 1 prof prof  0 Mar 27 20:57 c52eda933ff95be8f914eaf62</span>
+<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>-r-x-----x 1 prof prof  0 Mar 27 20:57 daf9509999adb4f6e6b49c7e91</span>
+<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>d---rwxr-- 2 prof prof 4K Mar 27 20:57 f35c8e8ed0fb8a609</span>
+<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>--wxrw--w- 1 prof prof  0 Mar 27 20:57 f4ed4ab4e61c850de968</span>
+<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>-rwxrwx-w- 1 prof prof  0 Mar 27 20:57 f59a77545fe6d10</span>
+<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>---x------ 1 prof prof  0 Mar 27 20:57 fce47615d2</span></code></pre></div>
 <div class="callout callout-style-default callout-tip callout-titled" title="Answer">
 <div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
 <div class="callout-icon-container">
@@ -334,10 +403,10 @@ Answer
 <div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
 <p>The first file</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3</span></code></pre></div>
+<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3</span></code></pre></div>
 <p>decodes to <code>0101110010</code></p>
 <p>The second file</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>-r-xrw--w- 1 prof prof 0 Mar 27 20:57 17c455d90e49</span></code></pre></div>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>-r-xrw--w- 1 prof prof 0 Mar 27 20:57 17c455d90e49</span></code></pre></div>
 <p>decodes to <code>0101110010</code></p>
 <p>We keep on going till we get all the bits</p>
 <pre><code>100010011101011100100110010101011000100000111011111010001100

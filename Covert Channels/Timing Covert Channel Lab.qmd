@@ -42,8 +42,109 @@ entirety...perhaps the string "EOF"
 
 # Setting up the server
 
+Let's create a basic TCP server using python's socket library.
+
+```python
+import socket
+
+# define a host and a port
+HOST = "127.0.0.1"	# This is the ip address for a local host
+PORT = 1337		# Choose a port number that is not typically
+			# used by other traffic.
+
+# Now to create a Socket object and connect it to the specific host and
+# port identified by our constants above
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s. bind((HOST, PORT))
+s.listen(0)	# the argument determines how many connection requests
+		# will be added to the queue. 0 means that it will not 
+		# add any new request to the queue and will reject any
+		# incoming requests if it is already dealing with one.
+
+print(f"Server is listening on {HOST}:{PORT}")
+
+while True:
+    # Note that if you wanted your server to be able to deal with more
+    # than one client at a time, this portion would be threaded. For our
+    # demonstration, you won't need to create a threaded server.
+    
+    c, addr = s.accept()	# store client details when connection
+				# comes in. "c" is the client socket,
+				# and "addr" is the client address.
+    
+    print(f"Connection from {addr} established")
+
+    # the b in the sendall command below ensures that the message is
+    # sent as bytes, which is the form that sendall requires.
+    c.sendall(b"Hello from the other side. I must have called a thousand times")
+
+    # make sure to close the connection
+    c.close()
+    
+```
+
+:::{.callout-tip}
+If you haven't done any socket programming before, this is a good place
+to stop and test your server. Its always fun to see how your code could
+work over a network.
+
+Later on in this lab, we'll design a programmatic client that will
+connect to our server. But you don't need one for now. You can use in
+built tools in the terminal that allow you to connect to a client/port.
+
+1. Using **telnet**
+```sh
+telnet 127.0.0.1 1337	# general form is telnet server_ip server_port
+```
+Telnet is used for plain text communication and is unencrypted so don't
+use it for sensitive data.
+
+2. Using **netcat**
+```sh
+nc 127.0.0.1 1337
+```
+Hit `Ctrl + C` or type `exit` to exit. Netcat is used to test and debug
+network services.
+
+:::
 
 
+The code above is a very simple server example. We need to tweak it to
+send one character at a time with a delay between each character where
+the delay is actually our covert channel.
+
+In order to do this, we shall have to make a couple of changes to our
+code above starting with importing the `sleep` command from the `time`
+library.
+
+```python
+from time import sleep
+```
+
+To make our code easier to adjust, we should probably put some time
+constants at the top of our code too.
+
+```python
+ZERO = 0.025	# How long to wait for a zero
+ONE = 0.1	# How long to wait for a one
+```
+
+Our algorithm for sending the message is also going to change a little
+bit. Instead of using `sendall`, we shall use `send` which allows us to
+send smaller chunks of the message.
+
+Our loop for sending the cover
+
+and then create a socket object that we can then bind to a specific
+port. That means that it will be listening to that port and will be
+required to do something when a connection comes in on that port.
+
+```python
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+port = 1337	# choose a port number that should typically be available
+
+s.bind(("", port))
 
 :::{.callout-tip}
 Depending on how far you went with a previous lab, you might not need to

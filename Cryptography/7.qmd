@@ -70,9 +70,9 @@ becomes Y, etc. Examples of it can actually be found in the bible [^1].
 
 [^1]: (https://www.theology.ox.ac.uk/article/crack-the-code)
 
-```default
-$ echo {z..a} | tr -d ' ' # to create the character set z through a.
-$ echo "abcde" | tr a-z "zyxwvutsrqponmlkjihgfedcba"
+```sh
+echo {z..a} | tr -d ' ' # to create the character set z through a.
+echo "abcde" | tr a-z "zyxwvutsrqponmlkjihgfedcba"
 ```
 
 ## Scytale cipher
@@ -97,9 +97,9 @@ own inverse.
 
 <p style="text-align:center;"><span style="background-color: #FFFF00">diwtgh hpxs: durdjght xi xh</span></p>
 
-```default
-$ echo "abcde" | tr a-z d-za-c #rot-3
-$ echo "abcde" | tr a-z n-za-m #rot-13
+```sh
+echo "abcde" | tr a-z d-za-c #rot-3
+echo "abcde" | tr a-z n-za-m #rot-13
 ```
 
 ## Sliding shift cipher
@@ -350,7 +350,7 @@ characters in 8-bit ASCII) are placed next to each other, grouped in 6s,
 and then each of those groups is converted back to a decimal number and
 looked up in the base-64 table.
 
-```default
+```sh
 $ echo -n "abc" | base64 # -n is to remove the newline character
 ```
 
@@ -388,8 +388,8 @@ What about going backwards i.e. from base-64 to ASCII? We shall try “RU4=”
 
 We see it converts to “EN”
 
-```default
-$ echo -n "RU4=" | base64 -d # -d is to decode base-64
+```sh
+echo -n "RU4=" | base64 -d # -d is to decode base-64
 ```
 
 # Cryptography today
@@ -522,9 +522,9 @@ MD5 (Message Digest algorithm 5) converts large data into a string of
 as collisions) and so it isn’t used much for high security cryptography
 but rather for checksums to verify data.
 
-```default
-$ echo -n "hello world" | md5sum # any small difference in input
-$ echo “hello world” | md5sum # should produce a very different hash
+```sh
+echo -n "hello world" | md5sum # any small difference in input
+echo “hello world” | md5sum # should produce a very different hash
 ```
 
 SHA – Secure Hash Algorithms – is a family of hashing functions. SHA1 is similar
@@ -532,10 +532,10 @@ to MD5 and was pretty much abandoned as of 2010. SHA 256 and SHA 512 are
 probably some of the more common ones and are named after the length in
 bits of the output they produce.
 
-```default
-$ echo -n "hello world" | sha1sum
-$ echo -n “hello world” | sha256sum
-$ echo -n “hello world” | sha512sum
+```sh
+echo -n "hello world" | sha1sum
+echo -n “hello world” | sha256sum
+echo -n “hello world” | sha512sum
 ```
 
 This has been a lot of information but hopefully it is very intriguing
