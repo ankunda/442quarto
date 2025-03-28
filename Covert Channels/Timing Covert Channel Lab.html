@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2025-03-28">
+
+<title>Timing Covert Channel Lab</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Timing Covert Channel Lab_files/libs/quarto-html/quarto.js"></script>
+<script src="Timing Covert Channel Lab_files/libs/quarto-html/popper.min.js"></script>
+<script src="Timing Covert Channel Lab_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Timing Covert Channel Lab_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Timing Covert Channel Lab_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Timing Covert Channel Lab_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Timing Covert Channel Lab_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Timing Covert Channel Lab_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Timing Covert Channel Lab_files/libs/bootstrap/bootstrap-095844cae4144bfb2698b3336d7ab35d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #002f8b;
+      }
+</style>
+
+
+</head>
+
+<body>
+
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Timing Covert Channel Lab</h1>
+                      </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">March 28, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul class="collapse">
+  <li><a href="#setting-up-the-server" id="toc-setting-up-the-server" class="nav-link active" data-scroll-target="#setting-up-the-server"><span class="header-section-number">1</span> Setting up the server</a>
+  <ul class="collapse">
+  <li><a href="#installation" id="toc-installation" class="nav-link" data-scroll-target="#installation"><span class="header-section-number">1.1</span> Installation</a></li>
+  <li><a href="#login" id="toc-login" class="nav-link" data-scroll-target="#login"><span class="header-section-number">1.2</span> Login</a></li>
+  <li><a href="#tweaking-the-ftp-server" id="toc-tweaking-the-ftp-server" class="nav-link" data-scroll-target="#tweaking-the-ftp-server"><span class="header-section-number">1.3</span> Tweaking the FTP server</a></li>
+  <li><a href="#restart-the-ftp-server" id="toc-restart-the-ftp-server" class="nav-link" data-scroll-target="#restart-the-ftp-server"><span class="header-section-number">1.4</span> Restart the FTP server</a></li>
+  </ul></li>
+  <li><a href="#storage-covert-channel" id="toc-storage-covert-channel" class="nav-link" data-scroll-target="#storage-covert-channel"><span class="header-section-number">2</span> Storage Covert Channel</a>
+  <ul class="collapse">
+  <li><a href="#bits" id="toc-bits" class="nav-link" data-scroll-target="#bits"><span class="header-section-number">2.1</span> 7 bits</a></li>
+  <li><a href="#bits-1" id="toc-bits-1" class="nav-link" data-scroll-target="#bits-1"><span class="header-section-number">2.2</span> 10 bits</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>In the last lecture, you covered different ways that someone might set up and take advantage of a Covert Channel. In the last lab, you set up one such Storage covert channel using the file permissions of an FTP server.</p>
+<p>In this lab, we shall set up a Timing Covert Channel. We will set up a server that will transmit text overtly, but transmit a covert message hidden in the timings between each successive character of the overt message.</p>
+<p>As an example, a delay of 0.025s between parts of the message could be translated to a 0 while a delay of 0.1s can be translated as a 1.</p>
+<p>In order to transfer a long covert message, we will need a much longer overt message. Using the suggestion above, transmitting a single covert character (7 or 8 bits) would require the transmission of 8 or 9 characters. As mentioned earlier, this isn’t too unreasonable because Covert channels are typically low bandwidth (i.e.&nbsp;can only realistically send small messages).</p>
+<p>To end the message we have a couple of options to consider. We could just repeat the covert message over and over and trust the recipient to know when they have received the entire message. However, this would make our channel easy to notice and analyse. A more surreptitious option would be to add a special tag at the end of our covert message to signify that the hidden message has been received in its entirety…perhaps the string “EOF”</p>
+<section id="setting-up-the-server" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Setting up the server</h1>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Depending on how far you went with a previous lab, you might not need to do the <code>Setting up an FTP server</code> section at all.</p>
+</div>
+</div>
+<section id="installation" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="installation"><span class="header-section-number">1.1</span> Installation</h2>
+<p>We shall be using vsftpd (Very Secure FTP Daemon). To do that run the following commands in the terminal</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update     <span class="co"># to update your software listings</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install vsftpd <span class="co"># to actually install vsftpd</span></span></code></pre></div>
+<p>Once the installation is done, you should be able to confirm that it is installed and running correctly with the following command.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> netstat <span class="at">-alpn</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">' LISTEN '</span></span></code></pre></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>if the <code>netstat</code> command above doesn’t work, you might need to install it using the command</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install net-tools</span></code></pre></div>
+<p>Once installed, re-run the <em>netstat | grep</em> command from earlier.</p>
+</div>
+</div>
+<p>The command above should produce a list of services that are running on your Linux machine. One of the lines in that list should have vsftpd in it. Below is a screenshot showing what the line above produces on my system.</p>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="1.png" class="img-fluid figure-img"></p>
+<figcaption>The last line in this Screenshot shows vsftpd is installed and working on my system</figcaption>
+</figure>
+</div>
+</section>
+<section id="login" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="login"><span class="header-section-number">1.2</span> Login</h2>
+<p>Now try logging in to your ftp server from the same computer/system.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> localhost</span></code></pre></div>
+<p>Running the command above should allow you to log in to your own system using the username and password of your system. Feel free to navigate and see what you have access to.</p>
+<p>Some commands that might be of help to you include:</p>
+<pre><code>ls
+ls -lh
+cd foldername
+cd ..
+Ctrl + D</code></pre>
+</section>
+<section id="tweaking-the-ftp-server" class="level2" data-number="1.3">
+<h2 data-number="1.3" class="anchored" data-anchor-id="tweaking-the-ftp-server"><span class="header-section-number">1.3</span> Tweaking the FTP server</h2>
+<p>We can make some few modifications to make it a better experience. These modifications include adjusting the welcome message, and adjusting the folder that an ftp user is automatically sent to.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> vim /etc/vsftpd.conf   <span class="co"># feel free to use another editor other than vim</span></span></code></pre></div>
+<p>When inside the config file, look for and adjust the following lines accordingly.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>anonymous_enable=YES</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>local_enable=NO</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>ftpd_banner=My first and Best FTP server # feel free to adjust this</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>anon_root=***   # where *** is the path to an appropriate folder with</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    # appropriate permissions. A suggestion is /home/ftp which you </span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    # will need to create if it doesn't already exist.</span></code></pre></div>
+</section>
+<section id="restart-the-ftp-server" class="level2" data-number="1.4">
+<h2 data-number="1.4" class="anchored" data-anchor-id="restart-the-ftp-server"><span class="header-section-number">1.4</span> Restart the FTP server</h2>
+<p>Restart the server and log in again. This time, you don’t need to use your system’s credentials to log in. You should be able to log in <strong>anonymously</strong>. That means your username is <em>anonymous</em> and your password is blank i.e.&nbsp;just hit <code>Enter</code></p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> service vsftpd restart</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> localhost</span></code></pre></div>
+<p>You can also try to ftp into your ftp server from another computer. All you’ll need is the ip address of the computer on which the ftp server is located.</p>
+<p>If you set up this server on a virtual machine and set up the network correctly, then your virtual machine will have a different IP address from your host computer and you can do this part from your host computer.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> 138.47.something.something  <span class="co"># recall you are running this command on your</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># host computer but using the ip address of your virtual machine (or</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># whatever computer the server is on)</span></span></code></pre></div>
+</section>
+</section>
+<section id="storage-covert-channel" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Storage Covert Channel</h1>
+<p>We are now going to use the ftp server as a Storage covert channel. More specifically, we shall use the permissions of the files on that server as a way of hiding a message.</p>
+<p>Note that the permissions are typically made up of 10 characters that could either be a letter [drwxl] or a dash [-]. We could take the presence of any letter to be a 1 and its absence to be a 0. This allows us 10 bits of information for each file.</p>
+<p>There are two ways we could use these 10 bits</p>
+<section id="bits" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="bits"><span class="header-section-number">2.1</span> 7 bits</h2>
+<p>We could ignore the first three bits and only embed ASCII letters with the latter 7 bits of each file’s permissions.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>---xrwxrwx</span></code></pre></div>
+<p>The file permission above would be translated to 1111111.</p>
+<p>Unfortunately, a list of files where the first 3 bits of file permissions were consistently not being used would rouse too much suspicion. So in order to make it look more convincing/surreptitious, we could add random files as noise into the file list. These “noise” files would have to have at least one of their first 3 bits set so that they could be differentiated from the actual hidden message.</p>
+<p>Here is an example of what we’re trying to do.</p>
+<p>Suppose we have the message <code>Demigod</code> that we want to embed.</p>
+<p>First we break it down into its ASCII representation.</p>
+<pre><code>D = 68 = 1000100
+e = 101 = 1100101
+m = 109 = 1101101
+i = 105 = 1101001
+g = 103 = 1100111 
+o = 111 = 1101111
+d = 100 = 1100100</code></pre>
+<p>File permissions are made up of three categories of flags that determine whether three user categories (user, group, other) can read, write, or execute the associated file respectively.</p>
+<p>If we are going to embed our message into these 9 bits, we will have to change our message bits from 7 to 9 bits by prepending 2 bits to each character’s representation.</p>
+<pre><code>D = 001 000 100
+e = 001 100 101
+m = 001 101 101
+i = 001 101 001
+g = 001 100 111 
+o = 001 101 111
+d = 001 100 100</code></pre>
+<p>Conveniently, it is possible to quickly set the permissions of a file to a 9 bit pattern. All one needs is the decimal equivalent of each 3 bit grouping. This will end up with each 3 bit pattern being replaced with a number in the range [0,7] i.e.&nbsp;the smallest 3 bit number - 000 to the largest 3 bit number - 111.</p>
+<pre><code>D = 104
+e = 145
+m = 155
+i = 151
+g = 147
+o = 157
+d = 144</code></pre>
+<p>We shall now create a bunch of random files (with the <code>touch</code> command), and adjust their permissions (with the <code>chmod</code> command) using the numbers identified above.</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file1</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 104 file1</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file2</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 145 file2</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file3</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 155 file3</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file4</span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 151 file4</span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file5</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 147 file5</span>
+<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file6</span>
+<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 157 file6</span>
+<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file7</span>
+<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 144 file7</span></code></pre></div>
+<p>This should produce something like this in your folder.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3*</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>---xr-x--x 1 prof prof 0 Mar 27 16:15 file4*</span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>---xr--rwx 1 prof prof 0 Mar 27 16:15 file5*</span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6*</span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>---xr--r-- 1 prof prof 0 Mar 27 16:15 file7*</span></code></pre></div>
+<p>Like we mentioned before, note that all the files that actually have something in their permissions do not have any of the first 3 flags set.</p>
+<p>We should now add some noise to the files, making sure that every file that is termed as <em>noise</em> has at least one of the first 3 flags set. This will make our file server contents look more believable.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>d--xrw-r-- 1 prof prof 0 Mar 27 16:15 file1.5*</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3*</span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>-r-xrwxrwx 1 prof prof 0 Mar 27 16:15 file3.5*</span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a>---xr-x--x 1 prof prof 0 Mar 27 16:15 file4*</span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a>---xr--rwx 1 prof prof 0 Mar 27 16:15 file5*</span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a>-rwx--xr-x 1 prof prof 0 Mar 27 16:15 file5.5*</span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a>---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6*</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a>-rw-r---wx 1 prof prof 0 Mar 27 16:15 file6.5*</span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a>---xr--r-- 1 prof prof 0 Mar 27 16:15 file7*</span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a>drwxr-xrw- 1 prof prof 0 Mar 27 16:15 file7.5*</span></code></pre></div>
+<p>SUCCESS. Covert channel has been set up and hidden message has been embedded.</p>
+<p>How would we go about retrieving the message?</p>
+<pre><code>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*
+0001000100 = 68 = D
+d--x---r-- 1 prof prof 0 Mar 27 16:15 file1.5*
+1001000100 = ignored
+---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*
+0001100101 = 101 = e
+...and so on...</code></pre>
+</section>
+<section id="bits-1" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="bits-1"><span class="header-section-number">2.2</span> 10 bits</h2>
+<p>One criticism of the covert channel above is that we are wasting 30% of the bits available to us. With just a small tweak to our algorithm, it is possible to use all the 10 bits in the file permissions instead of just 7.</p>
+<p>There are a few implications we need to know though chief of which is that we can no longer afford to include noise files. This is because there is no way to differentiate the noise files from the files that have legitimate portions of the message embedded in their permissions.</p>
+<p>To create the message, we’ll need to 1. order the files in the server alphabetically, 2. Create a complete message by appending all the bits of the hidden message together, and then splitting them into groups of 10. Each 10 bit grouping will be applied to a single file. 3. If the message we are trying to embed isn’t made up of a perfect multiple of 10bits, then we pad the message with extra 0’s. 4. During the decoding process, we should collect all the bits into a single stream, split them into groups of 7s (since we are using basic ASCII), and then convert each group of 7 into its associated character, and then reassemble the message.</p>
+<p>try to decode the following</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>-r-xrw--w- 1 prof prof  0 Mar 27 20:57 17c455d90e49</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>-rw--w-r-x 1 prof prof  0 Mar 27 20:57 302289542768697c</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>-rw---x--- 1 prof prof  0 Mar 27 20:57 4bdf419390d83b860cec</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>--wxr-xrwx 1 prof prof  0 Mar 27 20:57 51451ddb647ff3566601f232</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>d-w---xr-- 2 prof prof 4K Mar 27 20:57 6e8dd5f0924ce30b35aeaed9</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>d-wxrw--w- 2 prof prof 4K Mar 27 20:57 70a8cbb30</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>dr--r-x-w- 2 prof prof 4K Mar 27 20:57 79bf30d265cbd436079e</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>-rwxrwx--x 1 prof prof  0 Mar 27 20:57 81052541de641ff1ed7ca40</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>d-w-----wx 2 prof prof 4K Mar 27 20:57 a8b18ffb171e161c753ab8d</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>-rw-rwxrw- 1 prof prof  0 Mar 27 20:57 c52eda933ff95be8f914eaf62</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>-r-x-----x 1 prof prof  0 Mar 27 20:57 daf9509999adb4f6e6b49c7e91</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>d---rwxr-- 2 prof prof 4K Mar 27 20:57 f35c8e8ed0fb8a609</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>--wxrw--w- 1 prof prof  0 Mar 27 20:57 f4ed4ab4e61c850de968</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>-rwxrwx-w- 1 prof prof  0 Mar 27 20:57 f59a77545fe6d10</span>
+<span id="cb18-16"><a href="#cb18-16" aria-hidden="true" tabindex="-1"></a>---x------ 1 prof prof  0 Mar 27 20:57 fce47615d2</span></code></pre></div>
+<div class="callout callout-style-default callout-tip callout-titled" title="Answer">
+<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Answer
+</div>
+<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
+</div>
+<div id="callout-3" class="callout-3-contents callout-collapse collapse">
+<div class="callout-body-container callout-body">
+<p>The first file</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3</span></code></pre></div>
+<p>decodes to <code>0101110010</code></p>
+<p>The second file</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>-r-xrw--w- 1 prof prof 0 Mar 27 20:57 17c455d90e49</span></code></pre></div>
+<p>decodes to <code>0101110010</code></p>
+<p>We keep on going till we get all the bits</p>
+<pre><code>100010011101011100100110010101011000100000111011111010001100
+101111001011001010100111111001101000001101101111100101000001
+1000111100001111001001111110100001000000</code></pre>
+<p>We then group them into 7s and convert each group into its own ASCII character.</p>
+<pre><code>1000100 1110101 1100100 1100101 0101100 0100000 1110111 1101000
+D       u       d       e       ,       [space] w       h
+1100101 1110010 1100101 0100111 1110011 0100000 1101101 1111001
+e       r       e       '       s       [space] m       y
+0100000 1100011 1100001 1110010 0111111 0100001 000000
+[space] c       a       r       ?       !       [ignored]</code></pre>
+<p>which produces the message <em>Dude, where’s my car?!</em></p>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
