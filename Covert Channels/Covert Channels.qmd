@@ -3,12 +3,17 @@ title: "Covert Channels"
 date: "March 26, 2025"
 title-block-banner: "#002f8b"
 toc: true
+toc-depth: 2
 number-sections: true
 format:
-  html:
+  pdf:
     code-copy: false
     code-fold: true
 jupyter: python3
+---
+
+
+
 ---
 
 A **Covert Channel** in cybersecurity is a method used to secretly transfer
@@ -87,7 +92,7 @@ server. Without knowing about a hidden message, normal users would just
 assume that the files (which might or might not have important
 information) have nothing special in their permissions.
 
-```{default}
+```default
 drwxrwxrwx 1 prof prof     0 Mar 26 17:52 'Some random file name'
 ```
 

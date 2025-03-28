@@ -68,8 +68,16 @@ ul.task-list li input[type="checkbox"] {
     
   
   </header><div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
-<div id="quarto-margin-sidebar" class="sidebar margin-sidebar zindex-bottom">
-  
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#storage-covert-channels" id="toc-storage-covert-channels" class="nav-link active" data-scroll-target="#storage-covert-channels"><span class="header-section-number">1</span> Storage Covert Channels</a></li>
+  <li><a href="#timing-covert-channels" id="toc-timing-covert-channels" class="nav-link" data-scroll-target="#timing-covert-channels"><span class="header-section-number">2</span> Timing Covert Channels</a></li>
+  <li><a href="#network-covert-channels" id="toc-network-covert-channels" class="nav-link" data-scroll-target="#network-covert-channels"><span class="header-section-number">3</span> Network Covert Channels</a></li>
+  </ul>
+</nav>
 </div>
 <main class="content quarto-banner-title-block" id="quarto-document-content">
 
@@ -112,64 +120,70 @@ Note
 <p>Note that <strong>steganography</strong> (hiding data within data) is not a covert channel. There are a few reasons why the two are distinct but the main one is that Steganography requires a prior communication channel e.g.&nbsp;sending a picture, while covert channels create a channel to transmit a message potentially using the unintended side effects of a system’s operation. In the end, both are surreptitious ways to send a message.</p>
 </div>
 </div>
-<pre><code>    we're simply using a channel to covertly transmit data</code></pre>
-<p>storage covert channels</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; communicate by modifying some storage location</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; one process writes to some resource</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; another process reads from it</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., abuse the print queue</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sender either fills up the queue (signals a 1)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;or leaves it alone (signals a 0)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;receiver polls the queue to receive the message</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., abuse web site log files</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;request web page A (signals a 0)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;request web page B (signals a 1)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;receiver reads the log file for the message</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., abuse FTP site file privileges and permissions</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <samp>drwxrwxrwx</samp> (10 bits of information!)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;order files alphabetically, set permissions appropriately</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;concatenate bits for the message</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;can be done on an anonymous FTP with incoming permitted</p>
-<p>timing covert channels</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;communicate by affecting/modifying some observed response time (of a receiver)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., modulating usage of system resources (e.g., CPU time) that a receiver can monitor &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;time (the clock) is the shared resource</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.g., pattern of opening and closing a file (timing)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.g., using port knocking on different ports using some timing mechanism</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;e.g., using the hard drive head</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender has access to the entire hard drive (administrative access)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver has access to some portion of the hard drive</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender makes a file request far away from the receiver’s hard drive area (signals a 1)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender does nothing (signals a 0)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver makes a request within its hard drive area</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver uses the time it takes for the head to travel to its section and finish the request</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; long time → 1</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; short time → 0</p>
-<p>network covert channels</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;information is placed in packet headers (not in the payload – that’s steganography)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; e.g., IP, offset, options, TCP checksum, sequence numbers</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;or conveyed through action/reaction</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; send a covert packet, some number of legitimate packets, another covert packet, etc</p>
-<p>combination of storage and network (with a patsy)!</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender encodes a covert message in the sequence number field of a packet (or many packets)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender forges the source IP address with the IP address of the intended receiver</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; sender sends the packet(s) as part of the TCP handshake to a patsy</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; TCP handshake: <strong>SYN</strong>, SYN-ACK, ACK</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; or <strong>SYN</strong>, SYN-RST</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; patsy: an unknown “man-in-the-middle”</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; this makes the covert channel harder to detect</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; the patsy receives the packets(s) and either:</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (1) responds to the receiver (via the forged IP address) with SYN-ACK</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (2) responds to the receiver with SYN-RST</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; increments the sequence number of the packet(s) by 1 (standard procedure)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver receives the SYN-ACK or SYN-RST packet(s)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; receiver decrements the sequence number of the packets(s)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; and decodes the covert message</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; in either case (i.e., SYN-ACK or SYN-RST), receiver doesn’t respond to the patsy</p>
-<p>tutorials</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ftp (storage)</p>
-<p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; chat (timing)</p>
+<p>Covert Channels can typically be put into two categories.</p>
+<section id="storage-covert-channels" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Storage Covert Channels</h1>
+<p>With this category, the communication takes place using a system’s storage location and will involve some subtle modification of it. The sender (or sending process) modifies a general resource that everyone has access to, and the receiver (or receiving process) reads that message.</p>
+<p>Here are some examples of ways that this form <strong>could</strong> take</p>
+<ol type="1">
+<li><p>Abusing the print queue. The print queue keeps track of what jobs a printer has to work on and everyone has access to it. However, a person could send jobs to the queue, or ignore the queue to transmit a 1 or 0 respectively. Overtime, a receiver could put together the message that is being sent over the covert channel by repeatedly polling the print queue.</p></li>
+<li><p>Abusing website log files. Log files are used to keep track of which webpages on a server were requested. A sender process could attempt to access a specific page (which is interpreted as a 0) and then attempt to access a different page (which is interpreted as a 1). A receiver would then have to access this log file in order to get the covert message.</p></li>
+<li><p>FTP site file priviledges and permissions. FTP servers are easy to setup and can have any level of supervision. A sender could embed a message in the file permissions of all or some of the files on that FTP server. Without knowing about a hidden message, normal users would just assume that the files (which might or might not have important information) have nothing special in their permissions.</p></li>
+</ol>
+<pre class="{default}"><code>drwxrwxrwx 1 prof prof     0 Mar 26 17:52 'Some random file name'</code></pre>
+<p>Note that there are 10 positions in the file permissions above that can be used to transmit a covert message. This could take multiple forms but an easy one would be a 0 if there is no permission set, and a 1 if there is a permission set. This would translate to a maximum possible 10 bits of the covert message per file on the FTP server.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>FTP site file priviledges is the basis of the next Lab that you’ll cover in this class</p>
+</div>
+</div>
+</section>
+<section id="timing-covert-channels" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Timing Covert Channels</h1>
+<p>This category of covert channels relies on resource availability or system timing to transmit hidden messages. The recepient of the message would then have to pay attention to the timings of certain system tasks to decipher a message.</p>
+<p>Here are some examples of ways that this form of covert channels <strong>could</strong> take.</p>
+<ol type="1">
+<li><p>File access. A sender could close and open a file for a given amount of time that the recipient would track. A short time for a 0 and a long time for a 1, or something similar.</p></li>
+<li><p>Port Knocking. Later on in the quarter you’ll discuss port knocking as an approach to blocking unwanted network traffic. However, a sender could use an incorrect port knocking pattern to send a message that a receiver inside the closed network could keep track of. So even though the ports to the outside would remain closed and presumably “safe”, a recipient inside the network could still receive messages.</p></li>
+<li><p>Hard Drive noises. Older hard drives produce specific sounds based on how the hard drive head is moving. There is an attack that was shown to have used this sound to send a covert message consisting of sensitive data from an “air-gaped computer” i.e.&nbsp;a computer that was not connected to the internet. The sounds were being recorded and interpreted/sent by a nearby device with a microphone. <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a></p></li>
+</ol>
+</section>
+<section id="network-covert-channels" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Network Covert Channels</h1>
+<p>Strictly speaking this isn’t a sub-category of Covert channels as any attack in here could be placed in one of the two earlier categories. However, their use of network resources is a feature that these all share.</p>
+<p>An example is a sender placing information in the packet header of some network packets. The overt message would be the information in the actual payload of the packet and many security systems will check that payload to look for something suspicious. However, the actual content of the header isn’t typically as supervised and so would allow one to send some message using it.</p>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Note
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>We shall now go through <strong>two</strong> labs in which we shall set up one covert channel from each of the two main categories described above. By the end of the labs, you’ll be able to send and receive messages using either channel.</p>
+</div>
+</div>
+<p>The discussion in this chapter and the labs that follow it are not supposed to be a comprehensive discussion on all forms Covert Channels might take. Rather, they are designed to expose you to specific forms that have been used in the past. Note that Covert channels, as the name suggests, are difficult to identify. Unfortunately, or fortunately, they are also really easy to design. Once you see one, you should start to see ways that covert messages can easily be hidden in what looks like normal overt messaging.</p>
+<p>For a more in-depth discussion of this topic, make sure to sign up for <em>CSC 446/CYEN 402: Access Control Logic and Covert Channels</em>. This class is offered every other year and was last offered in the Winter 2024-25 quarter.</p>
+</section>
 
-</main>
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>https://arxiv.org/abs/1608.03431<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
 <!-- /main column -->
 <script id="quarto-html-after-body" type="application/javascript">
 window.document.addEventListener("DOMContentLoaded", function (event) {

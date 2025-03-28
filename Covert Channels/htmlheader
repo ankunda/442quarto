@@ -1,0 +1,12 @@
+---
+title: "Covert Channels"
+date: "March 26, 2025"
+title-block-banner: "#002f8b"
+toc: true
+number-sections: true
+format:
+  html:
+    code-copy: false
+    code-fold: true
+jupyter: python3
+---
