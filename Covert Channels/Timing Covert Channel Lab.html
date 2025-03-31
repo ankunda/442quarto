@@ -109,14 +109,15 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
   <ul class="collapse">
   <li><a href="#setting-up-the-server" id="toc-setting-up-the-server" class="nav-link active" data-scroll-target="#setting-up-the-server"><span class="header-section-number">1</span> Setting up the server</a>
   <ul class="collapse">
-  <li><a href="#login" id="toc-login" class="nav-link" data-scroll-target="#login"><span class="header-section-number">1.1</span> Login</a></li>
-  <li><a href="#tweaking-the-ftp-server" id="toc-tweaking-the-ftp-server" class="nav-link" data-scroll-target="#tweaking-the-ftp-server"><span class="header-section-number">1.2</span> Tweaking the FTP server</a></li>
-  <li><a href="#restart-the-ftp-server" id="toc-restart-the-ftp-server" class="nav-link" data-scroll-target="#restart-the-ftp-server"><span class="header-section-number">1.3</span> Restart the FTP server</a></li>
+  <li><a href="#sending-a-basic-message" id="toc-sending-a-basic-message" class="nav-link" data-scroll-target="#sending-a-basic-message"><span class="header-section-number">1.1</span> Sending a basic message</a></li>
+  <li><a href="#creating-our-covert-message" id="toc-creating-our-covert-message" class="nav-link" data-scroll-target="#creating-our-covert-message"><span class="header-section-number">1.2</span> Creating our covert message</a></li>
   </ul></li>
-  <li><a href="#storage-covert-channel" id="toc-storage-covert-channel" class="nav-link" data-scroll-target="#storage-covert-channel"><span class="header-section-number">2</span> Storage Covert Channel</a>
+  <li><a href="#setting-up-the-client" id="toc-setting-up-the-client" class="nav-link" data-scroll-target="#setting-up-the-client"><span class="header-section-number">2</span> Setting up the Client</a>
   <ul class="collapse">
-  <li><a href="#bits" id="toc-bits" class="nav-link" data-scroll-target="#bits"><span class="header-section-number">2.1</span> 7 bits</a></li>
-  <li><a href="#bits-1" id="toc-bits-1" class="nav-link" data-scroll-target="#bits-1"><span class="header-section-number">2.2</span> 10 bits</a></li>
+  <li><a href="#receiving-a-basic-message" id="toc-receiving-a-basic-message" class="nav-link" data-scroll-target="#receiving-a-basic-message"><span class="header-section-number">2.1</span> Receiving a Basic Message</a></li>
+  <li><a href="#receiving-many-small-messages" id="toc-receiving-many-small-messages" class="nav-link" data-scroll-target="#receiving-many-small-messages"><span class="header-section-number">2.2</span> Receiving many small messages</a></li>
+  <li><a href="#receiving-the-covert-message" id="toc-receiving-the-covert-message" class="nav-link" data-scroll-target="#receiving-the-covert-message"><span class="header-section-number">2.3</span> Receiving the covert message</a></li>
+  <li><a href="#understanding-our-covert-message" id="toc-understanding-our-covert-message" class="nav-link" data-scroll-target="#understanding-our-covert-message"><span class="header-section-number">2.4</span> Understanding our Covert Message</a></li>
   </ul></li>
   </ul>
 </nav>
@@ -134,6 +135,8 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 <p>To end the message we have a couple of options to consider. We could just repeat the covert message over and over and trust the recipient to know when they have received the entire message. However, this would make our channel easy to notice and analyse. A more surreptitious option would be to add a special tag at the end of our covert message to signify that the hidden message has been received in its entirety…perhaps the string “EOF”</p>
 <section id="setting-up-the-server" class="level1" data-number="1">
 <h1 data-number="1"><span class="header-section-number">1</span> Setting up the server</h1>
+<section id="sending-a-basic-message" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="sending-a-basic-message"><span class="header-section-number">1.1</span> Sending a basic message</h2>
 <p>Let’s create a basic TCP server using python’s socket library.</p>
 <div class="sourceCode" id="cb1"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> socket</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
@@ -183,7 +186,7 @@ Tip
 </div>
 <div class="callout-body-container callout-body">
 <p>If you haven’t done any socket programming before, this is a good place to stop and test your server. Its always fun to see how your code could work over a network.</p>
-<p>Later on in this lab, we’ll design a programmatic client that will connect to our server. But you don’t need one for now. You can use in built tools in the terminal that allow you to connect to a client/port.</p>
+<p>Later on in this lab, we’ll design a programmatic client that will connect to our server. But you don’t need one for now. You can use built-in tools in the terminal that allow you to connect to a client/port.</p>
 <ol type="1">
 <li>Using <strong>telnet</strong></li>
 </ol>
@@ -203,28 +206,61 @@ Tip
 <div class="sourceCode" id="cb5"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>ZERO <span class="op">=</span> <span class="fl">0.025</span>    <span class="co"># How long to wait for a zero</span></span>
 <span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>ONE <span class="op">=</span> <span class="fl">0.1</span>   <span class="co"># How long to wait for a one</span></span></code></pre></div>
 <p>Our algorithm for sending the message is also going to change a little bit. Instead of using <code>sendall</code>, we shall use <code>send</code> which allows us to send smaller chunks of the message.</p>
-<p>Our loop for sending the cover</p>
-<p>and then create a socket object that we can then bind to a specific port. That means that it will be listening to that port and will be required to do something when a connection comes in on that port.</p>
-<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>port <span class="op">=</span> <span class="dv">1337</span> <span class="co"># choose a port number that should typically be available</span></span>
-<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>s.bind((<span class="st">""</span>, port))</span>
-<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>:::{.callout<span class="op">-</span>tip}</span>
-<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>Depending on how far you went <span class="cf">with</span> a previous lab, you might <span class="kw">not</span> need to</span>
-<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>do the `Setting up an FTP server` section at <span class="bu">all</span>.</span>
-<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>:::</span>
-<span id="cb6-10"><a href="#cb6-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-11"><a href="#cb6-11" aria-hidden="true" tabindex="-1"></a><span class="co">## Installation</span></span>
-<span id="cb6-12"><a href="#cb6-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-13"><a href="#cb6-13" aria-hidden="true" tabindex="-1"></a>We shall be using vsftpd (Very Secure FTP Daemon). To do that run the</span>
-<span id="cb6-14"><a href="#cb6-14" aria-hidden="true" tabindex="-1"></a>following commands <span class="kw">in</span> the terminal</span>
-<span id="cb6-15"><a href="#cb6-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb6-16"><a href="#cb6-16" aria-hidden="true" tabindex="-1"></a>```sh</span>
-<span id="cb6-17"><a href="#cb6-17" aria-hidden="true" tabindex="-1"></a>sudo apt update     <span class="co"># to update your software listings</span></span>
-<span id="cb6-18"><a href="#cb6-18" aria-hidden="true" tabindex="-1"></a>sudo apt install vsftpd <span class="co"># to actually install vsftpd</span></span></code></pre></div>
-<p>Once the installation is done, you should be able to confirm that it is installed and running correctly with the following command.</p>
-<div class="sourceCode" id="cb7"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> netstat <span class="at">-alpn</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">' LISTEN '</span></span></code></pre></div>
+<p>Our loop for sending the covert message will look something like this</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>msg <span class="op">=</span> <span class="st">"Some message..."</span></span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> msg:</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    c.send(i)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (<span class="op">&lt;</span>zero<span class="op">&gt;</span>):</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>        sleep(ZERO)</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb6-7"><a href="#cb6-7" aria-hidden="true" tabindex="-1"></a>        sleep(ONE)</span>
+<span id="cb6-8"><a href="#cb6-8" aria-hidden="true" tabindex="-1"></a>c.send(<span class="st">"EOF"</span>)</span>
+<span id="cb6-9"><a href="#cb6-9" aria-hidden="true" tabindex="-1"></a>c.close()</span></code></pre></div>
+</section>
+<section id="creating-our-covert-message" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="creating-our-covert-message"><span class="header-section-number">1.2</span> Creating our covert message</h2>
+<p>We have most of the components to put our entire code together. However, we still have the question of how we know whether to transmit a 0 or 1 for our covert message.</p>
+<p>To answer that question, we’ll need to assemble our covert message</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>covert <span class="op">=</span> <span class="st">"secret"</span> <span class="op">+</span> <span class="st">"EOF"</span></span></code></pre></div>
+<p>then convert it to binary</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> binascii <span class="im">import</span> hexlify</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>covert <span class="op">=</span> <span class="st">"secret"</span> <span class="op">+</span> <span class="st">"EOF"</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>covert_bin <span class="op">=</span> <span class="st">""</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> covert:</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="co"># convert each character to a full byte</span></span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># hexlify converts ASCII to hex</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a>    <span class="co"># int converts the hex to a decimal integer</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a>    <span class="co"># bin provides its binary representation (with a 0b</span></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a>    <span class="co"># prefix that must be removed)</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># that's the [2:] (return the string from the third</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># character on)</span></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># zfill left-pads the bit string with 0s to ensure a</span></span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># full byte</span></span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    covert_bin <span class="op">+=</span> <span class="bu">bin</span>(<span class="bu">int</span>(hexlify(i), <span class="dv">16</span>))[<span class="dv">2</span>:].zfill(<span class="dv">8</span>)</span></code></pre></div>
+<p>As an example, if <code>covert == "ABC"</code>, then <code>covert_bin == "010000010100001001000011"</code></p>
+<p>So our algorithm from earlier will look something like this.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> time</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>ZERO <span class="op">=</span> <span class="fl">0.025</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>ONE <span class="op">=</span> <span class="fl">0.1</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a>msg <span class="op">=</span> <span class="st">"Some message..."</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>n <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> msg:</span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a>    c.send(i)</span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> (covert_bin[n] <span class="op">==</span> <span class="st">"0"</span>):</span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a>        time.sleep(ZERO)</span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">else</span>:</span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>        time.sleep(ONE)</span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> (n <span class="op">+</span> <span class="dv">1</span>) <span class="op">%</span> <span class="bu">len</span>(covert_bin)</span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>c.send(<span class="st">"EOF"</span>)</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>c.close()</span></code></pre></div>
+</section>
+</section>
+<section id="setting-up-the-client" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Setting up the Client</h1>
 <div class="callout callout-style-default callout-tip callout-titled">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -235,192 +271,101 @@ Tip
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>if the <code>netstat</code> command above doesn’t work, you might need to install it using the command</p>
-<div class="sourceCode" id="cb8"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install net-tools</span></code></pre></div>
-<p>Once installed, re-run the <em>netstat | grep</em> command from earlier.</p>
+<p>Historically, timing has not been super reliable on Windows. We mention this so that you are not shocked if the timings are not what you expect when on Windows. Occassionally, this unreliability has also extended to Linux VMs that are hosted on Windows Host machines.</p>
 </div>
 </div>
-<p>The command above should produce a list of services that are running on your Linux machine. One of the lines in that list should have vsftpd in it. Below is a screenshot showing what the line above produces on my system.</p>
-<div class="quarto-figure quarto-figure-center">
-<figure class="figure">
-<p><img src="1.png" class="img-fluid figure-img"></p>
-<figcaption>The last line in this Screenshot shows vsftpd is installed and working on my system</figcaption>
-</figure>
-</div>
-<section id="login" class="level2" data-number="1.1">
-<h2 data-number="1.1" class="anchored" data-anchor-id="login"><span class="header-section-number">1.1</span> Login</h2>
-<p>Now try logging in to your ftp server from the same computer/system.</p>
-<div class="sourceCode" id="cb9"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> localhost</span></code></pre></div>
-<p>Running the command above should allow you to log in to your own system using the username and password of your system. Feel free to navigate and see what you have access to.</p>
-<p>Some commands that might be of help to you include:</p>
-<pre><code>ls
-ls -lh
-cd foldername
-cd ..
-Ctrl + D</code></pre>
+<section id="receiving-a-basic-message" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="receiving-a-basic-message"><span class="header-section-number">2.1</span> Receiving a Basic Message</h2>
+<p>Let’s create a basic client using python’s socket library</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> socket</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Define server address and port</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>HOST <span class="op">=</span> <span class="st">'127.0.0.1'</span>  <span class="co"># Must match the server's address</span></span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>PORT <span class="op">=</span> <span class="dv">1337</span>         <span class="co"># Must match the server's port</span></span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Create a socket object</span></span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>s <span class="op">=</span> socket.socket(socket.AF_INET, socket.SOCK_STREAM)</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-10"><a href="#cb10-10" aria-hidden="true" tabindex="-1"></a><span class="cf">try</span>:</span>
+<span id="cb10-11"><a href="#cb10-11" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Connect to the server</span></span>
+<span id="cb10-12"><a href="#cb10-12" aria-hidden="true" tabindex="-1"></a>    s.<span class="ex">connect</span>((HOST, PORT))</span>
+<span id="cb10-13"><a href="#cb10-13" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Connected to the server."</span>)</span>
+<span id="cb10-14"><a href="#cb10-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-15"><a href="#cb10-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Receive data from the server</span></span>
+<span id="cb10-16"><a href="#cb10-16" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> s.recv(<span class="dv">1024</span>)  <span class="co"># Receive up to 1024 bytes</span></span>
+<span id="cb10-17"><a href="#cb10-17" aria-hidden="true" tabindex="-1"></a>    <span class="bu">print</span>(<span class="st">"Received from server:"</span>, data.decode(<span class="st">'utf-8'</span>))  <span class="co"># Decode bytes to string</span></span>
+<span id="cb10-18"><a href="#cb10-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb10-19"><a href="#cb10-19" aria-hidden="true" tabindex="-1"></a><span class="cf">finally</span>:</span>
+<span id="cb10-20"><a href="#cb10-20" aria-hidden="true" tabindex="-1"></a>    s.close()  <span class="co"># Close the connection</span></span></code></pre></div>
 </section>
-<section id="tweaking-the-ftp-server" class="level2" data-number="1.2">
-<h2 data-number="1.2" class="anchored" data-anchor-id="tweaking-the-ftp-server"><span class="header-section-number">1.2</span> Tweaking the FTP server</h2>
-<p>We can make some few modifications to make it a better experience. These modifications include adjusting the welcome message, and adjusting the folder that an ftp user is automatically sent to.</p>
-<div class="sourceCode" id="cb11"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> vim /etc/vsftpd.conf   <span class="co"># feel free to use another editor other than vim</span></span></code></pre></div>
-<p>When inside the config file, look for and adjust the following lines accordingly.</p>
-<div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>anonymous_enable=YES</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>local_enable=NO</span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>ftpd_banner=My first and Best FTP server # feel free to adjust this</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>anon_root=***   # where *** is the path to an appropriate folder with</span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    # appropriate permissions. A suggestion is /home/ftp which you </span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    # will need to create if it doesn't already exist.</span></code></pre></div>
+<section id="receiving-many-small-messages" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="receiving-many-small-messages"><span class="header-section-number">2.2</span> Receiving many small messages</h2>
+<p>The code above should be able to log into your server and receive the overt message that is being sent from it. However, it <em>might</em> not exhibit the behaviour we want. This is because, depending on your system, there is a chance that this client will wait till a certain amount of information has been received as a chunk before displaying it.</p>
+<p>To deal with this, we shall have to tweak our algorithm above to 1. write out what it gets as soon as it gets it. This will require us switching from <code>print</code> to <code>sys.stdout.write</code> 2. Flush out any information it is storing in the buffer once its written using <code>sys.stdout.flush</code> 3. Keep on receiving this information until it gets an “EOF”</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> sys</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> s.recv(<span class="dv">4096</span>) <span class="co"># increased the number of bytes</span></span>
+<span id="cb11-4"><a href="#cb11-4" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> (data.rstrip(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span>) <span class="op">!=</span> <span class="st">"EOF"</span>):</span>
+<span id="cb11-5"><a href="#cb11-5" aria-hidden="true" tabindex="-1"></a>    sys.stdout.write(data)</span>
+<span id="cb11-6"><a href="#cb11-6" aria-hidden="true" tabindex="-1"></a>    sys.stdout.flush()</span>
+<span id="cb11-7"><a href="#cb11-7" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> s.recv(<span class="dv">4096</span>) <span class="co"># receive the next bit of information</span></span>
+<span id="cb11-8"><a href="#cb11-8" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb11-9"><a href="#cb11-9" aria-hidden="true" tabindex="-1"></a>s.close()</span></code></pre></div>
 </section>
-<section id="restart-the-ftp-server" class="level2" data-number="1.3">
-<h2 data-number="1.3" class="anchored" data-anchor-id="restart-the-ftp-server"><span class="header-section-number">1.3</span> Restart the FTP server</h2>
-<p>Restart the server and log in again. This time, you don’t need to use your system’s credentials to log in. You should be able to log in <strong>anonymously</strong>. That means your username is <em>anonymous</em> and your password is blank i.e.&nbsp;just hit <code>Enter</code></p>
-<div class="sourceCode" id="cb13"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> service vsftpd restart</span>
-<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> localhost</span></code></pre></div>
-<p>You can also try to ftp into your ftp server from another computer. All you’ll need is the ip address of the computer on which the ftp server is located.</p>
-<p>If you set up this server on a virtual machine and set up the network correctly, then your virtual machine will have a different IP address from your host computer and you can do this part from your host computer.</p>
-<div class="sourceCode" id="cb14"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ftp</span> 138.47.something.something  <span class="co"># recall you are running this command on your</span></span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>    <span class="co"># host computer but using the ip address of your virtual machine (or</span></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>    <span class="co"># whatever computer the server is on)</span></span></code></pre></div>
+<section id="receiving-the-covert-message" class="level2" data-number="2.3">
+<h2 data-number="2.3" class="anchored" data-anchor-id="receiving-the-covert-message"><span class="header-section-number">2.3</span> Receiving the covert message</h2>
+<p>We now need to figure out a way to measure the time between each received message and interprete that as either a 0 or a 1. To do this, we’ll need to use the <code>time</code> library and take multiple time measurements during our code’s execution.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> time <span class="im">import</span> time</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>covert_bin <span class="op">=</span> <span class="st">""</span> <span class="co"># start with an empty string</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>...</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>t0 <span class="op">=</span> time() <span class="co"># take the time before you receive anything</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>data <span class="op">=</span> s.recv(<span class="dv">4096</span>)</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>t1 <span class="op">=</span> time() <span class="co"># take the time after you receive something</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>delta <span class="op">=</span> <span class="bu">round</span>(t1 <span class="op">-</span> t0, <span class="dv">3</span>) <span class="co"># calculate the difference</span></span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a><span class="co"># and then translate that difference into either a 1 or a 0. Add whatever</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a><span class="co"># it is to the covert message string</span></span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a><span class="cf">if</span> (delta <span class="op">&gt;=</span> ONE):</span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    covert_bin <span class="op">+=</span> <span class="st">"1"</span></span>
+<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a><span class="cf">else</span>:</span>
+<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>    covert_bin <span class="op">+=</span> <span class="st">"0"</span></span></code></pre></div>
 </section>
-</section>
-<section id="storage-covert-channel" class="level1" data-number="2">
-<h1 data-number="2"><span class="header-section-number">2</span> Storage Covert Channel</h1>
-<p>We are now going to use the ftp server as a Storage covert channel. More specifically, we shall use the permissions of the files on that server as a way of hiding a message.</p>
-<p>Note that the permissions are typically made up of 10 characters that could either be a letter [drwxl] or a dash [-]. We could take the presence of any letter to be a 1 and its absence to be a 0. This allows us 10 bits of information for each file.</p>
-<p>There are two ways we could use these 10 bits</p>
-<section id="bits" class="level2" data-number="2.1">
-<h2 data-number="2.1" class="anchored" data-anchor-id="bits"><span class="header-section-number">2.1</span> 7 bits</h2>
-<p>We could ignore the first three bits and only embed ASCII letters with the latter 7 bits of each file’s permissions.</p>
-<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>---xrwxrwx</span></code></pre></div>
-<p>The file permission above would be translated to 1111111.</p>
-<p>Unfortunately, a list of files where the first 3 bits of file permissions were consistently not being used would rouse too much suspicion. So in order to make it look more convincing/surreptitious, we could add random files as noise into the file list. These “noise” files would have to have at least one of their first 3 bits set so that they could be differentiated from the actual hidden message.</p>
-<p>Here is an example of what we’re trying to do.</p>
-<p>Suppose we have the message <code>Demigod</code> that we want to embed.</p>
-<p>First we break it down into its ASCII representation.</p>
-<pre><code>D = 68 = 1000100
-e = 101 = 1100101
-m = 109 = 1101101
-i = 105 = 1101001
-g = 103 = 1100111 
-o = 111 = 1101111
-d = 100 = 1100100</code></pre>
-<p>File permissions are made up of three categories of flags that determine whether three user categories (user, group, other) can read, write, or execute the associated file respectively.</p>
-<p>If we are going to embed our message into these 9 bits, we will have to change our message bits from 7 to 9 bits by prepending 2 bits to each character’s representation.</p>
-<pre><code>D = 001 000 100
-e = 001 100 101
-m = 001 101 101
-i = 001 101 001
-g = 001 100 111 
-o = 001 101 111
-d = 001 100 100</code></pre>
-<p>Conveniently, it is possible to quickly set the permissions of a file to a 9 bit pattern. All one needs is the decimal equivalent of each 3 bit grouping. This will end up with each 3 bit pattern being replaced with a number in the range [0,7] i.e.&nbsp;the smallest 3 bit number - 000 to the largest 3 bit number - 111.</p>
-<pre><code>D = 104
-e = 145
-m = 155
-i = 151
-g = 147
-o = 157
-d = 144</code></pre>
-<p>We shall now create a bunch of random files (with the <code>touch</code> command), and adjust their permissions (with the <code>chmod</code> command) using the numbers identified above.</p>
-<div class="sourceCode" id="cb19"><pre class="sourceCode sh"><code class="sourceCode bash"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file1</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 104 file1</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file2</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 145 file2</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file3</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 155 file3</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file4</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 151 file4</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file5</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 147 file5</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file6</span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 157 file6</span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a><span class="fu">touch</span> file7</span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="fu">chmod</span> 144 file7</span></code></pre></div>
-<p>This should produce something like this in your folder.</p>
-<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*</span>
-<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*</span>
-<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3*</span>
-<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>---xr-x--x 1 prof prof 0 Mar 27 16:15 file4*</span>
-<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>---xr--rwx 1 prof prof 0 Mar 27 16:15 file5*</span>
-<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6*</span>
-<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>---xr--r-- 1 prof prof 0 Mar 27 16:15 file7*</span></code></pre></div>
-<p>Like we mentioned before, note that all the files that actually have something in their permissions do not have any of the first 3 flags set.</p>
-<p>We should now add some noise to the files, making sure that every file that is termed as <em>noise</em> has at least one of the first 3 flags set. This will make our file server contents look more believable.</p>
-<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*</span>
-<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>d--xrw-r-- 1 prof prof 0 Mar 27 16:15 file1.5*</span>
-<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>---xr--r-x 1 prof prof 0 Mar 27 16:15 file2*</span>
-<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3*</span>
-<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>-r-xrwxrwx 1 prof prof 0 Mar 27 16:15 file3.5*</span>
-<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a>---xr-x--x 1 prof prof 0 Mar 27 16:15 file4*</span>
-<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>---xr--rwx 1 prof prof 0 Mar 27 16:15 file5*</span>
-<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>-rwx--xr-x 1 prof prof 0 Mar 27 16:15 file5.5*</span>
-<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6*</span>
-<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>-rw-r---wx 1 prof prof 0 Mar 27 16:15 file6.5*</span>
-<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>---xr--r-- 1 prof prof 0 Mar 27 16:15 file7*</span>
-<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>drwxr-xrw- 1 prof prof 0 Mar 27 16:15 file7.5*</span></code></pre></div>
-<p>SUCCESS. Covert channel has been set up and hidden message has been embedded.</p>
-<p>How would we go about retrieving the message?</p>
-<pre><code>---x---r-- 1 prof prof 0 Mar 27 16:15 file1*
-0001000100 = 68 = D
-d--x---r-- 1 prof prof 0 Mar 27 16:15 file1.5*
-1001000100 = ignored
----xr--r-x 1 prof prof 0 Mar 27 16:15 file2*
-0001100101 = 101 = e
-...and so on...</code></pre>
-</section>
-<section id="bits-1" class="level2" data-number="2.2">
-<h2 data-number="2.2" class="anchored" data-anchor-id="bits-1"><span class="header-section-number">2.2</span> 10 bits</h2>
-<p>One criticism of the covert channel above is that we are wasting 30% of the bits available to us. With just a small tweak to our algorithm, it is possible to use all the 10 bits in the file permissions instead of just 7.</p>
-<p>There are a few implications we need to know though chief of which is that we can no longer afford to include noise files. This is because there is no way to differentiate the noise files from the files that have legitimate portions of the message embedded in their permissions.</p>
-<p>To create the message, we’ll need to 1. order the files in the server alphabetically, 2. Create a complete message by appending all the bits of the hidden message together, and then splitting them into groups of 10. Each 10 bit grouping will be applied to a single file. 3. If the message we are trying to embed isn’t made up of a perfect multiple of 10bits, then we pad the message with extra 0’s. 4. During the decoding process, we should collect all the bits into a single stream, split them into groups of 7s (since we are using basic ASCII), and then convert each group of 7 into its associated character, and then reassemble the message.</p>
-<p>try to decode the following</p>
-<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3</span>
-<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>-r-xrw--w- 1 prof prof  0 Mar 27 20:57 17c455d90e49</span>
-<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>-rw--w-r-x 1 prof prof  0 Mar 27 20:57 302289542768697c</span>
-<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>-rw---x--- 1 prof prof  0 Mar 27 20:57 4bdf419390d83b860cec</span>
-<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>--wxr-xrwx 1 prof prof  0 Mar 27 20:57 51451ddb647ff3566601f232</span>
-<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>d-w---xr-- 2 prof prof 4K Mar 27 20:57 6e8dd5f0924ce30b35aeaed9</span>
-<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>d-wxrw--w- 2 prof prof 4K Mar 27 20:57 70a8cbb30</span>
-<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>dr--r-x-w- 2 prof prof 4K Mar 27 20:57 79bf30d265cbd436079e</span>
-<span id="cb23-9"><a href="#cb23-9" aria-hidden="true" tabindex="-1"></a>-rwxrwx--x 1 prof prof  0 Mar 27 20:57 81052541de641ff1ed7ca40</span>
-<span id="cb23-10"><a href="#cb23-10" aria-hidden="true" tabindex="-1"></a>d-w-----wx 2 prof prof 4K Mar 27 20:57 a8b18ffb171e161c753ab8d</span>
-<span id="cb23-11"><a href="#cb23-11" aria-hidden="true" tabindex="-1"></a>-rw-rwxrw- 1 prof prof  0 Mar 27 20:57 c52eda933ff95be8f914eaf62</span>
-<span id="cb23-12"><a href="#cb23-12" aria-hidden="true" tabindex="-1"></a>-r-x-----x 1 prof prof  0 Mar 27 20:57 daf9509999adb4f6e6b49c7e91</span>
-<span id="cb23-13"><a href="#cb23-13" aria-hidden="true" tabindex="-1"></a>d---rwxr-- 2 prof prof 4K Mar 27 20:57 f35c8e8ed0fb8a609</span>
-<span id="cb23-14"><a href="#cb23-14" aria-hidden="true" tabindex="-1"></a>--wxrw--w- 1 prof prof  0 Mar 27 20:57 f4ed4ab4e61c850de968</span>
-<span id="cb23-15"><a href="#cb23-15" aria-hidden="true" tabindex="-1"></a>-rwxrwx-w- 1 prof prof  0 Mar 27 20:57 f59a77545fe6d10</span>
-<span id="cb23-16"><a href="#cb23-16" aria-hidden="true" tabindex="-1"></a>---x------ 1 prof prof  0 Mar 27 20:57 fce47615d2</span></code></pre></div>
-<div class="callout callout-style-default callout-tip callout-titled" title="Answer">
-<div class="callout-header d-flex align-content-center" data-bs-toggle="collapse" data-bs-target=".callout-3-contents" aria-controls="callout-3" aria-expanded="false" aria-label="Toggle callout">
+<section id="understanding-our-covert-message" class="level2" data-number="2.4">
+<h2 data-number="2.4" class="anchored" data-anchor-id="understanding-our-covert-message"><span class="header-section-number">2.4</span> Understanding our Covert Message</h2>
+<p>We should have a string of 1s and 0s that make up our covert message. To understand it, we need to convert it to ASCII.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode python"><code class="sourceCode python"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>covert <span class="op">=</span> <span class="st">""</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>i <span class="op">=</span> <span class="dv">0</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a><span class="cf">while</span> (i <span class="op">&lt;</span> <span class="bu">len</span>(covert_bin)):</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>    <span class="co"># process one byte at a time</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>    b <span class="op">=</span> covert_bin[i:i <span class="op">+</span> <span class="dv">8</span>]</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># convert it to ASCII</span></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>    n <span class="op">=</span> <span class="bu">int</span>(<span class="st">"0b</span><span class="sc">{}</span><span class="st">"</span>.<span class="bu">format</span>(b), <span class="dv">2</span>)</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>        covert <span class="op">+=</span> unhexlify(<span class="st">"</span><span class="sc">{0:x}</span><span class="st">"</span>.<span class="bu">format</span>(n))</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>    <span class="co"># in the event that we either made a mistake in our interpretation</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>    <span class="co"># of a single bit, or we received an incorect bit, the entire</span></span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="co"># character is shot and we might not be able to find its ASCII</span></span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="co"># interpretation. In that case, just put a "?" so that we know there</span></span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    <span class="co"># was an error with this specific character.</span></span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">TypeError</span>:</span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>        covert <span class="op">+=</span> <span class="st">"?"</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-20"><a href="#cb13-20" aria-hidden="true" tabindex="-1"></a>    <span class="co"># stop at the string "EOF"</span></span>
+<span id="cb13-21"><a href="#cb13-21" aria-hidden="true" tabindex="-1"></a>    i <span class="op">+=</span> <span class="dv">8</span></span></code></pre></div>
+<div class="callout callout-style-default callout-note callout-titled">
+<div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
 </div>
 <div class="callout-title-container flex-fill">
-Answer
+Note
 </div>
-<div class="callout-btn-toggle d-inline-block border-0 py-1 ps-1 pe-0 float-end"><i class="callout-toggle"></i></div>
 </div>
-<div id="callout-3" class="callout-3-contents callout-collapse collapse">
 <div class="callout-body-container callout-body">
-<p>The first file</p>
-<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3</span></code></pre></div>
-<p>decodes to <code>0101110010</code></p>
-<p>The second file</p>
-<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>-r-xrw--w- 1 prof prof 0 Mar 27 20:57 17c455d90e49</span></code></pre></div>
-<p>decodes to <code>0101110010</code></p>
-<p>We keep on going till we get all the bits</p>
-<pre><code>100010011101011100100110010101011000100000111011111010001100
-101111001011001010100111111001101000001101101111100101000001
-1000111100001111001001111110100001000000</code></pre>
-<p>We then group them into 7s and convert each group into its own ASCII character.</p>
-<pre><code>1000100 1110101 1100100 1100101 0101100 0100000 1110111 1101000
-D       u       d       e       ,       [space] w       h
-1100101 1110010 1100101 0100111 1110011 0100000 1101101 1111001
-e       r       e       '       s       [space] m       y
-0100000 1100011 1100001 1110010 0111111 0100001 000000
-[space] c       a       r       ?       !       [ignored]</code></pre>
-<p>which produces the message <em>Dude, where’s my car?!</em></p>
-</div>
+<p>The entire <strong>client</strong> section of this lab has been intentionally vague. All the parts are there but they are not organized into a comprehensive solution. It will be up to you to figure out how to arrange them in order to get a piece of code that will log into the server, receive the overt message, compile the covert message, and interpret the covert message. <em>Good luck</em></p>
 </div>
 </div>
 </section>
