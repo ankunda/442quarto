@@ -79,7 +79,8 @@ while True:
 
     # the b in the sendall command below ensures that the message is
     # sent as bytes, which is the form that sendall requires.
-    c.sendall(b"Hello from the other side. I must have called a thousand times")
+    c.sendall(b"Hello from the other side.")
+    c.sendall(b"I must have called a thousand times")
 
     # make sure to close the connection
     c.close()
@@ -232,7 +233,9 @@ try:
 
     # Receive data from the server
     data = s.recv(1024)  # Receive up to 1024 bytes
-    print("Received from server:", data.decode('utf-8'))  # Decode bytes to string
+    # there might be a need to explicitly decode bytes to string 
+    # using the .decode option below
+    print("Received from server:", data.decode('utf-8'))
 
 finally:
     s.close()  # Close the connection
