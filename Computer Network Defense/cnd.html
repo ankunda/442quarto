@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="dcterms.date" content="2025-04-01">
+
+<title>Computer Network Defense</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="cnd_files/libs/clipboard/clipboard.min.js"></script>
+<script src="cnd_files/libs/quarto-html/quarto.js"></script>
+<script src="cnd_files/libs/quarto-html/popper.min.js"></script>
+<script src="cnd_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="cnd_files/libs/quarto-html/anchor.min.js"></script>
+<link href="cnd_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="cnd_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="cnd_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="cnd_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="cnd_files/libs/bootstrap/bootstrap-c40a5ba31462359f55d4ba59e7a4ff32.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+<style>
+
+      .quarto-title-block .quarto-title-banner {
+        background: #002f8b;
+      }
+</style>
+
+  <script src="https://cdnjs.cloudflare.com/polyfill/v3/polyfill.min.js?features=es6"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
+
+<script type="text/javascript">
+const typesetMath = (el) => {
+  if (window.MathJax) {
+    // MathJax Typeset
+    window.MathJax.typeset([el]);
+  } else if (window.katex) {
+    // KaTeX Render
+    var mathElements = el.getElementsByClassName("math");
+    var macros = [];
+    for (var i = 0; i < mathElements.length; i++) {
+      var texText = mathElements[i].firstChild;
+      if (mathElements[i].tagName == "SPAN") {
+        window.katex.render(texText.data, mathElements[i], {
+          displayMode: mathElements[i].classList.contains('display'),
+          throwOnError: false,
+          macros: macros,
+          fleqn: false
+        });
+      }
+    }
+  }
+}
+window.Quarto = {
+  typesetMath
+};
+</script>
+
+</head>
+
+<body>
+
+<header id="title-block-header" class="quarto-title-block default page-columns page-full">
+  <div class="quarto-title-banner page-columns page-full">
+    <div class="quarto-title column-body">
+      <h1 class="title">Computer Network Defense</h1>
+                      </div>
+  </div>
+    
+  
+  <div class="quarto-title-meta">
+
+      
+      <div>
+      <div class="quarto-title-meta-heading">Published</div>
+      <div class="quarto-title-meta-contents">
+        <p class="date">April 1, 2025</p>
+      </div>
+    </div>
+    
+      
+    </div>
+    
+  
+  </header><div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc" class="toc-active">
+    <h2 id="toc-title">Table of contents</h2>
+   
+  <ul>
+  <li><a href="#patch-updates" id="toc-patch-updates" class="nav-link active" data-scroll-target="#patch-updates"><span class="header-section-number">1</span> Patch Updates</a>
+  <ul class="collapse">
+  <li><a href="#the-need-for-updates" id="toc-the-need-for-updates" class="nav-link" data-scroll-target="#the-need-for-updates"><span class="header-section-number">1.1</span> The need for Updates</a></li>
+  <li><a href="#the-process-of-updating" id="toc-the-process-of-updating" class="nav-link" data-scroll-target="#the-process-of-updating"><span class="header-section-number">1.2</span> The process of updating</a></li>
+  </ul></li>
+  <li><a href="#malware-protection" id="toc-malware-protection" class="nav-link" data-scroll-target="#malware-protection"><span class="header-section-number">2</span> Malware Protection</a></li>
+  <li><a href="#firewalls" id="toc-firewalls" class="nav-link" data-scroll-target="#firewalls"><span class="header-section-number">3</span> Firewalls</a>
+  <ul class="collapse">
+  <li><a href="#installing-ufw" id="toc-installing-ufw" class="nav-link" data-scroll-target="#installing-ufw"><span class="header-section-number">3.1</span> Installing UFW</a></li>
+  <li><a href="#blocking-all-incoming-traffic" id="toc-blocking-all-incoming-traffic" class="nav-link" data-scroll-target="#blocking-all-incoming-traffic"><span class="header-section-number">3.2</span> Blocking all incoming traffic</a></li>
+  <li><a href="#allowing-traffic-from-a-specific-service" id="toc-allowing-traffic-from-a-specific-service" class="nav-link" data-scroll-target="#allowing-traffic-from-a-specific-service"><span class="header-section-number">3.3</span> Allowing traffic from a specific service</a></li>
+  <li><a href="#removing-a-rule-from-your-firewall" id="toc-removing-a-rule-from-your-firewall" class="nav-link" data-scroll-target="#removing-a-rule-from-your-firewall"><span class="header-section-number">3.4</span> Removing a rule from your Firewall</a></li>
+  <li><a href="#denying-traffic-from-a-specific-source" id="toc-denying-traffic-from-a-specific-source" class="nav-link" data-scroll-target="#denying-traffic-from-a-specific-source"><span class="header-section-number">3.5</span> Denying traffic from a specific source</a></li>
+  <li><a href="#turning-off-your-firewall" id="toc-turning-off-your-firewall" class="nav-link" data-scroll-target="#turning-off-your-firewall"><span class="header-section-number">3.6</span> Turning off your firewall</a></li>
+  </ul></li>
+  <li><a href="#other-defenses" id="toc-other-defenses" class="nav-link" data-scroll-target="#other-defenses"><span class="header-section-number">4</span> Other Defenses</a>
+  <ul class="collapse">
+  <li><a href="#virtualization" id="toc-virtualization" class="nav-link" data-scroll-target="#virtualization"><span class="header-section-number">4.1</span> Virtualization</a></li>
+  <li><a href="#chroot-jails" id="toc-chroot-jails" class="nav-link" data-scroll-target="#chroot-jails"><span class="header-section-number">4.2</span> Chroot jails</a></li>
+  <li><a href="#docker-containers" id="toc-docker-containers" class="nav-link" data-scroll-target="#docker-containers"><span class="header-section-number">4.3</span> Docker containers</a></li>
+  </ul></li>
+  <li><a href="#basic-offence" id="toc-basic-offence" class="nav-link" data-scroll-target="#basic-offence"><span class="header-section-number">5</span> Basic Offence</a></li>
+  </ul>
+</nav>
+</div>
+<main class="content quarto-banner-title-block" id="quarto-document-content">
+
+
+
+
+
+<p>As the name suggests, computer network defense is a set of actions that a body/group takes to make sure that there is no unauthorized activity within its computer network. It is basically the defensive side of Cyber warfare. A successful defense strategy prevents any attacks and exploits.</p>
+<p>Attacks include lots of possibilities ranging from taking down systems, to modifying the data on a system, to misusing resources – basically anything that affects the availability and/or integrity of a system can be called an attack. Exploits, on the other hand, affect the confidentiality of a system. If data is stolen or published, then that would fall under the exploit category.</p>
+<p>We shall start our discussion of defense with the three things EVERY computer user should definitely be doing to every system they use.</p>
+<section id="patch-updates" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> Patch Updates</h1>
+<section id="the-need-for-updates" class="level2" data-number="1.1">
+<h2 data-number="1.1" class="anchored" data-anchor-id="the-need-for-updates"><span class="header-section-number">1.1</span> The need for Updates</h2>
+<p>Because systems are designed by humans, there are ALWAYS vulnerabilities being found and/or misused. As we discussed earlier in the quarter, a vulnerability exists in the “wild” for about 342 days on average before being discovered. During this time, nefarious characters can use those vulnerabilities to carry out attacks on a system. After the vulnerability is discovered, it will take time to design and then publish a fix for that vulnerability. During this phase, information on the vulnerabilities and how they can be misused is typically exchanged by bad actors. After a patch is fixed, it is still up the the user to download and/or install that patch and from your personal experience, you know that that might take a long time. As users of these systems, we have very little control over the time it takes to identify and fix a vulnerability. However, we do have control over how long it will take up to download and install that update. Until the patch is installed, all users aware of the vulnerability can use it to attack your system.</p>
+<p>Bottom line is – install security updates as soon as possible.</p>
+</section>
+<section id="the-process-of-updating" class="level2" data-number="1.2">
+<h2 data-number="1.2" class="anchored" data-anchor-id="the-process-of-updating"><span class="header-section-number">1.2</span> The process of updating</h2>
+<p>For a linux system, the process of manually updating your system involves 4 commands. You should find a way of carrying out these commands as regularly as you can without it significantly affecting your system availability.</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update         <span class="co"># get the latest software inventory</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt upgrade        <span class="co"># based on the inventory, make any updates to </span></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>                        <span class="co"># software I have on my system</span></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt dist-upgrade   <span class="co"># sometimes there might be some low level                   </span></span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a>                        <span class="co"># software that needs upgrading too.</span></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a>                        </span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt auto-remove    <span class="co"># remove old software or installation files                     </span></span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a>                        <span class="co"># that are no longer being used.</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The first two commands shown above are the most important. The upgrade command will take some time if its been a while since your last upgrade.</p>
+</div>
+</div>
+</section>
+</section>
+<section id="malware-protection" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Malware Protection</h1>
+<p>“Malicious Software” or malware is an all encompassing word for any software designed explicitly to exploit or attack a system. There are a few different types/kinds of malware in existence. However it is important to realize that while these types might have different definitions, there are multiple examples of malware that could be classified under multiple categories.</p>
+<ol type="1">
+<li><p>Viruses: Small piece of code inserted into seemingly innocuous application or system and are typically deployed by the victim themselves. Easily spreads to other files on that system and can do things such as destroy data, steal data, send infected files to contact lists, launch other attacks on other victims.</p></li>
+<li><p>Worms: Very similar to viruses but do not need human interaction to make a copy of itself and doesn’t need to attach itself to a specific program to cause damage. Worms can be transmitted via email attachments, removable media, etc.</p></li>
+<li><p>Bacteria: This is another name for the fork bomb (or rabbit virus) similar to the one you saw earlier in the quarter. This is a program that when run takes over system resources by replicating itself. This typically results in slower systems, or even crashing the system which might seem like a small price for a personal computer but is a very high price for other systems that run equipment that should never be off.</p></li>
+<li><p>Trojans: A virus that masquerades as a benign program in order to persuade a victim to install it.</p></li>
+</ol>
+<div class="quarto-figure quarto-figure-center">
+<figure class="figure">
+<p><img src="cnd.png" class="img-fluid quarto-figure quarto-figure-center figure-img"></p>
+</figure>
+</div>
+<ol start="5" type="1">
+<li><p>Rootkits: Software that helps cyber criminals or other malware to remain hidden. They will do things like grant access of the system to cyber criminals, hide evidence of such access, etc. They don’t typically cause serious damage to the system directly but they make it easier for other software or people to do so.</p></li>
+<li><p>Spyware: Spyware’s purpose – as the name suggests – is to spy on the user of the system. They will do things like track internet or system activity for any sensitive information e.g.&nbsp;passwords.</p></li>
+<li><p>Adware: Malware that supports advertising. Sometimes this will look like pop-up ads. Adware also typically is used to provide data on your system usage to its designer. Not all adware is malicious but they can definitely be annoying.</p></li>
+<li><p>Ransomware: Malware that locks and/or encrypts a user’s system and requires a payment (usually in bitcoin) to regain access to the system.</p></li>
+</ol>
+<p>While there are lots of types of malware, they are all typically transmitted in a similar manner and that allows us to either avoid them or mitigate their effect. Some reports say up to 94% of malware was delivered by email. Other ways include manual exploitation of security vulnerabilities, drive-by downloads, social engineering (phishing, vishing, smishing, etc.)</p>
+<div class="callout callout-style-default callout-important callout-titled" title="group discussion">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+group discussion
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>Email use demo: cf ./emailspam/*</p>
+<p>In groups of 3-4, read over the provided emails and identify answers to the following questions:</p>
+<ol type="1">
+<li><p>What kind of attack is this?</p></li>
+<li><p>Are there signs that you can see to identify that this is in fact an attack? or that it is legitimate?</p></li>
+<li><p>What kind of vulnerabilities (in the cyber and physical realms) does this kind of attack need to be successful?</p></li>
+<li><p>How can you defend against this kind of attack?</p></li>
+</ol>
+</div>
+</div>
+<p>Some of the tell-tale signs that your system has malware include: slow or crashing system, little to no storage space, emails being sent without consent, pop-ups, programs being opened, closed or modifying data on their own, etc.</p>
+<p>How does one protect themselves against malware? The only fool proof way is to never go on the internet and never use a removable device. But that is too high a price to pay. A more realistic price is being vigilant. At the beginning of class, we mentioned how the weakest link in any cyber security system is the human being and this is one of the reasons. CISA (Cybersecurity and Infrastructure Security Agency) is pushing for everyone to activate <strong>two factor authentication</strong> and that is a very good solution to most of the issues. If a piece of software requires access to both your phone and your computer to send an email with malicious attachments, then that reduces the likelihood of your system sending malware to someone else.</p>
+<p>That might stop easy transmission of malware from one victim to another, but it doesn’t stop a victim from getting it for themselves. Being <strong>skeptical and vigilant</strong> can help one avoid suspicious links, websites, and emails. Another way is to tinker with your spam folder settings so that emails promising you free ipads will never show up in your inbox to begin with.</p>
+<p><strong>Patch updates.</strong> We have already talked about this but it is worth mentioning here again. The success or failure of a downloaded piece of malware will depend on whether you have the appropriate updates or not.</p>
+<p>Installing and updating anti-malware software is another very important thing one can do to defend against malware. Do your research and find the software that fits within your budget and does what you want it to do.</p>
+<p>A final possible fall back is <strong>maintaining backups</strong> of your data. If all else fails, at the very least you can format your system and restore the data you have backed up and only lose a few hours or a few days of data and not everything. This is a good habit to have for more than just avoiding malware.</p>
+</section>
+<section id="firewalls" class="level1" data-number="3">
+<h1 data-number="3"><span class="header-section-number">3</span> Firewalls</h1>
+<p>This is the third thing everyone should be doing. Firewalls stop active cyber criminals from accessing your system or your home network. They also stop malware on your system or network from communicating and therefore propagating to other systems and/or their designer.</p>
+<p>There are two dominant schools of thought on how a firewall might be set up. Windows comes with a default firewall that blocks connections to and from the outside world depending on the application that created that connection. You have to select which applications can connect and which ones cannot. One downside of this is that you have to interact with the firewall a little more since you have to change the settings for any software you want to use that requires an internet connection.</p>
+<p>Linux approach to firewall is to block connections based on the port that those connections are using. As you might know from previous classes, every computer can connect to the internet over 65,536 ports (<span class="math inline">\(2^{16}\)</span>). the first 1024 of those are system ports and are typically used for common services e.g.&nbsp;HTTP on port 80, FTP on 20 and 21, SSH on 22, IMAP on 143, etc. The rest of the ports dynamic and can be used for any connections you would like. Later on in this class, you will set up a linux firewall in an ingenious way to lock out all connections that do not know about a “secret knock” of yours.</p>
+<section id="installing-ufw" class="level2" data-number="3.1">
+<h2 data-number="3.1" class="anchored" data-anchor-id="installing-ufw"><span class="header-section-number">3.1</span> Installing UFW</h2>
+<p>The commands below will install a basic firewall on your linux system using <strong>U</strong>ncomplicated <strong>F</strong>ire<strong>W</strong>all a.k.a. UFW</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt update</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> apt install ufw <span class="co">#or “sudo apt install gufw” if you are a noob</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="blocking-all-incoming-traffic" class="level2" data-number="3.2">
+<h2 data-number="3.2" class="anchored" data-anchor-id="blocking-all-incoming-traffic"><span class="header-section-number">3.2</span> Blocking all incoming traffic</h2>
+<p>We shall now set up some basic rules to your firewall to keep out all incoming traffic.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw enable</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw default deny incoming</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw status verbose <span class="co"># this just shows the status of the firewall</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The commands above turn on the firewall, set it up to deny any incoming traffic, and then show its current status.</p>
+<p>But what is the point of having a computer that can never connect to the internet?</p>
+</section>
+<section id="allowing-traffic-from-a-specific-service" class="level2" data-number="3.3">
+<h2 data-number="3.3" class="anchored" data-anchor-id="allowing-traffic-from-a-specific-service"><span class="header-section-number">3.3</span> Allowing traffic from a specific service</h2>
+<p>Let’s allow a specific network service – SSH.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw allow ssh</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="callout callout-style-default callout-tip callout-titled">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-title-container flex-fill">
+Tip
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>The command above will now allow ssh connections to your computer. Feel free to test this out by running the command below on another computer, or in a different terminal window. If you are doing this from another computer e.g.&nbsp;a neighbour’s computer, or your host Machine (assuming the ssh target is your Virtual Machine), then you’ll have to replace <code>localhost</code> in the commands below with the appropriate IP address.</p>
+<p>Any of the commands below will do the same thing i.e.&nbsp;log into your computer using ssh</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="op">&lt;</span>username<span class="op">&gt;</span>@localhost    <span class="co"># replace username with the computer username</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> localhost               <span class="co"># if you are already using the username account</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="fu">ssh</span> <span class="at">-p</span> <span class="op">&lt;</span>portnumber<span class="op">&gt;</span> <span class="op">&lt;</span>username<span class="op">&gt;</span>@localhost <span class="co"># if its a non-traditional port</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+</div>
+</section>
+<section id="removing-a-rule-from-your-firewall" class="level2" data-number="3.4">
+<h2 data-number="3.4" class="anchored" data-anchor-id="removing-a-rule-from-your-firewall"><span class="header-section-number">3.4</span> Removing a rule from your Firewall</h2>
+<p>Generally speaking, adding <em>allow</em> rules will look like what we did in the previous subsection. Routinely, however, you will need to remove a rule you put into your firewall. There are a couple of ways you could do this.</p>
+<p>If you know what the rule/service name is, you could just remove it using that service name.</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw delete allow ssh</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Or if you cannot remember exactly, you can list out all the rules and delete the rule corresponding to a specific line number.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw status numbered</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw delete <span class="op">&lt;</span>rule_number<span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="denying-traffic-from-a-specific-source" class="level2" data-number="3.5">
+<h2 data-number="3.5" class="anchored" data-anchor-id="denying-traffic-from-a-specific-source"><span class="header-section-number">3.5</span> Denying traffic from a specific source</h2>
+<p>You can also deny traffic from a specific ip address or ip range</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw deny from ip.ad.re.ss</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw deny from ip.ad.re.ss/24   <span class="co"># deny from a subnet</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="turning-off-your-firewall" class="level2" data-number="3.6">
+<h2 data-number="3.6" class="anchored" data-anchor-id="turning-off-your-firewall"><span class="header-section-number">3.6</span> Turning off your firewall</h2>
+<p>In case you want to turn off your firewall (and suspend any rules you might have set up), use the command below</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">sudo</span> ufw disable</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>You can find more UFW commands and examples at <a href="#fn1" class="footnote-ref" id="fnref1" role="doc-noteref"><sup>1</sup></a>.</p>
+</section>
+</section>
+<section id="other-defenses" class="level1" data-number="4">
+<h1 data-number="4"><span class="header-section-number">4</span> Other Defenses</h1>
+<p>While the three techniques we discussed above should be required for all systems, they are not 100% infallible especially since we are dealing with humans – myself included. There are times when it would be helpful and beneficial to implement other defensive strategies.</p>
+<section id="virtualization" class="level2" data-number="4.1">
+<h2 data-number="4.1" class="anchored" data-anchor-id="virtualization"><span class="header-section-number">4.1</span> Virtualization</h2>
+<p>One of the techniques you have already used from the last class is virtualization. As you discussed in that class, this allows you to isolate a portion of your computer and install a completely separate system on it. This is the approach most people will use when they have to deal with inherently risky files (e.g.&nbsp;studying viruses), or connect to risky networks. This allows you to have explicit control over what kinds of files might be corrupted or affected by nefarious characters. It also allows you to easily revert to an older snapshot of your computer if something goes awry.</p>
+<p>The only con is you need to be technically savvy and spend a lot of time to set up and maintain a virtual machine especially if the default settings don’t work for you. Also, because it is only allowed to access part of your original system e.g.&nbsp;less RAM, it can be slow and cumbersome to work with.</p>
+</section>
+<section id="chroot-jails" class="level2" data-number="4.2">
+<h2 data-number="4.2" class="anchored" data-anchor-id="chroot-jails"><span class="header-section-number">4.2</span> Chroot jails</h2>
+<p>Another way of isolating or restricting access for users of a system is using chroot jails. As background, when you open a file manager in linux, you are typically put in the home folder. Most of a person’s usual work will be based at home. However, if you go two levels up you get to the root folder and this is the grandparent of all files on the system. You can find files used to boot the computer (<em>boot</em>), programs installed on the computer (<em>bin</em>), all devices connected to the computer (<em>dev</em>), etc. Understandably this is a lot of information that anyone who logs into your computer might have access to. A way to deal with this is to create a chroot jail. The name chroot comes from “change root” which essentially means that you change the root folder for some users. This allows you to create a small subsystem of folders that that user has access to and can never get out of. Setting up a chroot jail even means that you determine what programs and utilities the user will be able to access in their jail e.g.&nbsp;can they use <code>ls</code>, <code>mkdir</code>, etc.</p>
+<p>You will discuss and set up chroot jails later on in this class. For those of you who have been trying out bandit, this is probably one of the ways that that system is set up since you cannot see any folders other than what the designer of the system gives you access to.</p>
+<p>Setting chroot jails up takes way less system resources than virtualization and is quicker but the jail will have the same OS as the host and a subset of the tools installed on the host.</p>
+</section>
+<section id="docker-containers" class="level2" data-number="4.3">
+<h2 data-number="4.3" class="anchored" data-anchor-id="docker-containers"><span class="header-section-number">4.3</span> Docker containers</h2>
+<p>Docker containers are a recent entry into the isolation game. They allow users to set up environments with operating systems, and software that are portable to other users and systems and serve to give users an isolated environment that has been set up and tested by someone else. It reduces the amount of work that the end user will have to do to get their computer set up to tackle a task.</p>
+<p>Isolation software or approaches aren’t the only way to defend against attacks online. Unfortunately, there are way too many approaches to discuss in this class but I hope that this has introduced you to a few of the main ones that anyone can use on their own systems and perhaps even some enterprise systems.</p>
+</section>
+</section>
+<section id="basic-offence" class="level1" data-number="5">
+<h1 data-number="5"><span class="header-section-number">5</span> Basic Offence</h1>
+<p>Sometimes a good defense is based on understanding the capabilities of the offence. Unfortunately, the offense is always growing and wrapping your mind round all the possibilities is a daunting task. Nonetheless, let us discuss a couple of things that are commonly done during an offense i.e.&nbsp;recon/footprinting tactics.</p>
+<p>To look for vulnerabilities (a process done by both attackers and defenders of a network) some tools can be used. <code>Nmap</code> is probably the most common but others include <code>nemesis</code>, <code>python-scapy</code>, <code>netcat</code>, <code>telnet</code>. For many of these tools, there is some overlap in what they do but the more you work with them, the more you’ll get a feeling for which tools work best in what situation. Familiarity with the tool and its capabilities is one of those factors that will also affect your choice of tool.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode sh code-with-copy"><code class="sourceCode bash"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> sudo apt install nmap</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> nmap <span class="op">&lt;</span>address or address range<span class="op">&gt;</span></span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> nmap <span class="at">-h</span>   <span class="co"># to see some of the options</span></span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> nmap <span class="at">-Pn</span> <span class="op">&lt;</span>address<span class="op">&gt;</span>    </span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a><span class="ex">$</span> nmap <span class="at">-O</span> <span class="op">&lt;</span>address<span class="op">&gt;</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Another offensive operation is network sniffing. This involves just looking at network traffic and then figuring out more specific targets based on that. The most common tool is <code>wireshark</code>.</p>
+<p>This is supposed to be small preview of a few tools. We shall dive deeper into some of them in later lectures. But now that you have heard about them, nothing stops you from taking a look at a few of them on your own time.</p>
+<p><strong>References</strong>:</p>
+<ol type="1">
+<li>https://www.sciencedirect.com/topics/computer-science/computer-network-exploitation</li>
+<li>https://www.sciencedirect.com/topics/computer-science/computer-network-attack</li>
+<li>https://www.sciencedirect.com/topics/computer-science/computer-network-defense</li>
+<li>https://us.norton.com/internetsecurity-malware-types-of-malware.html#ransomware</li>
+</ol>
+</section>
+
+
+<div id="quarto-appendix" class="default"><section id="footnotes" class="footnotes footnotes-end-of-document" role="doc-endnotes"><h2 class="anchored quarto-appendix-heading">Footnotes</h2>
+
+<ol>
+<li id="fn1"><p>(https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands)<a href="#fnref1" class="footnote-back" role="doc-backlink">↩︎</a></p></li>
+</ol>
+</section></div></main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const onCopySuccess = function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  }
+  const getTextToCopy = function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+    text: getTextToCopy
+  });
+  clipboard.on('success', onCopySuccess);
+  if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+    const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+      text: getTextToCopy,
+      container: window.document.getElementById('quarto-embedded-source-code-modal')
+    });
+    clipboardModal.on('success', onCopySuccess);
+  }
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
