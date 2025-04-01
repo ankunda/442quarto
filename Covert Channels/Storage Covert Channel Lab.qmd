@@ -322,7 +322,7 @@ The first file
 ```default
 d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3
 ```
-decodes to `0101110010`
+decodes to `1000100111`
 
 The second file
 ```default
