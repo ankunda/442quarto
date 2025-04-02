@@ -1,0 +1,84 @@
+---
+title: "Access Control"
+format:
+  html:
+    code-fold: false
+jupyter: python3
+code-copy: false
+---
+
+<style>
+  .indent {
+      margin-left: 40px; /* Indent the entire element by 40 pixels */
+      margin-top:0px
+  }
+  .indent2 {
+      margin-left: 80px; /* Indent the entire element by 40 pixels */
+      margin-top:0px
+  }
+  .indent3 {
+      margin-left: 120px; /* Indent the entire element by 40 pixels */
+      margin-top:0px
+  }
+</style>
+
+bottom line: controlling access
+<div class="indent">how does this occur on campus?  at a military base?  at Google?  in the cyberLAB?</div>
+
+<div class="indent">how does this occur on land?  on the sea?  in the air?  in space?  underground?</div>
+<div class="indent">how does this occur on information technology/computer information systems?</div> \
+
+
+logic?
+<div class="indent">tools and protocols in computer information systems used for:</div>
+<div class="indent2">identification: making a claim attesting to one's identity</div>
+<div class="indent3">who are you?</div>
+<div class="indent2">authentication: confirming truth claimed true by some entity (i.e., confirming identity)</div>
+<div class="indent3">are you who you say you are?</div>
+<div class="indent2">authorization: specifying access rights to resources</div>
+<div class="indent3">are you allowed to access this?</div>
+<div class="indent2">accountability: acknowledgment and assumption of responsibility for actions</div>
+<div class="indent3">you screwed up, so I will temporarily reduce your access and log the incident</div> \
+<div class="indent2">enforce access control measures for systems, programs, and information</div> 
+<div class="indent3">at various levels (e.g., OS, apps, security packages, databases, etc)</div> \
+
+examples in computer information systems \
+<div class="indent">identification and authentication:</div>
+<div class="indent2">user name and password</div>
+<div class="indent2">physical biometrics</div>
+<div class="indent2">behavioral biometrics</div>
+<div class="indent2">key fobs and dongles</div>
+<div class="indent2">?</div>
+<div class="indent">authorization:</div>
+<div class="indent2">file permissions</div>
+<div class="indent2">dongles</div>
+<div class="indent2">?</div> \
+
+examples in other areas (e.g., airports, military bases, etc)? \
+\
+threat avoidance sidebar \
+<div class="indent">threats simply don't matter</div>
+<div class="indent">we don't care about detection, mitigation, prevention, attribution</div>
+<div class="indent">we have an invisibility cloak</div>
+<div class="indent">e.g., beaconing malware, unauthorized network users/apps, port knocking</div> \
+
+port knocking \
+<div class="indent">ports are the only way for remote users to get in</div>
+<div class="indent">if ports are closed, no one can get in</div>
+<div class="indent">wouldn't it be cool if we could monitor special packets at a lower level?</div>
+<div class="indent">and then perhaps selectively open ports temporarily for specific remote users</div>
+
+<div class="indent">forms:</div>
+<div class="indent2">knock on several ports in a timed sequence</div>
+<div class="indent2">knock on a single port with a symmetric key</div>
+<div class="indent2">knock with a client key (SPA: single packet authorization)</div> \
+
+<div class="indent">is port knocking a form of access control?</div> \
+
+<div class="indent">side note: this is basically security through obscurity</div>
+<div class="indent2">which shouldn’t be our default method</div>
+<div class="indent2">not something that we should count on</div> \
+
+tutorials \
+<div class="indent">fwknop</div>
+<div class="indent">chroot jail</div>
