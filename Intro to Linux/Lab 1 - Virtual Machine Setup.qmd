@@ -1,0 +1,263 @@
+---
+title: "Intro to Linux: Virtual Machine Setup"
+format:
+    pdf:
+        toc: true
+        number-sections: true
+        colorlinks: true
+        output-file: "Lab 1 - Virtual Machine Setup.pdf"
+---
+
+
+# Flavors of Linux
+
+For this course it is recommended that you use Mint or Ubuntu, although there are many more flavors of Linux available. Below is a very short list of the distros that most of you will either use or be familiar with.
+
+1. Ubuntu is designed with beginners in mind. It is a general purpose distro with both server and desktop environments. It is also the most popular distribution.
+
+2. Linux mint is based on Ubuntu and is good for beginners who are switching from windows. This is because it is designed to be familiar for
+windows users.
+
+3. Debian is one of the oldest distros and is typically used where stability is paramount. It is used by experienced users and is popular for servers and mission critical environments.
+
+4. Arch linux is used by advanced users for whom customization and minimalist systems are important. Users of this system typically want to be involved in manually setting up everything on the computer.
+
+5. Kali linux is based on debian and is used by cyber security professionals. This is because it comes with multiple tools for penetration testing, forensics and security research
+
+6. Raspbian is a version of linux designed to work on raspberry pis. The focus of this distro is being light weight (i.e. not taking up a lot of space), and yet work fast with the limited hardware resources one might find on a microcomputer like a raspberry pi
+
+
+# Virtualization Software
+
+In order to use a completely different OS on your computer without significantly affecting it, we are going to use virtualization. **Virtualization** allows us to install and use multiple versions of different computers independent of the physical computer we actually have. It allows us to test out different software with the security of knowing we cannot affect our host computer and can even revert to an older version of the software we are trying. The cost of virtualization is that you typically have to be comfortable with running the computer with reduced resources i.e. it doesn’t have access to all your memory or processors.
+
+## Download Virtual Box and Install
+
+
+1. Download Virtual Box from Oracle by visiting [https://www.virtualbox.org/wiki/Downloads](https://www.virtualbox.org/wiki/Downloads){target="_blank"} . Click the appropriate download link for your system.
+
+2. Install Virtual Box. 
+
+
+:::{.callout-tip}
+# Windows Host Tip
+
+Note that when installing on windows, you might get an error concerning needing to install Visual c++ 2019. You can resolve this error by visiting [https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170](https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist?view=msvc-170) and downloading the latest X64 version of Microsoft Visual C++. Alternatively, here is a direct download link for convenience [https://aka.ms/vs/17/release/vc_redist.x64.exe](https://aka.ms/vs/17/release/vc_redist.x64.exe). Also, if you received this error, once VirtualBox has been installed, restart your computer.
+:::
+
+:::{.callout-tip}
+# Mac Host Tip
+
+If you have a mac with homebrew, you can run the following command to both download and install:
+
+```sh
+brew install --cask virtualbox
+```
+:::
+
+
+:::{.callout-tip}
+# Linux Host Tip
+
+If you are a Linux user, you can download and install virtual box using the following commands.
+
+```sh
+sudo apt update
+sudo apt install virtualbox virtualbox-qt
+```
+:::
+
+
+
+
+# Downloading an ISO
+
+In this class we support Linux Mint and Ubuntu Desktop for the Windows host users and Ubuntu Server for the Mac host users. You are welcome to use a distribution outside of these, however, you may be alone when it comes to troubleshooting. 
+
+People that typically use Windows will find Linux Mint to be a comfortable place. 
+
+Ubuntu server is being used for users with Mac hosts as it currently (year of 2025) the most easily accessible ARM64 based distribution. Macs with the m-series chips have ARM64 architecture. 
+
+1. Download the appropriate image for your virtual machine based on your host:
+
+    - If you have an **x86-64/amd64** based machine (most Windows machines and Intel based macs):
+        - [Linux Mint](https://www.linuxmint.com/download.php)
+            - note that the `xfce` edition is recommended for virtual machines
+        - [Ubuntu Desktop](https://ubuntu.com/download/server)
+
+    - If you have an **arm64** based machine (m-series Macs and very few Windows machines):
+        - [Ubuntu Server](https://ubuntu.com/download/server/arm)
+
+    - You are welcome to use any other Linux distro, links not provided, troublshooting and instructions not provided.
+
+2. Once you have downloaded the `.iso` file, move the file to the folder you have created for this course on your computer so you can easily find it when you need it later.
+
+
+# Installing the OS on Virtual Box
+
+This section of the instructions apply regardless of the flavor of Linux you chose.
+
+1. Create a new VM in Virtual Box by clicking NEW.
+
+2. Give it a name of your choosing. You might do something like the name of this class. This is just how VirtualBox will label it for your own referencing purposes.
+
+3. For the `Folder` option, you can leave the default selected folder. It is most likely something along the lines of `.../VirtualBox VMs`.
+
+4. For the` ISO Image` option, select the .iso file you downloaded in the previous section of these instructions. You may need to click "other" in the dropdown to browse for it.
+
+6. Skip the unattended install by checking the box to skip it.
+
+7. When prompted for `base memory`, it is recommended that you allow the machine to use up to 25% of your host machine's resources.
+
+    - If you have at least 8 GB of ram, consider allowing 2 GB for the virtual machine. 
+    - If you have 16 GB of ram, consider allowing 4 GB for the virtual machine.
+    
+   This is only setting the max it can use on your machine, so feel free to give it more than 25%, but you may start slowing down the host.
+
+8. When prompted about the `processors`, it is recommended you give it at least 2. For a 2021 mac with 10 cores, we chose 4 and have had no performance issues.
+
+9. When prompted about the `Hard Disk`, make it sufficient in size, say 100 GB for storage. **Do not** pre-allocate the storage.
+
+10. Click "Finish" to finish this portion of the setup. This does not setup the machine. Just prepares it for setup.
+
+
+# Modify VirtualBox Settings
+
+Now that the machine exists inside virtual box, it is recommended you complete the following.
+
+1. Bidirectional Clipboard and Drag and Drop Support
+
+    a. Select the machine on the left hand side of the window.
+    b. Select `Settings` near the top of the window.
+    c. Go to `General`.
+    d. Go to `Advanced`.
+    e. Set `shared clipboard` to `bidirectional`.
+    f. Set `drag'n'drop` to `bidirectional`.
+    g. Click `OK` to save.
+
+    Note: We've had mixed results with the clipboard and drag and drop actually working.
+
+2. Network Connectivity
+
+    a. Select the machine on the left hand side of the window.
+    b. Select `Settings` near the top of the window.
+    c. Go to `Network`.
+    d. Under the `Attached To:` option, choose `Bridged Adapter` instead of `NAT`.
+    e. Under the `Name:` option, choose the normal connection you use, probably your Wi-fi connection
+        - On windows, you might only have one option (your Wi-Fi)
+        - On macs, it is most likely en0: Wi-Fi
+
+    Note: NAT stands for Network Address Translation. If this is the setting, then virtual machine and host machine will share an IP address when communicating with the outside world. The Bridged Adapter allows the virtual machine to receive it's own ip address when communicating with the outside world.
+
+
+# Installing and Booting the VM
+
+Boot the VM by selecting it in the left navigation and clicking "Start". 
+
+For this step, the instructions will be different depending on the flavor of Linux you chose, be sure to scroll to the appropriate section for your VM's operating system.
+
+## For Mint
+
+For Mint, you will be presented with a GUI that should be simple to step through. You'll see a disk in the top left corner labeled "Install Linux Mint". Double click it to start. Some notes for your install follow:
+
+1. Language: Choose English
+
+2. Multimedia Codecs: No (these will not be necessary)
+
+3. Now you'll be presented with the options to `Erase Disk and Install Linux Mint` or `Something Else`. 
+
+    Choosing `Erase Disk and Install Linux Mint` is the simplest option. This will not erase anything on your host machine since we are doing this inside of virtualization software. 
+    
+    If you wanted to be a bit more specific about the partitions that get created, you can choose `Something Else`. Scroll down to the `Partition Details` section of this document for more about this.
+
+    Once you've made your selection, click "Install Now"
+
+4. Time zone: Chicago
+
+5. If you chose `Something Else` for the Erase Disk and Install Linux Mint option, you'll need to jump to the Partition Details section of this document and then come back here when you're done. If you chose `Yes`, move to step 6.
+
+6. Now you'll be asked for some information such as username, computer name, and password. Make a username and password that you'll remember. You do not need to encrypt your home folder, but could if you wanted to.
+
+## For Ubuntu Desktop
+
+Ubutun desktop will present you with a step by step installation process. Follow this process. If you are interested in a custom partition, skip to the `Partition Details` section of this document for more, otherwise, use the default partitioning.
+
+## For Ubuntu Server ARM
+This could take some time, so it is not recommended that you update when prompted during the install if you are short on time.
+
+1. When prompted, select "Try to Install Ubuntu".
+
+3. The install will present lots of options that you can choose to customize. At some point it will ask for a username and password, be sure you remember it.
+
+4. Once it is installed it will prompt to reboot. 
+
+5. After rebooting it'll ask you to login with the username and password once you reboot.
+
+6. Setting Up the GUI. Note that there will be gui based software that is used in this course, so it is recommended that you setup the gui.
+
+    a. Run the following two commands separately
+
+    ```bash
+    sudo apt update
+    ```
+
+    ```bash
+    sudo apt install ubuntu-desktop
+    ```
+
+    b. Once it is done, turn the machine off by closing the window and selecting the option to turn the machine off. 
+    
+    c. Start the machine and log back in. There should be a GUI at this point.
+
+
+## Partition Details
+
+If you chose to do a custom partition, here are some tips. Partitioning gives the user the opportunity to specify how much space is reserved for certain functions of the computer. This in turn allows us to easily update or overwrite our operating system later on without losing the files we were using.
+
+Partitioning is arguably not as used these days with how cheap computers and memory are and the prevalence of all sorts of backup tools. However, it is still a good experience to have as a computer science student because you won’t always be using the latest and greatest computers.
+
+Your hard drive will probably have a name like `/dev/sda` that is the size of all the space you have available for your VM. For each new partition that we create, select the unused space and click the `+` sign to add a partition to it.
+
+1. 1st partition: 
+
+    - 1024 MB
+    - type = primary
+    - location = beginning
+    - use as = ext 2
+    - mount point = /boot
+
+2. 2nd partition: 
+
+    - 4096 MB3
+    - type = primary
+    - location = end
+    - use as = swap area
+
+3. 3rd partition: 
+
+    - 35% of space left
+    - type = primary
+    - location = beginning
+    - use as ext 4
+    - mount point = /
+
+4. 4th partition
+
+    - all that is left
+    - type = primary
+    - location = beginning
+    - use as = ext 4
+    - mount point = /home.
+
+Click install now.
+
+If you get some error messages with suggested partitions, feel free to delete the 4th partition, create the suggested partitions with the suggested sizes and uses, and then recreate the 4th partition with whatever space is left over.
+
+Return to the install instructions that brought you to the Partition Details
+
+
+
+
+
+
+
