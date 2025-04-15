@@ -1,0 +1,131 @@
+---
+title: "Network Setup"
+format:
+    pdf:
+        toc: true
+        number-sections: true
+        colorlinks: true
+        output-file: "Lab 2 - Network Setup.pdf"
+---
+
+# Introduction
+
+For cyberstorm, you'll need to be able to setup a network connection manually on your Linux Virtual machine. This can be done via the terminal or via a gui. This document will walk you through the steps to do so.
+
+# Using the Terminal
+
+## Checking Your Network Settings
+
+To check your network settings, open your terminal and type the command `ifconfig`
+
+```sh
+ifconfig
+```
+
+If the above command failed, you can install it with the following command.
+
+```sh
+sudo apt install net-tools
+```
+
+The output might look something like this:
+
+```
+enp0s8: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 138.47.166.224  netmask 255.255.248.0  broadcast 138.47.167.255
+        inet6 fe80::a00:27ff:fe75:a790  prefixlen 64  scopeid 0x20<link>
+        ether 08:00:27:75:a7:90  txqueuelen 1000  (Ethernet)
+        RX packets 740731  bytes 1041970707 (1.0 GB)
+        RX errors 0  dropped 42  overruns 0  frame 0
+        TX packets 169179  bytes 16661316 (16.6 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 6152  bytes 687551 (687.5 KB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 6152  bytes 687551 (687.5 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+
+Let's break down this output. There are two network interfaces labeled, `enp0s8` and `lo`. **Note that your labels may differ slightly.** For example you might have different numbers (ex: a 3 instead of an 8), or you might see `eth0` in place of `enp0s8`.
+
+The label `lo` stands for loopback interface. The loopback interface is for routing packets back to your system without any processing. This is mainly used for testing and router identification.
+
+We are concerned with the other interface, the one labeled `enp0s8` or `eth0` or similar (such as `enp0s3`). The label `enp0s8` has three parts to it:
+
+- en - stands for ethernet
+- p0 - tells us the interface is on PCI bus 0
+- s8 - refers to slot 8 on PCI bus 0
+
+Inside the details for this interface, we are concerned most with the ip address, the broadcast address, and the mask. You can find these details on the first three lines.
+
+```
+enp0s8: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 138.47.166.224  netmask 255.255.248.0  broadcast 138.47.167.255
+        inet6 fe80::a00:27ff:fe75:a790  prefixlen 64  scopeid 0x20<link>
+```
+
+Notice that the ip address for the interface above is `138.47.166.224` and the netmask is `255.255.248.0`. We can summarize this with CIDR notation as `138.47.166.224/21`. The interface was automatically configured with this information using a DHCP, or Dynamic Host Configuration Protocol.
+
+:::{.callout-caution}
+# Troubleshooting Tip
+If at this point your ip address starts with a 10 (that is it is in the format 10.X.Y.Z), then you probably have the Virtual Box network settings for this machine set to **NAT**. It needs to be changed to **Bridged Adapter** before continuing. 
+
+&nbsp;
+
+To change it to bridged adapter, go to your Virtual Box main window, select this machine in the left hand navigation, then choose `Settings` at the top. Go down to `Network Settings` and change NAT to Bridged Adapter. Then, for the interface, choose the Wifi option for now (it could be listed as something with 802.11 in it, or just Wifi in it)
+
+&nbsp;
+
+You will then need to reset your virtual machine, that is, close it and do not save the state of the machine. Once it is booted back up, if you are on Louisiana Tech's network the ip address should begin with 138.47 (that is, in the format 138.47.X.Y). If you are at home, it will most likely be 192.168.1.X.
+:::
+
+## Manually Configuring Your Network Settings
+
+For cyberstorm, we will need to manually configure our network settings to place your computer in the network 10.0.0.0. Let's say you want to configure your computer for the ip address of 10.4.5.6. To do this, you can run the command that follows. 
+
+Note that you will need to replace `enp0s8` with the appropriate interface for your device (i.e if your interface is `enp0s3`, then use that.)
+
+```sh
+sudo ifconfig enp0s8 10.4.5.6 netmask 255.0.0.0 up
+```
+
+Now you can test that it worked by running `ifconfig` again and confirm the ip address and netmask have changed.
+
+If this is the day you are doing the network setup lab, you can test by attempting to visit a website such as [Google](https://www.google.com). If you cannot visit, then you're no longer connected to Tech's network which is good. 
+
+
+## Switching back to Tech's Network
+
+To reset the configuration for the ethernet connection, you can run the following commands.
+
+```sh
+sudo ifconfig enp0s8 0.0.0.0 down
+```
+
+```sh
+sudo ifconfig enp0s8 up
+```
+
+```sh
+# for mint 
+sudo dhclient enp0s8 
+
+# for ubuntu server
+sudo systemctl restart systemd-networkd
+```
+
+Once you have run these commands, try visting a website again. You should have access as your connection should have been restored.
+
+
+<!-- ## Using Your GUI -->
+
+
+
+
+
+
+

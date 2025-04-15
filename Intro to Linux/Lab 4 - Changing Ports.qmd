@@ -1,0 +1,161 @@
+---
+title: "Changing Ports"
+format:
+    pdf:
+        toc: true
+        number-sections: true
+        colorlinks: true
+        output-file: "Lab 4 - Changing Ports.pdf"
+---
+
+## Introduction
+
+In most cases, the default port is specified in a configuration file, so you just need to change the port in the configuration file and then restart the appropriate server. The `netstat` command will let you check that the service is infact running on the correct port.
+
+## Changing HTTP Port
+
+The defualt port for HTTP is port 80. You can modify this by completing the following instructions.
+
+1. Open the file at `/etc/apache2/ports.conf`
+
+    ```sh
+    sudo nano /etc/apache2/ports.conf 
+    ```
+
+2. Find `Listen 80` and change 80 to another value. For example, it may read `Listen 12345` after you make the change.
+
+3. Save and close the file.
+
+4. Open the file at `/etc/apache2/sites-enabled/000-default.conf`
+
+    ```sh
+    sudo nano /etc/apache2/sites-enabled/000-default.conf 
+    ```
+
+5. Modify the line with `<VirtualHost *:80>` to match the new port. That is, it might be modified to `<VirtualHost *:12345>` if you wanted to switch to port `12345`.
+
+6. Restart the server with the following command:
+
+    ```sh
+    sudo service apache2 restart
+    ```
+
+7. Browse to the new port in a web browser by visiting `http://localhost:12345`.
+
+8. Reset the port back to port 80 by following steps 1 through 7 again.
+
+## Changing the FTP Port 
+
+Complete the following to change the FTP port. The default port is 21.
+
+1. Open the vsftp config file.
+
+    ```sh 
+    sudo nano /etc/vsftpd.conf
+    ```
+
+2. Add the following line to match new port.
+
+    ```
+    listen_port=54321
+    ``` 
+
+3. Save and close the file.
+
+4. Restart the server.
+
+    ```sh 
+    sudo service vsftpd restart 
+    ``` 
+
+5. Login on the new port 
+
+    ```sh 
+    ftp localhost 54321 
+    ``` 
+
+6. Repeat steps 1 through 5 using port 21 to reset it back to the default.
+
+
+## Changing the SSH Port 
+
+SSH is usually hosted on port 22. You can change this using the following instructions.
+
+1. Open the config file.
+
+    ```sh 
+    sudo nano /etc/ssh/sshd_config 
+    ```
+
+2. Modify `Port 22` to use a different value such as `Port 2222`.
+
+3. Save and close the file. 
+
+4. Restart the service. 
+
+    ```sh 
+    sudo service ssh restart 
+    ``` 
+
+5. Login on the new port 
+
+    ```sh 
+    ssh -p 2222 localhost 
+    ``` 
+
+6. To set it back to 22, repeat steps 1 through 5, but use 22.
+
+## Changing the MySQL Port 
+
+The default port for MySQL is 3306. To change this, complete the following instrcutions.
+
+1. Open the config file.
+
+    ```sh 
+    sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf 
+    ```
+
+2. Find the `[client]` section and modify the port. 
+
+    By default it shows the following:
+
+    ```sh 
+    port            = 3306
+    ``` 
+
+    Consider trying port 6033. 
+
+    ```sh 
+    port            = 6033 
+
+    ```
+
+3. Now find the `[mysqld]` section and modify the port there too.
+
+    By default it shows the following:
+
+    ```sh 
+    port            = 3306
+    ``` 
+
+    Consider trying port 6033. 
+
+    ```sh 
+    port            = 6033 
+    ```
+
+4. After modifying both the `[client]` and `[mysqld]` sections, save and close the file. 
+
+5. Restart the server.
+
+    ```sh 
+    sudo service mysql restart 
+    ``` 
+
+6. Find and note your ip address using `ifconfig`. 
+
+6. Login on the new port to test. Replace `x.x.x.x` with your ip address and `user-name` with the username you created.
+
+    ```sh
+    mysql -h x.x.x.x -u user-name -p
+    ```
