@@ -1,0 +1,960 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.6.42">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>Introduction To Reverse Engineering.</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="Reverse Engineering_files/libs/quarto-html/quarto.js"></script>
+<script src="Reverse Engineering_files/libs/quarto-html/popper.min.js"></script>
+<script src="Reverse Engineering_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="Reverse Engineering_files/libs/quarto-html/anchor.min.js"></script>
+<link href="Reverse Engineering_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="Reverse Engineering_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="Reverse Engineering_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="Reverse Engineering_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="Reverse Engineering_files/libs/bootstrap/bootstrap-095844cae4144bfb2698b3336d7ab35d.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Introduction To Reverse Engineering.</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<section id="is-reverse-engineering" class="level2">
+<h2 class="anchored" data-anchor-id="is-reverse-engineering"><strong>is reverse engineering?</strong></h2>
+<p>Reverse engineering is a process by which we try to extract knowledge about the inner workings of something without being privy to its creation process. Some of you were curious as children and took apart your toys or gadgets to figure out how they worked. This is reverse engineering in a nutshell.<br>
+<br>
+In our context, reverse engineering usually means figuring out what a piece of software does and how it does it without being privy to the source code. Many times the software is provided in the form of an executable.<br>
+<br>
+Our success in figuring out how a toy car works by breaking it apart is dependent on how familiar we are, or can be with the individual components that make up that car. Similarly, our success in figuring out how a piece of software works is dependent on how familiar we are with the parts that make up an executable piece of software.<br>
+<br>
+The process of getting familiar with the components that might be in a piece of software is a daunting one. It is one that will take a lot of time for one to get comfortable with. Even your instructors have not attained that level yet. However, one does not need a lot of experience with how a toy car works to break it apart and attempt to understand it. Yes someone who knows all the parts in a toy car will quickly figure it out, but anyone can do the same given enough time and a “never say die” attitude. Similarly, we don’t need a lot of experience to reverse engineer our first piece of software. It will look overwhelming at the beginning but hopefully we’ll figure out a little bit of it as we progress through the class, lab and challenge.<br>
+</p>
+</section>
+<section id="why-should-we-learn-reverse-engineering" class="level2">
+<h2 class="anchored" data-anchor-id="why-should-we-learn-reverse-engineering"><strong>Why should we learn reverse engineering?</strong></h2>
+<p>Software is complicated to understand as is. If not, computer science would not be a course at all. Admittedly some of the smaller programs you wrote earlier in your life might be easy to understand, but larger systems and programs are not easy to understand unless they are really well documented or use a programming language and programming style that you are very familiar with. The process of reverse engineering is even harder because you rarely have access to the source code but rather the executable.<br>
+</p>
+<div class="sourceCode" id="cb1"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>$ g++ hello.cpp -o myexecutable     # compile a simple c++ program</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>$ cat myexecutable      # see if you can understand what is has.</span></code></pre></div>
+<p>As you can tell from the commands above, there is very little you can gleam by visually examining the executable of a program.<br>
+</p>
+<p>So. Why go through the process of trying to figure out what a program can or is doing.<br>
+<br>
+Well one reason is competition. If your competitor has a program, it might make sense to reverse engineer it so that you can create your own better version of it. Unfortunately, this process is typically too expensive (time-wise) that it makes more sense to just write your own version from scratch.<br>
+<br>
+A more realistic reason for reverse engineering is software development related. Sometimes your piece of code depends on libraries whose source code is not readily available and so you want to figure out how it works and identify any security concerns so that you can address them in your own software. Sometimes this has nothing to do with the security and you are more interested in identifying how the software works so that you can design your own to work better with it.<br>
+<br>
+Another security related reason is to identify how a piece of software works so that you can build a solution. This pops up in the study of malware. Many times researchers will break open a virus so that they can understand how it works and identify what security flaws it is taking advantage of so that they can update their own software to patch those flaws.<br>
+<br>
+On the sketchier side of things, reverse engineering could be used to identify the security features of a piece of software in order to take advantage of it. Bad actors could then use the identified vulnerabilities to create exploits based on them. Sometimes there are legitimate reasons for this e.g.&nbsp;counter espionage or to override copy protection schemes.<br>
+<br>
+An example of this was ArccOS protection in which Sony intentionally included corrupted sections on their DVDs that their software was looking for as a mark of legitimacy. If their software did not find the corrupted section on the DVD, it assumed that the DVD was a copy and therefore would not play the DVD. This despite the fact that it is not illegal to make a copy of your own DVD for your own use. One could reverse engineer the software and patch it to create a version that doesn’t check for those sectors and would therefore work for any DVD.<br>
+<br>
+</p>
+</section>
+<section id="what-we-should-know." class="level2">
+<h2 class="anchored" data-anchor-id="what-we-should-know."><strong>What we should know.</strong></h2>
+</section>
+<section id="csccyen-130-how-different-programming-languages-are-compiled-andor-interpreted." class="level2">
+<h2 class="anchored" data-anchor-id="csccyen-130-how-different-programming-languages-are-compiled-andor-interpreted."><strong>CSC/CYEN 130: How different programming languages are compiled and/or interpreted.</strong></h2>
+<p>Computers only understand 1s and 0s. Humans find it hard to understand 1s and 0s especially if its a large number of them. So there is a gap between what we can write and understand and what the computer can understand and execute and that gap is bridged by the compilation process. More formally, the 1s and 0s are referred to as machine language, and the commands we write that look a little like English are referred to as the programming language. A compiler is a tool that translates a program from the programming language to the machine language.<br>
+<br>
+<img src="R1.png" class="img-fluid"></p>
+<p>Unfortunately (or fortunately), this traditional compilation process produces machine language that can only be understood and/or executed by a computer system with the same characteristics and operating system as the system on which the compilation process was done. As a result, many programmers who want to distribute a program will have to compile it on multiple systems in order to create multiple versions of the machine language that different users can download and/or use depending on which system they have themselves. C and C++ are the most known examples of compiled languages.<br>
+<br>
+Another approach is converting the source code on the fly, line by line into machine language. The downside to this approach is that it is comparatively slow and the source code has to be provided for one to use it which can present problems when you want to keep your intellectual property private. Python and Javascript are well known examples of interpreted languages.<br>
+<br>
+The last approach is sort of a hybrid between the two. The program is “partially compiled” into an intermediate form. That intermediate form can be distributed to anyone who wants to execute the program. The intermediate program is then executed on the target system with the use of an interpreter on that system. One doesn’t have to create multiple intermediate forms for different target systems with this approach. Additionally the intermediate form cannot “easily” be translated back to the original program so intellectual property is somewhat safe.<br>
+<br>
+Java is an example of such a language and the intermediate form it takes is a class file which stores bytecodes.<br>
+</p>
+</section>
+<section id="csccyen-130-components-of-a-computer-and-how-they-communicate." class="level2">
+<h2 class="anchored" data-anchor-id="csccyen-130-components-of-a-computer-and-how-they-communicate."><strong>CSC/CYEN 130: Components of a computer and how they communicate.</strong></h2>
+<p><img src="R2.png" class="img-fluid"></p>
+<p>At a minimum, general purpose computers will consist of a CPU, Main Memory, secondary storage, and some input/output devices. The CPU is referred to as the brain of the computer and is responsible for executing the instructions that make up the program. Main memory (also known as RAM) is where the data and/or instructions currently being dealt with are stored. Secondary storage is used for storing any data or instructions that could be dealt with at any point in the future. Input/Output devices are any devices that allow us as humans to interact with the system e.g.&nbsp;screen, keyboard, etc. All these systems send the data and instructions to themselves via a data bus.</p>
+</section>
+<section id="csccyen-132-the-instruction-cycle." class="level2">
+<h2 class="anchored" data-anchor-id="csccyen-132-the-instruction-cycle."><strong>CSC/CYEN 132: The Instruction Cycle.</strong></h2>
+<p>One way to understand the way a computer is organized and carries out the commands we give to it can be represented in the diagram below. The diagram only shows the CPU and Main memory because those are the two components central to the execution of a command. The diagram does not show the electronic components necessary to execute the program but rather the registers and memory required to do so.</p>
+<p><img src="R3.png" class="img-fluid"></p>
+<p>Recall that the CPU has multiple short term storage locations called registers and updates these registers as it progresses through the computation process. In fact, data can only be manipulated when it is located on the CPU and so depending on the instruction, it might be necessary to copy some data/instruction from the main memory across the bus onto the cpu. While most of the registers are general purpose and can be used for almost anything, a few are special. For example, the instruction register holds a copy of the instruction currently being executed. The program counter holds the address of the instruction that will be executed next. Status bits are used to hold information about the most recent operation e.g.&nbsp;whether a carry was generated, or whether the result was negative or zero, or whether the operation resulted in an overflow.<br>
+<br>
+We also discussed the instruction cycle which constituted of 5 steps.<br>
+- Fetch: Use the program counter to identify the location of the next instruction to be executed and load that instruction into the instruction register.<br>
+- Increment: increase the program counter by one so that it points to the next instruction in the sequence.<br>
+- Decode: Break down the instruction into op-code and operands.<br>
+- Execute: Carry out the operation by routing the data and or instructions to the appropriate hardware. The results are then stored in the appropriate destinations e.g.&nbsp;general purpose registers, special purpose registers, and main memory.<br>
+- Repeat: Start the cycle over again.<br>
+Admittedly the information that we have covered here is a stripped down version but it did cover a lot of the actual content (at least enough for you to understand what is going on at a college freshman level).<br>
+<br>
+</p>
+</section>
+<section id="what-we-may-know." class="level2">
+<h2 class="anchored" data-anchor-id="what-we-may-know."><strong>What we may know.</strong></h2>
+<p>Understanding the way a program works based off of assembly or some other intermediate form of the program is a difficult task. A lot of the things that are important for us to understand how a program works in a programming language e.g.&nbsp;spacing, variable names, comments, etc. are not maintained when the code is converted to intermediate or even assembly language. Its almost like trying to figure out what a jigsaw puzzle shows without seeing the picture on the box.<br>
+<br>
+In order to get the most out of this we are going to quickly go over the basics of assembly language. That way when we see a lot of it at once, we aren’t completely overwhelmed.<br>
+</p>
+<p>Note that assembly language depends on the target system that the software was compiled for. For example there are different assembly language codes for intel 32bit (IA32) vs intel 64 bit vs ARM. For simplicity, we shall stick to a discussion of IA32. The concepts discussed here can easily be applied to other architectures and languages after a short study of their language rules and how they compare to IA32.</p>
+</section>
+<section id="assembly-language-basics" class="level2">
+<h2 class="anchored" data-anchor-id="assembly-language-basics"><strong>Assembly language Basics</strong></h2>
+<section id="register-set-and-data-types" class="level3">
+<h3 class="anchored" data-anchor-id="register-set-and-data-types"><strong><ins>Register Set and Data Types</ins></strong></h3>
+<p>We’ll start with the register set and data types. Note that since we are looking at a specific architecture, this might look slightly different from the version you saw in CSC/CYEN 132.<br>
+<br>
+The x86 architecture has eight general purpose registers that are each 32 bits long as shown in the diagram below. A few of them can be further divided into 8 and 16 bit registers. The names and sometimes their purposes are mostly historical but it is still important to understand them.<br>
+</p>
+<p><img src="R4.png" class="img-fluid"></p>
+<p>Data of different sizes can be stored in the general purpose registers in different forms. Note that the general purpose registers are EAX, EBX, ECX, EDX, ESI and EDI.<br>
+- Bytes or 8 bits can be stored in AL, BL, CL, and DL<br>
+- Words or groups of 16 bits can be stored in AX, BX, CX, and DX<br>
+- Double words or groups of 32 bits can be stored in EAX, EBX, ECX, and EDX.<br>
+- Quad words or groups of 64 bits can be stored across pairs of registers typically EDX:EAX<br>
+</p>
+</section>
+<section id="data-movement." class="level3">
+<h3 class="anchored" data-anchor-id="data-movement."><strong><ins>Data Movement.</ins></strong></h3>
+<p>One of the most common operations in assembly is moving data. This typically falls in one of 5 types.<br>
+1. Immediate to register e.g.&nbsp;storing a numerical value that is part of an instruction in a register.<br>
+2. Register to register<br>
+3. Immediate to memory e.g.&nbsp;storing a numerical value that is part of an instruction in a location in memory. The specific address would be stored as the value in a register in the cpu.<br>
+4. Register to memory and vice versa. Similar to above, if memory is going to be accessed, its location needs to be stored in one of the registers in the cpu.<br>
+5. Memory to memory. This type of data movement is not common at all. In fact, most architectures do not even support it at all. If any data needs to be moved from a memory location to another location, it would have to be moved to one of the registers temporarily.<br>
+<br>
+The form of the command is<br>
+</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>mov destination, source ; this is what a comment looks like.</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>mov ecx, 0xF005F    ; store the value 0xF005F in the register ECX.</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>mov esi, ecx        ; ESI = ECX</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>mov ecx, [eax]  ; EAX contains an address. Go to that address and               ; store the value found there in the register ECX.</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>mov [ebx], ecx  ; store the value found in ECX in the location                  ; referenced by EBX.</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>mov eax, [esi+0x34] ; go to the location 0x34 after the address in                  ;ESI. retrieve that value and store it in EAX.</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>mov dword ptr [eax], 1  ; store the 32 bit representation of                            ; 1 in the address referenced by EAX.</span></code></pre></div>
+<p>Many times the size of the data item can be inferred from the instruction. For example mov eax, ebx could only mean move the 32 bits in ebx to eax since the source register (ebx) is a 32 bit register.<br>
+<br>
+However there are cases where the interpretation can be ambiguous and in those cases requires a size directive immediately after the mov command. Examples include <strong>byte ptr</strong>, <strong>word ptr</strong>, and <strong>dword ptr</strong> which specify that the data in question should be 8, 16 or 32 bits wide respectively.<br>
+<br>
+Another common command related to data movement is the <samp><strong>lea</strong></samp> command. <samp><strong>Load Effective Address</strong></samp> evaluates the address in its second argument and stores the result in the register specified by its first argument. Note that it stores an address and not the value and is typically used for getting a pointer to an address in memory.<br>
+</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>lea register addresslocation</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>lea eax [ebx+4*esi] ; EAX will store the address evaluated from the                     ; expression in the square brackets.</span></code></pre></div>
+</section>
+<section id="arithmetic-operations." class="level3">
+<h3 class="anchored" data-anchor-id="arithmetic-operations."><strong><ins>Arithmetic Operations.</ins></strong></h3>
+<p>Basic mathematical and logical operators are supported. These include addition, multiplication, division, subtraction, and, or, not, xor, as well as left and right shift. Most of these should be straightforward in their interpretation.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>add esp, 0x13   ; ESP = ESP + 0x13</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>sub ecx, eax    ; ECX = ECX – EAX</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>inc ebx     ; EBX = EBX + 1</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>dec edi     ; EDI = EDI – 1</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>or eax, 0xFFFD  ; EAX = EAX | 0xFFFD</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>and ebx, 6  ; EBX = EBX &amp; 6</span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>xor eax, eax    ; EAX = EAX ^ EAX</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>not edi     ; EDI = ~EDI</span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>shl cl, 3       ; CL = CL &lt;&lt; 3</span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>shr ecx, 2  ; ECX = ECX &gt;&gt; 2</span></code></pre></div>
+<p>The left and right shift operations appear more frequently than one would think especially given you might have never used them since you saw them in CSC/CYEN 130. Left and right shift are computationally cheaper alternatives to multiplying and dividing by powers of two. For example, 100/2 is the same as 100&gt;&gt;1 and 546/16 is the same as 546&gt;&gt;4 while 234*8 is the same as 234&lt;&lt;3.<br>
+<br>
+Multiplication and division are slightly different from the basic forms discussed above.<br>
+<br>
+MUL only works on unsigned numbers and takes one argument i.e.&nbsp;the location of the multiplier. The multiplicand is always assumed to be in either AL, AX or EAX and the product will always be stored in AX, DX:AX, or EDX:EAX. Note that when multiplying two numbers, the product has the potential to require double the number of bits for storage hence the need for much larger register space for the product.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>mul ebx ; EDX:EAX = EAX * EBX</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>mul bl  ; AX = AL * BL</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>mul dx  ; DX:AX = AX * DX</span></code></pre></div>
+<p>See if you can figure out what the snippet below is doing.<br>
+</p>
+<div class="sourceCode" id="cb6"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>mov eax, 3</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>mov ecx, 0x23232323</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>mul ecx</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>mov eax, 4</span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>mov ecx, 0x78787878</span>
+<span id="cb6-6"><a href="#cb6-6" aria-hidden="true" tabindex="-1"></a>mul ecx</span></code></pre></div>
+<p>Note that in the examples above, one of the products cannot be stored using just 32 bits. This is a demonstration of the reason why multiplication of two registers will require the result to be stored in a larger register (which in the commands above is EDX:EAX)<br>
+<br>
+IMUL works on signed numbers and could take either 1, 2 or 3 arguments.<br>
+</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>imul ebx            ; EDX:EAX = EAX * EBX i.e. same as mul command</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>imul esi, 0x13  ; ESI = ESI * 0x13</span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>imul ecx, esi       ; ECX = ECX * ESI</span></code></pre></div>
+<p>DIV and IDIV look very similar to MUL. They only take a single argument and are inherently tied to the EAX register. The argument stores the divisor. Because the quotient could potentially be much smaller in size than the divisor, the result is stored in a smaller register. The result will constitute of both the quotient and remainder pair which are stored in AL/AH or AX/DX or EAX/EDX.</p>
+<div class="sourceCode" id="cb8"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a>div ebx     ; EDX:EAX / EBX. Quotient in EAX, remainder in EDX</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>div cl      ; AX / CL. Quotient in AL, remainder in AH.</span></code></pre></div>
+</section>
+<section id="stack-operations." class="level3">
+<h3 class="anchored" data-anchor-id="stack-operations."><strong><ins>Stack Operations.</ins></strong></h3>
+<p>A stack is used to invoke a function and as such, stack operations will be pretty common in assembly language. The stack is NOT located in the registers but rather in contiguous locations in memory. The beginning and end of the stack is typically stored in ESP and EBP respectively. Both these registers can be manipulated to adjust the beginning and end point of the stack during code execution. This allows for functions to have easily accessible local variables that can then be discarded by moving the beginning and end points of the stack again.<br>
+<br>
+Keeping track of the interplay between the registers and the ever changing stack can be a little tricky to grasp at the beginning but don’t forget that your brain is way more complicated than a computer and in the end, all it is doing is very simple data manipulations.</p>
+<p><img src="R5.png" class="img-fluid"></p>
+<p>The stack uses two commands both of which implicitly change ESP. <strong>Push</strong> reduces ESP (typically by 4 bytes or 32 bits) and then stores the value in the new location referenced by ESP. Note that reducing the value of ESP has the effect of growing the stack by adding a new memory location to the stack. <strong>Pop</strong> stores the data referenced by ESP before increasing it. Increasing ESP has the effect of shrinking the stack.</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>push value  ; reduce ESP and store value in location referenced                 ; by    new ESP value. </span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>pop location    ; store value referenced by ESP in location, then</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>                ; increase ESP value</span></code></pre></div>
+<p>See if you can follow what happens in memory and in the registers during the following sequence of code.</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a>; assume ESP = 0xb20000</span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a>mov eax, 0xF00D</span>
+<span id="cb10-3"><a href="#cb10-3" aria-hidden="true" tabindex="-1"></a>mov ebx, 0xFACE</span>
+<span id="cb10-4"><a href="#cb10-4" aria-hidden="true" tabindex="-1"></a>mov ecx, 0xF001</span>
+<span id="cb10-5"><a href="#cb10-5" aria-hidden="true" tabindex="-1"></a>mov edx, 0xD001</span>
+<span id="cb10-6"><a href="#cb10-6" aria-hidden="true" tabindex="-1"></a>push eax            ; what do the stack and registers look like?</span>
+<span id="cb10-7"><a href="#cb10-7" aria-hidden="true" tabindex="-1"></a>push ebx</span>
+<span id="cb10-8"><a href="#cb10-8" aria-hidden="true" tabindex="-1"></a>pop esi</span>
+<span id="cb10-9"><a href="#cb10-9" aria-hidden="true" tabindex="-1"></a>pop edi</span></code></pre></div>
+<p>As far as functions are concerned, a lot of the abstraction that makes them very appealing and easy to use in high-level programming languages is lost by the time it makes it to the assembly language.<br>
+<br>
+There are two extra commands we need to understand to know how functions look like in assembly.</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>call address/varName</span></code></pre></div>
+<p>The call command does two tasks.<br>
+<br>
+1. It pushes the address immediately after it onto the stack. Note that this will involve reducing ESP and then putting that address value on top of the stack.<br>
+2. It then changes EIP to the call destination as defined by the address/varName in the command.<br>
+<br>
+This is the first command we have discussed that has the potential to change the sequential nature of the commands in assembly. Pushing the address onto the stack allows the system to know which command to proceed with when the function is completed. Changing the EIP allows the system to know where the function assembly code is located so that it can begin executing it.</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a>ret</span></code></pre></div>
+<p>The ret command is typically found in the assembly code corresponding to the function and marks the end of that function. It does this by popping the address on top of the stack into EIP and transferring control to it. Recall that we stored the address we would want to go back to on the stack with the call command. The ret command puts that address into EIP so that the system will know where to proceed.<br>
+<br>
+As a practice run of the stack operations, see if you can figure out what the following snippets of code are doing and how they are doing it. You will need to keep track of both the registers and a block of memory denoting the stack.</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a>; assume a function (that we’ll refer to as mystery) is defined as </span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>; shown below. We’ll refer to this section of code as Section A.</span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>push ebp</span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>mov ebp, esp</span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>…</span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>movsx eax, word ptr [ebp + 8]</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a>movsx ecx, word ptr [ebp + 0xC]</span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>sub eax, ecx</span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>…</span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>mov esp, ebp</span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>pop ebp</span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>ret</span></code></pre></div>
+</section>
+<section id="further-along-in-the-code-the-function-is-invoked-using-the-following-code" class="level3">
+<h3 class="anchored" data-anchor-id="further-along-in-the-code-the-function-is-invoked-using-the-following-code"><strong>Further along in the code, the function is invoked using the following code</strong></h3>
+<div class="sourceCode" id="cb14"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>; We’ll refer to this section of code as Section B.</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>; assume eax has the value 5, and ecx has the value 8</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>push eax</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>…</span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>push ecx</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>call mystery    ; mystery could be a memory address, or assembly                    ; function name</span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>add esp, 8</span></code></pre></div>
+</section>
+<section id="dont-forget-that-adding-4-to-an-address-has-the-effect-of-moving-you-to-the-next-memory-location.-similarly-adding-8-will-move-you-two-blocks-over-and-c-will-move-you-three-blocks-over." class="level3">
+<h3 class="anchored" data-anchor-id="dont-forget-that-adding-4-to-an-address-has-the-effect-of-moving-you-to-the-next-memory-location.-similarly-adding-8-will-move-you-two-blocks-over-and-c-will-move-you-three-blocks-over."><strong>Don’t forget that adding 4 to an address has the effect of moving you to the next memory location. Similarly adding 8 will move you two blocks over, and C will move you three blocks over.</strong></h3>
+<p><br>
+</p>
+</section>
+<section id="control-flow." class="level3">
+<h3 class="anchored" data-anchor-id="control-flow."><strong><ins>Control Flow.</ins></strong></h3>
+<p>Control flow is how assembly would deal with selection and repetition i.e.&nbsp;if/else, switch/case and while/for constructs that you would find in higher level programming languages. The commands in this section allow for the execution to be non-sequential i.e.&nbsp;allows for the system to skip to a line of code later in the program as a result of a test of some sort. All the commands will depend on the EFLAGS register which contains 32 flags that are updated with each mathematical operation that is executed. Common EFLAGS that are used include:<br>
+- Zero Flag (ZF). Set to 1 if the result of the previous operation is zero.<br>
+- Sign Flag (SF). Set to match the most significant bit of the result of the previous calculation.<br>
+- Carry Flag (CF). Set to 1 if the previous calculation required a carry.<br>
+- Overflow Flag (OF). Set to 1 if the previous calculation resulted in an overflow.<br>
+<br>
+The commands themselves include CMP, TEST, JMP, and Jcc where CC is any of multiple options for conditional code.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a>cmp eax, ebx    ; subtract EBX from EAX without changing EAX and                    ; update the EFLAGS accordingly.</span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>test eax, ebx   ; perform an AND operation between EAX and EBX                  ; without changing either, but update the EFLAGS                    ; accordingly.</span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>jmp &lt;label&gt; ; move execution to the memory location indicated by                ; the label.</span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>j[cc] &lt;label&gt;   ; move execution to that location if the conditional                ; code [cc] is satisfied.</span></code></pre></div>
+<p>Common conditional codes include:<br>
+1. JB/JNAE: Jump if Below/Neither Above nor Equal<br>
+2. JNB/JAE: Jump if Not Below/Above or Equal<br>
+3. JE/JZ: Jump if Equal/Zero<br>
+4. JNE/JNZ: Jump if Not Equal/Not Zero<br>
+5. JL/JNGE: Jump if Less than/Not Greater than or Equal<br>
+6. JGE/JNL: Jump if Greater or Equal/Not Less than<br>
+7. JG/JNLE: Jump if Greater/Not Less than or Equal.<br>
+<br>
+You will notice that there is no specific command to repeat a line of code. However, any repetition constructs can be rewritten using just if statements and goto statements and that is what is done during the compilation process.<br>
+<br>
+With this brief introduction/recap of assembly language, I believe it’s time that we dived into the deep end and looked at some programs to see if we can identify what is going on and perhaps even adjust it for our own purposes.</p>
+</section>
+</section>
+<section id="java-reflection." class="level1">
+<h1>Java Reflection.</h1>
+<p>We shall start getting our hands dirty with java. Note that this section will NOT involve assembly language. Recall that this is one of the languages that is partially compiled into byte code. The byte code can be distributed to any user who wants to execute it without needing to make any accommodations for different target systems. Additionally, one of the features of byte code is it provides some kind of security such that users cannot easily figure out what the code is.</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>$ cat Test.class</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>$ cat TestTest.class</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>$ java TestTest</span></code></pre></div>
+<p>Java allows for programs to examine and potentially manipulate themselves during their own execution. For example, it is possible for a class to get and display the names of its members. It is also possible for another program written in java to modify the behaviour of classes, methods and interfaces at runtime. This ability to “reflect” doesn’t come with many other languages.<br>
+<br>
+The TestTest program seems self explanatory. It utilizes the Test class which we know little about other than how to use it properly. But let’s write another program to “reflect” upon it to see if we can find out anything about it we shouldn’t know.</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>cf ReflectionTest0[1,4].java</span></code></pre></div>
+<p>If going over Test.class did not give you a good understanding of the power that can be wielded by a person with a good grasp of the Reflection library, let’s go over Countdown.class.</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>cf ReflectionCount0[1-4].java</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a># how can I get it to give me the password earlier?</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a># There are two ways to do this. Which one is better?</span></code></pre></div>
+<p>Hopefully you can see the implications of this power. There is a story that some programmers did something similar to a game of Runescape and gave themselves a lot of game money which they then sold to other players of the game for real money…until they were discovered and sued.<br>
+<br>
+The beauty of this style of reverse engineering is that it doesn’t even really require a lot of extra knowledge to start using it. As long as you understand the terminology behind object oriented programming in java, you can do it. The downside is that it only works for java.<br>
+<br>
+</p>
+</section>
+<section id="radare-2" class="level1">
+<h1>Radare 2</h1>
+<p>In order to reverse engineer more than java, we are going to have to get back to our assembly language. The tool in question that we shall use is called radare 2. There is no way to grasp the full capabilities of radare in the short time we are devoting to it in this class. In fact, it is going to look overwhelming at the beginning but hopefully we know just enough to survive today. And then with more time and practice, we shall get comfortable enough with it to do some real analysis.<br>
+<br>
+Radare2 is a disassembler and debugger with a lot of functionality. Its open source and a competitor of more well known tools like IDAPro and Ghidra. The most updated version of radare2 is maintained on github and so its installation process is a little bit unconventional.</p>
+<div class="sourceCode" id="cb19"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>$ sudo apt-get update   # update your list of repositories</span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>$ sudo apt-get upgrade  # if you have time/internet, upgrade any </span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>                        # outdated software on your system.</span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>$ sudo apt-get install git build-essential  # install git and </span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>                        # software essential to writing programs.</span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a># navigate to a directory you are comfortable with downloading and </span>
+<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a># installing to. Make sure it is a directory without spaces in its </span>
+<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a># name coz apparently that may cause installation issues. A </span>
+<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a># suggestion is Downloads, or a specific folder on your Desktop.</span>
+<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>$ git clone https://github.com/radare/radare2</span>
+<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a>$ cd radare2    # navigate to the radare2 directory that has just </span>
+<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a>                # been created.</span>
+<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>$ sys/install.sh    # execute its install script.</span></code></pre></div>
+<p>Any time that you want to <strong>update</strong> it, navigate to wherever the radare2 folder was stored and re-execute its installation script.</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>$ ./sys/install.sh  # to update it anytime</span></code></pre></div>
+<p>Alternatively, if you want to <strong>delete/uninstall</strong> it, make sure you are in the radare2 folder when you execute the following commands.</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>$ make uninstall</span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>$ make purge</span></code></pre></div>
+<section id="getting-started." class="level3">
+<h3 class="anchored" data-anchor-id="getting-started.">Getting Started.</h3>
+<p>A quick piece of advice before we start. It is highly encouraged that you run this process on a virtual machine whenever you are analyzing any piece of software. However, you can be sure that the software I am giving you is safe and therefore you can run it on your host system (although that is something a more nefarious actor would say too). I would also suggest making a copy of the executable so that you have the original to revert to should you make any changes to it (intentionally or inadvertently).</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a>$ r2 -h # to find some help in starting.</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>$ r2 -d filename    # to open the file in debug mode</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>$ r2 -w filename    # to open the file in write mode</span></code></pre></div>
+<p>One should only open the file in write mode when they have a good understanding of the program and intend to make actual changes to it. One would typically use the debug mode to get that understanding. Let’s start by analyzing a very simple program: <strong><samp>1.exe</samp></strong><br>
+<br>
+Once open, radare2 will open a shell. It prints out a fortune every time you do so. The shell offers us the option to run commands and by default is opened at the entry-point address of the program. The value on the left of the prompt is the location in memory that you are currently at in your debug process.</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>&gt; ? # find out the command options available</span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>&gt; i?    # find out the command options available that start with I</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>&gt; aa?</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>&gt; iM    # find out where the main program is</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>&gt; iI    # print out some information about the binary.</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>&gt; ie    # list all entry points to the program.</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>&gt; aaa</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>&gt; q     # IF YOU EVER WANT TO QUIT.</span></code></pre></div>
+<p>Its typically a good thing to start with analyzing the program – <strong><samp>aaa</samp></strong>. Note that this could have been done at startup with the <strong><samp>r2 -A</samp></strong> command. <strong><samp>Analyze all</samp></strong> allows radare to go through the program and match names to interesting offsets/memory locations e.g.&nbsp;strings, functions, and symbols. This will make navigating through the program easier going forward. These names are referred to as flags. Flags of a similar type are grouped into what is referred to as flag spaces and you can investigate any of them.</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>&gt; fs            # to list all flag spaces (and their frequency)</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>&gt; fs &lt;flagspace&gt;    # to narrow down to a specific flag space</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>&gt; f         # and print out all the flags in that flagspace</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>&gt; fs *  # to go back to all the flags.</span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>            # Sometimes that is all it takes to hack a program.</span></code></pre></div>
+<p>For example <strong><samp>fs registers; f</samp></strong> should reveal that radare has identified some familiar names.<br>
+You might have noticed that as a result of its analysis, r2 flagged some memory locations as strings (<strong><samp>fs strings; f</samp></strong>). r2 marked all these flags with the <strong><samp>str</samp></strong> precursor. In order to look at these strings, we are going to go back to our <strong><samp>info</samp></strong> commands.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>&gt; iz            # find the strings in data portion of the program.</span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>&gt; izz   # find the strings in the entire binary.</span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>            # Sometimes that is all it takes to hack a program.</span></code></pre></div>
+<p>We can see some interesting features of a few strings. Most of the strings make sense. I wonder what we can try out with the one that doesn’t make sense.<br>
+We could analyze the references to these strings i.e.&nbsp;see what commands or memory locations actually use those string flags.</p>
+<div class="sourceCode" id="cb26"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>&gt; axt str.  # hitting tab space should reveal all your options.</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a>&gt; axt str.&lt;specific string flag&gt;    # shows you how/when that flag is                               # used.</span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>&gt; axt @@ str.*      # @@ is “for each”, str.* is a way of accessing                     # all the string flags in this command.</span></code></pre></div>
+<p>We are beginning to see the addresses and commands in assembly where these strings are being used. The results of some of these commands should look familiar to us since we discussed them at the beginning of this lecture.<br>
+<br>
+All this time, we have been at the entry point of the program. This is shown by the fact that the value to the left of the cursor, which denotes where in memory you are, has not changed since we began our analysis. We can move to other parts in the code for closer inspection using the <strong><samp>seek</samp></strong> command.</p>
+<div class="sourceCode" id="cb27"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>&gt; axt str.  # hitting tab space should reveal all your options.</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>&gt; axt str.&lt;specific string flag&gt;    # shows you how/when that flag is                               # used.</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>&gt; axt @@ str.*      # @@ is “for each”, str.* is a way of accessing                     # all the string flags in this command.</span></code></pre></div>
+<p>Time to dive in and look at some assembly. To do that, we’ll have to disassemble the code and print it out.</p>
+<div class="sourceCode" id="cb28"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a>&gt; pdf   # take your time looking at the output and see if you can           # identify a few familiar things.</span></code></pre></div>
+<p>What you should see is some visual screen representation of where you are in memory i.e.&nbsp;main function. It shows the memory location, opcodes and operands, as well as the assembly language representation of the commands. It might also have some arrows on the left showing where successful jump commands will go.</p>
+<p><img src="R6.png" class="img-fluid"></p>
+<p>It might seem like a lot but it is made up of small simple commands, the vast majority of which we spent a lot of time discussing earlier in this lecture. So with enough time, the vast majority of this should make some sense.<br>
+<br>
+Looking over the code, one begins to get an idea of the general layout of the program and perhaps even potential pseudo-code for it.<br>
+<br>
+Radare is equipped with a <strong><samp>visual</samp></strong> mode that might help one get a better grasp of the big picture of the code.</p>
+<div class="sourceCode" id="cb29"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>&gt; v # load visual mode. Your arrow keys will allow you to move up, </span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    # down and sideways in your code.</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a># to use normal r2 commands in visual mode, you’ll have to use it </span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a># like vim i.e. “:” followed by the command.</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>q # to quit out of visual mode</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>p # to switch panes in visual mode between disassembly, registers, </span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a># and the stack (all of which we have seen before)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>; &lt;comment&gt; &lt;Enter&gt; # if you want to add your own comments to the </span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a># code at a specific point</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>;-  # to remove the comment.</span></code></pre></div>
+<p>Another cool feature for those of us who prefer visual cues is VV. This activate the visual graph view. You might need to zoom out to see the relationships between different blocks of code.</p>
+<div class="sourceCode" id="cb30"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>&gt;VV # activate the graph view. Direction arrows to slide.</span></code></pre></div>
+<p>As we mentioned before, take your time to look over the code and see if you can figure out what is going on. I don’t expect you to know what every single command is doing but rather what the big picture is. Take advantage of the provided radare cheat sheet and see if you can mess around and move around in the code. Its okay if you get stuck somewhere as it is a simple program and you can easily end the process and start all over again.<br>
+<br>
+When you feel like you are not as freaked out about everything, it is time to make a few adjustments to the file.<br>
+</p>
+</section>
+<section id="changing-things-up---temporarily." class="level2">
+<h2 class="anchored" data-anchor-id="changing-things-up---temporarily.">Changing things up - temporarily.</h2>
+<p>My analysis of <strong><samp>1.exe</samp></strong> shows that there is a <strong><samp>test</samp></strong> command that determines whether to proceed to success or to jump to failure. My first thought would be to trick this <strong><samp>test</samp></strong> into failing so that we can proceed to <strong><samp>success</samp></strong>.<br>
+This particular jump is JE which we know is related to JZ and therefore the z bit of the eflags register.</p>
+<div class="sourceCode" id="cb31"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>$ r2 -d 1.exe</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>&gt; aaa   # to analyze the whole program</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>&gt; s main    </span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>&gt; v             # and then scroll to the appropriate line of code.</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>F2          # to set a break point</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>; some comment  # perhaps even add a comment</span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>q           # to quit out of visual mode    </span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>&gt; dc            # to run the program up till the break point</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>&gt; v         # to go back to visual mode to inspect the state</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>q           # to quit out of visual mode    </span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a>&gt; dr zf # to find the value of the z bit</span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>&gt; dr zf=0   # to change it to zero</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>&gt; dc            # to proceed with execution </span></code></pre></div>
+<p>Take your time with the sequence above. Remember that ? will allow you to look up commands and what they potentially do.<br>
+<br>
+<br>
+Another approach would be to change the command that says jump if equal to the opposite…</p>
+<div class="sourceCode" id="cb32"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a>$ r2 -d 1.exe</span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>&gt; aaa       # to analyze the whole program</span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>&gt; s main    </span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a>&gt; v                 # and then scroll to the appropriate line of code.</span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a>q               # quit out of visual mode</span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>&gt; wao recj  # to reverse the condition. </span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>&gt; dc                # to run (or continue running) the program</span>
+<span id="cb32-8"><a href="#cb32-8" aria-hidden="true" tabindex="-1"></a>&gt; ood       # to reload the program. Might not work if your</span>
+<span id="cb32-9"><a href="#cb32-9" aria-hidden="true" tabindex="-1"></a>                # path has a space in it.</span></code></pre></div>
+<p>Or change it to nothing (i.e.&nbsp;don’t do anything).</p>
+<div class="sourceCode" id="cb33"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a>$ r2 -d 1.exe</span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>&gt; aaa       # to analyze the whole program</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>&gt; s main    </span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>&gt; v                 # and then scroll to the appropriate line of code.</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>q               # quit out of visual mode</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a>&gt; wao nop       # to change the command to do nothing   </span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a>&gt; dc                # to run (or continue running) the program</span></code></pre></div>
+<p>Note that all these changes are only maintained for that session of radare and that if we reloaded the code, all our changes including break points, comments, and new lines of code would be lost.<br>
+<br>
+</p>
+</section>
+<section id="changing-things-up---permanently." class="level2">
+<h2 class="anchored" data-anchor-id="changing-things-up---permanently.">Changing things up - permanently.</h2>
+<p>Before we go with permanent change i.e.&nbsp;patching the code, its a good habit to save a copy of the file somewhere so that you have the original in case you need to restart. Another option would be to recompile the source code to get a new version of the executable but this of course depends on whether you have access to the source code. Keep track of flags and identifiers that you used to make your changes in the <strong><samp>debug</samp></strong> mode because you’ll need to know where exactly to move and what to change while in <strong><samp>write</samp></strong> mode.</p>
+<div class="sourceCode" id="cb34"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>$ r2 -w 1.exe   # opening the code in write mode.</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>&gt; aaa       # to analyze the whole program</span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>&gt; s main    </span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>&gt; v                 # and then scroll to the appropriate line of code.</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>q               # quit out of visual mode</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>DO WHATEVER YOU DECIDED TO DO BASED ON YOUR TRIALS  </span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>&gt; q         # to quit the program</span></code></pre></div>
+<p>Once you get out of the write mode, your executable should hopefully do what you wanted it to do.</p>
+<div class="sourceCode" id="cb35"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>$ ./1.exe       # should run the way you wanted it to now.</span></code></pre></div>
+<p>Let’s see if we can figure out how to patch this next program to work the way we would want it to.</p>
+<div class="sourceCode" id="cb36"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>Cf 2.exe    # figure out how to change it. You have access to </span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>            # password.cc if you want to actually see the source code.</span></code></pre></div>
+<p>Hopefully that didn’t take you too long. The password was not in plain text in the code because there were functions to obfuscate it. That shouldn’t stop us from being able to change the code to give us success though and there are multiple ways of doing that.<br>
+<br>
+For our last program of the day, we will tackle a slightly different problem albeit similar to a problem we’ve faced before.</p>
+<div class="sourceCode" id="cb37"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>Cf 3.exe    # analyze this code and see if you can figure out a way to          # make it work for us. Its no longer just a process of </span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>            # changing up some conditional code.</span></code></pre></div>
+<p>A few things to remember when adjusting this code. It is little endian which means that the bytes that are used to store a number will be ordered from the least significant byte to the most significant byte (which is opposite to how we would read a number).</p>
+<div class="sourceCode" id="cb38"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>Approaches:</span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>1. Change the jump condition. (This should be straight forward)</span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>2. Change the number it starts at.</span></code></pre></div>
+<p>We shall discuss the second approach.</p>
+<div class="sourceCode" id="cb39"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>$ r2 -d 3.exe   # we’ll start in debug mode and then change to write</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>                # mode later</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>&gt; iI                # some initial investigation reveals little endian</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>&gt; aaa       # analyze the whole program</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>&gt; afl       # we can see there is a main function</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>&gt; s main        </span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>&gt; v             # to view the main function</span></code></pre></div>
+<p>After spending some looking over the code in main, we recognize the command that sets a register to the value 0x1e8480 (which evaluates to 2,000,000). One might also notice that the opcode/operands, which are shown by the hex in the middle of the screen actually has the value 80841e.</p>
+<p><img src="R7.png" class="img-fluid"></p>
+<p>Recall that the view screen shows (in order)<br>
+1. The memory location of the command,<br>
+2. The hex value currently stored there,<br>
+3. The disassembled command, and<br>
+4. potentially some comments based on its analysis.<br>
+The values before that (i.e.&nbsp;c7459c) are the code for first half of that command.<br>
+<br>
+To change the starting value of our program, we are going to have to change the 80841e value and to do that, we are going to look at the hexadecimal representation of the entire code.</p>
+<div class="sourceCode" id="cb40"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a># scroll to make sure that the command you are going to change is at # the top of the screen.</span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>&gt; q         # to get out of the view mode. In the example above, your </span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>            # prompt should now be at address 0x00400fbb</span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>&gt; V         # Notice this is upper case V. You can press p/P to cycle </span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>            # through the view options here. Some will look familiar. </span></code></pre></div>
+<p>This view allows for the hex to be seen more clearly and potentially even edited. Note that we can see the c7459c80841e that we want to change.</p>
+<div class="sourceCode" id="cb41"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a>i           # to go into Insert mode. A cursor should appear in the             # hex value. Move it sideways till we get to the hex value          # we want to change. We want to change the 80841e to</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a>0a0000  # which is the little endian way of writing 10 which is</span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>            # 00000a</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>q           # to quit out of this editing mode. You can now hit</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>&gt; v         # to see the code with your edit.   </span></code></pre></div>
+<p><img src="R8.png" class="img-fluid"></p>
+<p>We can now run our program to see if this adjustment accomplished what we wanted it to do.</p>
+<div class="sourceCode" id="cb42"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>&gt; q         # to quit visual mode</span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>&gt; dc            # to continue execution.</span></code></pre></div>
+<p>Once you have confirmed that it does what you want it to do, we can repeat the process with radare in write mode this time.</p>
+<div class="sourceCode" id="cb43"><pre class="sourceCode default"><code class="sourceCode default"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a>#| highlight-style: tango</span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>$ r2 -w 3.exe       # open in write mode</span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>&gt; aaa           # analyze</span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>&gt; s main            # go to the main function</span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>&gt; v                 # view the code and scroll to the appropriate                   # line</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a>q                   # to quit the view mode.</span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a>&gt; V                 # upper case v to view the hex.</span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a>i                   # to enter insert mode.(cursor should appear)</span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>Scroll sideways     # till cursor is at 80841e, and then type in                    # your new values</span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>q                   # to quit hex mode.</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>&gt; v                 # to view disassembled code and confirm that </span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>                    # your changes are what you want.</span>
+<span id="cb43-13"><a href="#cb43-13" aria-hidden="true" tabindex="-1"></a>q                   # to quit visual mode</span>
+<span id="cb43-14"><a href="#cb43-14" aria-hidden="true" tabindex="-1"></a>&gt; q                 # to quit radare</span>
+<span id="cb43-15"><a href="#cb43-15" aria-hidden="true" tabindex="-1"></a>$ ./3.exe           # to run your patched version of 3.exe.</span></code></pre></div>
+<p><img src="R9.png" class="img-fluid"></p>
+<p>GREAT SUCCESS!!</p>
+</section>
+</section>
+<section id="radare-2-gui-alternatives" class="level1">
+<h1>Radare 2 GUI alternatives</h1>
+<p>This might have seemed like a lot and that is completely understandable. We emphasize radare2 even though it depends on command line because the alternatives I will mention here are built on top of it and therefore understanding radare2 and being able to use it is an obvious help.<br>
+<br>
+Additionally radare2 has been around for ages and these graphical alternatives are only new.<br>
+I personally haven’t tested them out but they come highly recommended by a former student so I’d suggest taking a look at them in case they make the process of reverse engineering easier for you to tackle.<br>
+<br>
+<strong>Cutter</strong><br>
+<a href="https://cutter.re/">https://cutter.re/</a><br>
+<strong>Iaito</strong><br>
+<a href="https://github.com/radareorg/iaito">https://github.com/radareorg/iaito</a></p>
+<p><strong>References:</strong><br>
+1. Practical Reverse Engineering. Bruce Dang, Alexandre Gazet and Elias Bachaalany.<br>
+<a href="http://www.cs.virginia.edu/~evans/cs216/guides/x86.html">2. X86 assembly guide. University of Virginia.</a><br>
+<a href="https://www.geeksforgeeks.org/reflection-in-java/">3. Reflection in Java. GeeksforGeeks.</a><br>
+<a href="https://www.oracle.com/technical-resources/articles/java/javareflection.html">4. Using Java Reflection. Oracle.</a><br>
+<a href="https://www.megabeets.net/a-journey-into-radare-2-part-1/">5. A journey into Radare 2. Megabeets.</a></p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+    var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+    var mailtoRegex = new RegExp(/^mailto:/);
+      var filterRegex = new RegExp('/' + window.location.host + '/');
+    var isInternal = (href) => {
+        return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+    }
+    // Inspect non-navigation links and adorn them if external
+ 	var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+    for (var i=0; i<links.length; i++) {
+      const link = links[i];
+      if (!isInternal(link.href)) {
+        // undo the damage that might have been done by quarto-nav.js in the case of
+        // links that we want to consider external
+        if (link.dataset.originalHref !== undefined) {
+          link.href = link.dataset.originalHref;
+        }
+      }
+    }
+  function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+    const config = {
+      allowHTML: true,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start',
+    };
+    if (contentFn) {
+      config.content = contentFn;
+    }
+    if (onTriggerFn) {
+      config.onTrigger = onTriggerFn;
+    }
+    if (onUntriggerFn) {
+      config.onUntrigger = onUntriggerFn;
+    }
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      if (note) {
+        return note.innerHTML;
+      } else {
+        return "";
+      }
+    });
+  }
+  const xrefs = window.document.querySelectorAll('a.quarto-xref');
+  const processXRef = (id, note) => {
+    // Strip column container classes
+    const stripColumnClz = (el) => {
+      el.classList.remove("page-full", "page-columns");
+      if (el.children) {
+        for (const child of el.children) {
+          stripColumnClz(child);
+        }
+      }
+    }
+    stripColumnClz(note)
+    if (id === null || id.startsWith('sec-')) {
+      // Special case sections, only their first couple elements
+      const container = document.createElement("div");
+      if (note.children && note.children.length > 2) {
+        container.appendChild(note.children[0].cloneNode(true));
+        for (let i = 1; i < note.children.length; i++) {
+          const child = note.children[i];
+          if (child.tagName === "P" && child.innerText === "") {
+            continue;
+          } else {
+            container.appendChild(child.cloneNode(true));
+            break;
+          }
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(container);
+        }
+        return container.innerHTML
+      } else {
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        return note.innerHTML;
+      }
+    } else {
+      // Remove any anchor links if they are present
+      const anchorLink = note.querySelector('a.anchorjs-link');
+      if (anchorLink) {
+        anchorLink.remove();
+      }
+      if (window.Quarto?.typesetMath) {
+        window.Quarto.typesetMath(note);
+      }
+      if (note.classList.contains("callout")) {
+        return note.outerHTML;
+      } else {
+        return note.innerHTML;
+      }
+    }
+  }
+  for (var i=0; i<xrefs.length; i++) {
+    const xref = xrefs[i];
+    tippyHover(xref, undefined, function(instance) {
+      instance.disable();
+      let url = xref.getAttribute('href');
+      let hash = undefined; 
+      if (url.startsWith('#')) {
+        hash = url;
+      } else {
+        try { hash = new URL(url).hash; } catch {}
+      }
+      if (hash) {
+        const id = hash.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note !== null) {
+          try {
+            const html = processXRef(id, note.cloneNode(true));
+            instance.setContent(html);
+          } finally {
+            instance.enable();
+            instance.show();
+          }
+        } else {
+          // See if we can fetch this
+          fetch(url.split('#')[0])
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.getElementById(id);
+            if (note !== null) {
+              const html = processXRef(id, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      } else {
+        // See if we can fetch a full url (with no hash to target)
+        // This is a special case and we should probably do some content thinning / targeting
+        fetch(url)
+        .then(res => res.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const htmlDoc = parser.parseFromString(html, "text/html");
+          const note = htmlDoc.querySelector('main.content');
+          if (note !== null) {
+            // This should only happen for chapter cross references
+            // (since there is no id in the URL)
+            // remove the first header
+            if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+              note.children[0].remove();
+            }
+            const html = processXRef(null, note);
+            instance.setContent(html);
+          } 
+        }).finally(() => {
+          instance.enable();
+          instance.show();
+        });
+      }
+    }, function(instance) {
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            div.style.left = 0;
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+        // Handle positioning of the toggle
+    window.addEventListener(
+      "resize",
+      throttle(() => {
+        elRect = undefined;
+        if (selectedAnnoteEl) {
+          selectCodeLines(selectedAnnoteEl);
+        }
+      }, 10)
+    );
+    function throttle(fn, ms) {
+    let throttle = false;
+    let timer;
+      return (...args) => {
+        if(!throttle) { // first call gets through
+            fn.apply(this, args);
+            throttle = true;
+        } else { // all the others get throttled
+            if(timer) clearTimeout(timer); // cancel #2
+            timer = setTimeout(() => {
+              fn.apply(this, args);
+              timer = throttle = false;
+            }, ms);
+        }
+      };
+    }
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
