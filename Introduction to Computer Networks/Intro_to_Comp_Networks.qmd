@@ -1,0 +1,59 @@
+---
+title: "Introduction to Computer Networks"
+date: "September 11, 2025"
+title-block-banner: "#002f8b"
+toc: true
+toc-depth: 2
+number-sections: true
+format:
+  pdf:
+    code-fold: true
+jupyter: python3
+---
+
+# Introduction
+
+A network is a "bunch of connected entities". What constitutes an entity
+or the connection really depends on the context in which you are looking
+at the network.
+
+In the context of network theory, the entities are typically referred to
+as **nodes** and the connections are referred to as **links**.
+
+![A basic network](1.png){width=40%}
+
+In the context of the internet (or any computer network), the nodes are
+typically computers, and the links are the multiple ways that computers
+can be connected to each other e.g. wirelessly, ethernet cables, etc.
+
+# Routing
+
+The main use of a computer network is to facilitate the transfer of
+messages between two nodes. The term *routing* is the process of sending
+a message along a path. We shall discuss a very basic example of
+what this process could look like in a more realistic network.
+
+![Routing a message through a network](2.png){width=40%}
+
+Assume that I had to send a message from Node 1 to Node 5.
+- Node 1 is connected only to Node 4. Therefore, the message goes to
+  Node 4
+- Node 4’s routing table shows the best way to get a message to Node 5 is to
+send it to Node 2. Therefore, the message goes to Node 2
+- Node 2’s routing table shows the best way to get a message to Node 5 is to
+send it to Node 3. Therefore, the message goes to Node 3
+- Node 3’s routing table shows it is directly connected to the destination. Therefore, the message
+goes to Node 5. 
+
+Note that no single node in the network has knowledge of every other
+node in the network. All they have is a direct connection to another
+node that they believe will get the message closer to the target node.
+
+# IP Addresses
+
+In the previous examples, we used numbers for the nodes. In reality,
+each node in a computer network has a unique number that can be used to
+identify it out of all the computers in the network.
+
+## IPv4
+
