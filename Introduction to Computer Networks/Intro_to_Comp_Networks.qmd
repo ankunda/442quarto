@@ -57,3 +57,183 @@ identify it out of all the computers in the network.
 
 ## IPv4
 
+
+![IPv4 address structure](3.png)
+
+![](4.png)
+
+![IPv4 address example](5.png)
+
+
+IPv4 addresses are made up of 4 **octets** i.e. 4 groups of 8 bits each.
+Each octet can take on any value in the range [0, 255] i.e. 256 unique
+values.
+
+This means that there are a total of 
+$$ 256^4 = 4, 294, 967, 296 $$
+unique addresses possible.
+
+This is clearly not enough for every individual computer or device
+connected to the internet to have its own unique address. They dealt
+with this restriction in a few notable ways.
+
+1. **Private IP Addresses**. Some ip address ranges e.g. 10.0.0.0/8,
+   172.16.0.0-172.31.0.0/12 and 192.168.0.0/16 can NOT be accessed from
+   the internet. They are reserved for private networks and can be
+   reused without any restriction. You might have noticed that your
+   internal virtual machine internet address was from this range.
+
+2. **Network Address Translation (NAT)** allows routers to represent
+   multiple internal private IP addresses as a single public IP address
+   when communicating with the internet. You might notice that your home
+   router does something like this i.e. you and your roommate might have
+   the same public facing ip address, but different internal addresses
+   and the router knows who to send which data to.
+
+3. **Dynmaic IP Assignment (DHCP)** allows Internet Service Providers to
+   reuse addresses i.e. a computer cannot easily just have the same
+   permanent public IP address. If you turn off your computer, your IP
+   address could be assigned to someone else.
+
+4. **Carrier-Grade NAT (CGNAT)** is similar to NAT but at a much larger
+   scale i.e. tens of thousands of subscribers could be assigned one
+   public facing IP address.
+
+5. **Subnetting and Classless Inter-Domain Routing (CIDR)**. Back when 4
+   billion addresses seemed enough, ip addresses were split into rigid
+   classes based on how many octets were for the network id i.e. class A
+   used 1 octet for the network ID, leaving $256^3$ addresses for the
+   hosts, class B used two octets for the network ID, leaving $256^2$
+   for the hosts, and class C used three octets for the network ID,
+   leaving just 256 addresses for the hosts. Class A was of course more
+   expensive to get. The problem, however, was that there was a lot of
+   wastage. If a company had 500 hosts, they had to use a class B, which
+   would leave $256^2 - 500$ unassigned addresses. These days, the
+   differences are not so rigid, and the network portion of the address
+   can be any number, not just full octets. As an example, as of right
+   now, Louisiana Tech's network portion is 23 bits. 
+
+![Output of `ifconfig` on my system showing 23 bit netmask](3_2.png)
+
+## IPv6
+
+![IPv6 address structure](6.png)
+
+![IPv6 address example](7.png)
+
+IPv6 addresses are made up of 8 *hextets*, where a hextet is a group of
+16 bits). Even if they were to permanently assign an ip address to a
+unique computer, IPv6 still has space for
+$$
+65,536^8 \approx 3.4 \times 10^{38}
+$$
+
+Just for context, the estimated number of grains of sand on planet earth
+is
+$$
+7.5 \times 10^{19}
+$$
+which means that each grain of sand on earth can have its own $4.6 \times 10^{18}$
+ip addresses.
+
+# Packet Structure
+
+Messages that are sent over a computer network are split into smaller
+units called packets. Each packet can potentially take its own unique
+path from the origin to the destination. 
+
+![TCP/IP packets](8.jpg){height=7cm}
+
+Each packet will contain a lot of information to enable successful
+routing, and reassembly into the original message at the destination.
+
+This information includes:
+
+- A source IP address
+- A destination IP address
+- A sequence number
+- A piece of the original message or data
+
+
+The sequence number is used to reassemble the message from individual
+packets to a complete message while maintaining the order.
+As an example, the table below shows how a message "Meet me at midnight
+by the park." might be split into packets and sent from Node 1 to Node 5.
+
+![Message to packets](9.png){height=4cm}
+
+# Netmasks
+
+A *network mask* (or *netmask*) is a binary value that is used to divide
+an ip address into the *network id* and the *host id*. 
+
+A netmask can be represented as either an ip address i.e. the decimal
+equivalent of the binary value of each octet e.g. 255.255.255.0 **or**
+it can be represented as the number of 1s in the netmask e.g. /24
+
+![Ways of representing a Netmask](10.png)
+
+The netmask will always be made up of consecutive 1's and then
+consecutive 0's. The portion of the netmask that is made up of 1's is an
+indication of how much of the associated IP address is for the network.
+The portion of the netmastk made up of 0's is an indication of how much
+of the IP address is reserved for the individual/unique hosts on that
+network.
+
+![](11.png)
+
+In the diagram/example above, each host (device on the network) will
+receive a unique value from 1 to 254 in the final octet.
+
+If the router needs to send a *broadcast* message i.e. a message to all
+the hosts on the network, it will use the final .255 address in its
+message.
+
+## Calculating the Network ID
+The netmask and ip address of any host can be used to calculate the
+network id.
+
+![](12.png){height=2cm fig-align="center"}
+
+Given the example host IP address and netmask above, the network id can
+be calculated from 
+
+```
+network_id = ip_address & netmask
+```
+
+![](13.png)
+
+::: {.callout-note}
+Recall that an *AND* between a 1 and any bit, is that bit. And an *AND*
+between a 0 and any bit is a 0. Therefore, *AND* between a netmask and
+any ip address maintains the first bits of the ip address, and makes the
+remaining bits 0.
+:::
+
+## Calculating the Host ID
+To calculate the host ID from the netmask and ip address, we complement
+the netmask before putting it through the same operation as above.
+
+```
+host_id = ip_address & ~ netmask
+```
+
+![](14.png)
+
+## Calculating the Broadcast address
+The broadcast address can also be calculated from the ip address and
+netmask using the *OR* operation instead of the *AND* operation.
+
+```
+broadcast_addr = ip_address | ~ netmask 
+```
+
+![](15.png)
+
+# Conclusion
+
+This section should have presented you with a very basic introduction to
+some of the terminology and basics in Computer Networks. This and more
+will be covered in **CSC 4503: Computer Networks**
+
