@@ -18,7 +18,9 @@ or the connection really depends on the context in which you are looking
 at the network.
 
 In the context of network theory, the entities are typically referred to
-as **nodes** and the connections are referred to as **links**.
+as **nodes** and the connections are referred to as **links**. There is
+a lot of overlap between networks and the concept of *Graphs* which you
+should have covered in *CSC 2203: Data Structures*
 
 ![A basic network](1.png){width=40%}
 
@@ -36,6 +38,7 @@ what this process could look like in a more realistic network.
 ![Routing a message through a network](2.png){width=40%}
 
 Assume that I had to send a message from Node 1 to Node 5.
+
 - Node 1 is connected only to Node 4. Therefore, the message goes to
   Node 4
 - Node 4’s routing table shows the best way to get a message to Node 5 is to
