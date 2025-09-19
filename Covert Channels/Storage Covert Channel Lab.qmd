@@ -280,13 +280,14 @@ the bits available to us. With just a small tweak to our algorithm, it
 is possible to use all the 10 bits in the file permissions instead of just
 7.
 
-There are a few implications we need to know though chief of which is
+There are a few implications we need to know though, chief of which is
 that we can no longer afford to include noise files. This is because
 there is no way to differentiate the noise files from the files that
 have legitimate portions of the message embedded in their permissions.
 
 To create the message, we'll need to 
-1. order the files in the server alphabetically,
+
+1. Order the files in the server alphabetically,
 2. Create a complete message by appending all the bits of the hidden
    message together, and then splitting them into groups of 10. Each 10
    bit grouping will be applied to a single file.
