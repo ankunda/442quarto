@@ -1,6 +1,6 @@
 ---
 title: "Timing Covert Channel Lab"
-date: "March 28, 2025"
+date: "September 20, 2025"
 title-block-banner: "#002f8b"
 toc: true
 toc-depth: 2
@@ -44,47 +44,110 @@ entirety...perhaps the string "EOF"
 
 ## Sending a basic message
 
-Let's create a basic TCP server using python's socket library.
+Let's create a basic TCP server using Go's net library. Our server will
+accept connections from any clients on a specified port, listen to any
+incoming messages across that connection, and then echo the message back
+to the client.
 
-```python
-import socket
+```go
+package main
 
-# define a host and a port
-HOST = "127.0.0.1"	# This is the ip address for a local host
-PORT = 1337		# Choose a port number that is not typically
-			# used by other traffic.
+/* 
+*   we'll need bufio for input/output, fmt for printing messages, net for
+*   networking functions, and os to help us exit the program if things go 
+*   south. 
+*/
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"os"
+)
 
-# Now to create a Socket object and connect it to the specific host and
-# port identified by our constants above
+// set up some constants to make your server easier to tweak
+const (
+    address = ""	// allow all connections. Use 127.0.0.1 if you
+			// only want local connections.
+    port = "1337"	// the port we will be using
+)
 
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s. bind((HOST, PORT))
-s.listen(0)	# the argument determines how many connection requests
-		# will be added to the queue. 0 means that it will not 
-		# add any new request to the queue and will reject any
-		# incoming requests if it is already dealing with one.
 
-print(f"Server is listening on {HOST}:{PORT}")
+func main() {
+	// Start listening on TCP to specified port
+	listener, err := net.Listen("tcp", address + ":" + port)
 
-while True:
-    # Note that if you wanted your server to be able to deal with more
-    # than one client at a time, this portion would be threaded. For our
-    # demonstration, you won't need to create a threaded server.
-    
-    c, addr = s.accept()	# store client details when connection
-				# comes in. "c" is the client socket,
-				# and "addr" is the client address.
-    
-    print(f"Connection from {addr} established")
+	// if there is an error in starting the server, end the program
+	// with an appropriate error message.
+	if err != nil {
+		fmt.Println("Error starting server:", err)
+		os.Exit(1)
+	}
 
-    # the b in the sendall command below ensures that the message is
-    # sent as bytes, which is the form that sendall requires.
-    c.sendall(b"Hello from the other side.")
-    c.sendall(b"I must have called a thousand times")
+	// use the defer functionality to close the listener whenever
+	// main() is done.
+	defer listener.Close()
 
-    # make sure to close the connection
-    c.close()
-    
+	fmt.Printf("Server listening on %s:%s", address, port)
+
+	// start an infinite loop that will handle all incoming
+	// connections.
+	for {
+		// Accept new connections
+		conn, err := listener.Accept()
+	
+		/*  
+		*   if something goes wrong with the incoming connection, 
+		*   print out the error, and continue to the next
+		*   iteration/connection. 
+		*/
+		if err != nil {
+			fmt.Println("Error accepting connection:", err)
+			continue
+		}
+
+		/* 
+		*   However, if connection is good, print out a message,
+		*   and then call a goroutine (thread) with the custom 
+		*   function handleConnection() and the connection conn
+		*/
+		fmt.Println("New client connected!")
+
+		go handleConnection(conn)
+	}
+}
+
+// custom function to be executed with each connection received.
+func handleConnection(conn net.Conn) {
+
+	// use the defer functionality to ensure that the connection is
+	// closed at the end of the function no matter what.
+	defer conn.Close()
+
+	// prepare to read information from the connection.
+	reader := bufio.NewReader(conn)
+
+	/*
+	*    An infinite loop to read whatever string is sent from the
+	*    client, print it to the screen, and send a copy of that same
+	*    message back to the client.
+	*/
+	for {
+		// Read data from client
+		message, err := reader.ReadString('\n')
+		
+		// if there is an error, log it, and then end the
+		// function
+		if err != nil {
+			fmt.Println("Client disconnected.")
+			return
+		}
+		fmt.Print("Message received:", message)
+
+		// Send a response back
+		conn.Write([]byte("You said: " + message))
+	}
+}
+
 ```
 
 :::{.callout-tip}
@@ -99,56 +162,109 @@ client/port.
 
 1. Using **telnet**
 ```sh
-telnet 127.0.0.1 1337	# general form is telnet server_ip server_port
+telnet localhost 1337	# general form is telnet server_ip server_port
 ```
 Telnet is used for plain text communication and is unencrypted so don't
 use it for sensitive data.
 
 2. Using **netcat**
 ```sh
-nc 127.0.0.1 1337
+nc localhost 1337
 ```
 Hit `Ctrl + C` or type `exit` to exit. Netcat is used to test and debug
 network services.
 
+You can also share your server's ip address with your
+deskmates/groupmates to try and connect to each other's servers. If so,
+connect to their server by tweaking your commands above
+```sh
+telnet ip.ad.re.ss 1337	# OR
+nc ip.ad.re.ss 1337
+```
+where `ip.ad.re.ss` is your groupmate's ip adress.
 :::
 
-The code above is a very simple server example. We need to tweak it to
-send one character at a time with a delay between each character where
-the delay is actually our covert channel.
+## Sending an Overt message
 
-In order to do this, we shall have to make a couple of changes to our
-code above starting with importing the `sleep` command from the `time`
-library.
+The code above is a very simple server example. We need to tweak it in a
+few ways on our way to setting up our covert channel.
 
-```python
-from time import sleep
+1. We should stop it from reading any incoming messages from the client
+   (because all it should do is send messages), and
+2. We need to send our message one character at a time with a delay
+   between each character. 
+
+In order to do this, we shall have to make a few changes to our
+code above starting with importing the `time` package for its `Sleep`
+function.
+
+```go
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"os"
+	"time"
+)
 ```
 
 To make our code easier to adjust, we should probably put some time
 constants at the top of our code too.
 
-```python
-ZERO = 0.025	# How long to wait for a zero
-ONE = 0.1	# How long to wait for a one
+```go
+const (
+    address = ""	// allow all connections. Use 127.0.0.1 if you
+			// only want local connections.
+    port = "1337"	// the port we will be using
+    zero = 25		// How many milliseconds to wait for a zero
+    one	= 100		// How many milliseconds to wait for a one
+)
 ```
 
-Our algorithm for sending the message is also going to change a little
-bit. Instead of using `sendall`, we shall use `send` which allows us to
-send smaller chunks of the message.
+To capture everything we want to do with a connection, it'll probably be
+cleaner and easier to use a completely different function instead of
+`handleConnection` to deal with sending an overt message.
 
-Our loop for sending the covert message will look something like this
+```go
+func sendMessage(message string, conn net.Conn) {
+    defer conn.Close()	// make sure to close connection at end of function
 
-```python
-msg = "Some message..."
-for i in msg:
-    c.send(i)
-    if (<zero>):
-	    sleep(ZERO)
-    else:
-	    sleep(ONE)
-c.send("EOF")
-c.close()
+    for i, ch := range message {
+         _, err := conn.Write([]byte(string(ch)))
+
+        // if there is an error while writing, log it and end function
+        if err != nil {
+	    fmt.Println("Error writing to client:", err)
+            return
+        }
+
+        /*
+        * Otherwise, wait for a "zero" or "one" based on whether the
+        * index is even or odd. Of course this is just for
+        * demonstration purposes and will have to be changed when we want
+        * to actually use our covert channel.
+        */
+        if i % 2 == 0 {
+            time.Sleep(one * time.Millisecond)
+        } else {
+            time.Sleep(zero * time.Millisecond)
+        }
+    }
+        
+    fmt.Println("Overt message sent. Closing connection.")
+    return
+}
+```
+
+To accommodate this new function, we will also need to tweak our `main`
+function a little.
+
+```go
+...
+message := "This is a really message that will be sent a character at a time"
+...
+// go handleConnection(conn)	// old function call
+go sendMessage(message, connn)	// new function call
 ```
 
 ## Creating our covert message
@@ -157,51 +273,37 @@ We have most of the components to put our entire code together. However,
 we still have the question of how we know whether to transmit a 0 or 1
 for our covert message.
 
-To answer that question, we'll need to assemble our covert message
-```python
-covert = "secret" + "EOF"
-```
-then convert it to binary
-```python
-from binascii import hexlify
+To answer that question, we'll need to assemble our covert message and
+then convert it to binary. There are multiple ways to do this but one of
+them is to **use the `strings` package**.
 
-covert = "secret" + "EOF"
-covert_bin = ""
-for i in covert:
-	# convert each character to a full byte
-	# hexlify converts ASCII to hex
-	# int converts the hex to a decimal integer
-	# bin provides its binary representation (with a 0b
-	# prefix that must be removed)
-	# that's the [2:] (return the string from the third
-	# character on)
-	# zfill left-pads the bit string with 0s to ensure a
-	# full byte
-    covert_bin += bin(int(hexlify(i), 16))[2:].zfill(8)
+```go
+func getCovert() string {
+    covert := "secret" + "EOF"
+    var result strings.Builder
+
+    for _, c := range covert {
+	result.WriteString(fmt.Sprintf("%08b", c))
+    }
+    return result.String()
+}
 ```
 
 As an example, if `covert == "ABC"`, then 
-`covert_bin == "010000010100001001000011"`
+`getCovert()` would return  `"010000010100001001000011"`
 
-So our algorithm from earlier will look something like this.
-```python
-import time
+We now need to make a few tweaks to the `sendMessage` function 
 
-ZERO = 0.025
-ONE = 0.1
+```go
+...
+covert := getCovert()
+...
+if covert[i % len(covert)] == '1' {
+    time.Sleep(one * time.Millisecond)
+} else {
+    time.Sleep(zero * time.Millisecond)
+}
 
-msg = "Some message..."
-n = 0
-
-for i in msg:
-	c.send(i)
-	if (covert_bin[n] == "0"):
-	    time.sleep(ZERO)
-	else:
-	    time.sleep(ONE)
-	n = (n + 1) % len(covert_bin)
-c.send("EOF")
-c.close()
 ```
 
 # Setting up the Client
