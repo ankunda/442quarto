@@ -42,7 +42,7 @@ entirety...perhaps the string "EOF"
 
 # Setting up the server
 
-## Sending a basic message
+## Sending a basic message {#sec-basicserver}
 
 Let's create a basic TCP server using Go's net library. Our server will
 accept connections from any clients on a specified port, listen to any
@@ -309,66 +309,105 @@ if covert[i % len(covert)] == '1' {
 # Setting up the Client
 
 :::{.callout-tip}
-Historically, timing has not been super reliable on Windows. We mention
-this so that you are not shocked if the timings are not what you expect
-when on Windows. Occassionally, this unreliability has also extended to
-Linux VMs that are hosted on Windows Host machines.
+Historically, timing has not been super reliable on Windows when running
+python scripts. We mention this so that you are not shocked if the
+timings are not what you expect when on Windows. We have not yet tried
+this with *Go* so you'll be our guinea pigs.
 :::
 
 ## Receiving a Basic Message
-Let's create a basic client using python's socket library
+Let's create a basic client using Go's net library. This client should
+be able to send and receive messages from our original chat server in
+@sec-basicserver
 
-```python
-import socket
+```go
+package main
 
-# Define server address and port
-HOST = '127.0.0.1'  # Must match the server's address
-PORT = 1337         # Must match the server's port
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"os"
+)
 
-# Create a socket object
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+func main() {
+	// Connect to the TCP server
+	conn, err := net.Dial("tcp", "localhost:1337")
+	if err != nil {
+		fmt.Println("Error connecting:", err)
+		os.Exit(1)
+	}
+	
+	// prepare to close the connection when the main function is
+	// done.
+	defer conn.Close()
 
-try:
-    # Connect to the server
-    s.connect((HOST, PORT))
-    print("Connected to the server.")
+	/* This client code will allow you to type out a long message
+	*  terminated by "Enter". That message will then be sent to the
+	*  server which will read the message, and echo it back to the
+	*  client. When received, the client will print the message to
+	*  the screen, and then wait for the user to type a new message.
+	*/
 
-    # Receive data from the server
-    data = s.recv(1024)  # Receive up to 1024 bytes
-    # there might be a need to explicitly decode bytes to string 
-    # using the .decode option below
-    print("Received from server:", data.decode('utf-8'))
+	fmt.Println("Connected to server. Type a message and press Enter:")
 
-finally:
-    s.close()  # Close the connection
+	// Read from stdin and send to server
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		text := scanner.Text()
+
+		// Send to server
+		fmt.Fprintf(conn, text+"\n")
+
+		// Read response
+		response, err := bufio.NewReader(conn).ReadString('\n')
+		if err != nil {
+			fmt.Println("Error reading from server:", err)
+			break
+		}
+		fmt.Print("Server replied: " + response)
+	}
+}
+
 ```
 
 ## Receiving many small messages
 
-The code above should be able to log into your server and receive the
-overt message that is being sent from it. However, it *might* not
-exhibit the behaviour we want. This is because, depending on your
-system, there is a chance that this client will wait till a certain
-amount of information has been received as a chunk before displaying it.
+While the behaviour of the code above is adequate for a normal echo
+server, it will not suffice for our covert/overt channel transmission
+for a couple of reasons.
 
-To deal with this, we shall have to tweak our algorithm above to
+- Our client should only be receiving a message and not sending one.
+- Our client should ideally print out any message or part of the message
+  that it receives immediately instead of waiting for the entire message
+  (or a line terminated by a newline character) to be received.
 
-1. write out what it gets as soon as it gets it. This will require us
-   switching from `print` to `sys.stdout.write`
-2. Flush out any information it is storing in the buffer once its
-   written using `sys.stdout.flush`
-3. Keep on receiving this information until it gets an "EOF"
-
-```python
-import sys
+```go
+// you will need to import "io" to be able to identify an EOF message
+// Note that this is different from the literal letters EOF appended to 
+// a message.
 ...
-data = s.recv(4096)	# increased the number of bytes
-while (data.rstrip("\n") != "EOF"):
-    sys.stdout.write(data)
-    sys.stdout.flush()
-    data = s.recv(4096)	# receive the next bit of information
+// create a Reader object for the server responses
+reader := bufio.NewReader(conn)
+
+// then loop until you get to the end of the message or get an
+// error
+for {
+    r, _, err := reader.ReadRune()
+
+    if err != nil {
+        if  err == io.EOF {
+            fmt.Println("\nServer closed Connection")
+            break
+        }
+        fmt.Println("\nError reading from server:", err)
+        break
+    }
+
+    // otherwise print out the rune
+    fmt.Printf("%c", r)
+}
 ...
-s.close()
 ```
 
 ## Receiving the covert message
@@ -378,59 +417,37 @@ received message and interprete that as either a 0 or a 1. To do this,
 we'll need to use the `time` library and take multiple time measurements
 during our code's execution.
 
-```python
-from time import time
+```go
+// import the "time" library
 ...
-covert_bin = ""	# start with an empty string
+// create a slice of time.Duration objects so that you can visually
+// inspect the times to see if they fall into two or more groupings.
+var times []time.Duration
 ...
-t0 = time()	# take the time before you receive anything
-data = s.recv(4096)
-t1 = time()	# take the time after you receive something
-delta = round(t1 - t0, 3) # calculate the difference
-
-# and then translate that difference into either a 1 or a 0. Add whatever
-# it is to the covert message string
-if (delta >= ONE):
-    covert_bin += "1"
-else:
-    covert_bin += "0"
+// within the for loop getting the message
+start := time.Now()
+r, _, err := reader.ReadRune()
+stop := time.Since(start)
+...
+// printing out the final slice should allow you to observe the
+// durations and identify any details that might help you decipher
+// the covert message.
+fmt.Println(times)
 ```
 
-## Understanding our Covert Message
+## From times to characters
 
-We should have a string of 1s and 0s that make up our covert message. To
-understand it, we need to convert it to ASCII.
-
-```python
-covert = ""
-i = 0
-
-while (i < len(covert_bin)):
-    # process one byte at a time
-    b = covert_bin[i:i + 8]
-    # convert it to ASCII
-    n = int("0b{}".format(b), 2)
-
-    try:
-	    covert += unhexlify("{0:x}".format(n))
-    # in the event that we either made a mistake in our interpretation
-    # of a single bit, or we received an incorect bit, the entire
-    # character is shot and we might not be able to find its ASCII
-    # interpretation. In that case, just put a "?" so that we know there
-    # was an error with this specific character.
-    except TypeError:
-	    covert += "?"
-
-    # stop at the string "EOF"
-    i += 8
-```
+It should be relatively easy to identify an algorithm to convert the
+times from raw times to `1`s or `0`s. Once that has been done, those bit
+strings can then be converted to actual characters -- a process you have
+already done in an earlier assignment.
 
 :::{.callout-note}
 The entire **client** section of this lab has been intentionally vague.
-All the parts are there but they are not organized into a comprehensive
-solution. It will be up to you to figure out how to arrange them in
-order to get a piece of code that will log into the server, receive the
+All the parts are included in the section but they are not organized
+into a comprehensive solution, and code snippets have been scarce. It
+will be up to you to figure out how to arrange them in order to get a
+well designed piece of code that will log into the server, receive the
 overt message, compile the covert message, and interpret the covert
-message.
-*Good luck*
+message. *Good luck*
 :::
