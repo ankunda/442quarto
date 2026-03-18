@@ -14,7 +14,15 @@ In this tutorial you are shown how to setup an HTTP server, an FTP server, an SS
 
 # HTTP Server
 
-HTTP stands for Hypertext Transfer Protocol. The HTTP server will be hosted on port 80 (the default http port). For the HTTP server, we will use Apache. For more about the Apache HTTP server project, visit [https://httpd.apache.org/](https://httpd.apache.org/).
+::: {.callout-note}
+## Hypertext Transfer Protocol (HTTP)
+
+**HTTP (Hypertext Transfer Protocol)** is the foundational communication protocol of the web, used to transfer data between clients (typically web browsers) and servers. It was developed in the early 1990s by :contentReference[oaicite:0]{index=0} as part of the creation of the World Wide Web at :contentReference[oaicite:1]{index=1}. The original version of HTTP was extremely simple, supporting only basic text retrieval, but it quickly evolved into more sophisticated versions such as HTTP/1.1, HTTP/2, and HTTP/3. These newer versions improve efficiency, reduce latency, and support modern web features like persistent connections and multiplexing. HTTP operates as a stateless protocol, meaning each request from a client to a server is independent, which simplifies design but often requires additional mechanisms (like cookies or sessions) to maintain state.
+
+HTTP is used virtually everywhere on the internet, forming the backbone of web browsing, APIs, and many cloud-based services. When you visit a website, your browser sends an HTTP request to a server, which responds with resources such as HTML, images, or JSON data. In cybersecurity, HTTP is especially important because it is both a critical service and a common attack surface. Many vulnerabilities—such as cross-site scripting (XSS), SQL injection, and man-in-the-middle attacks—exploit weaknesses in how HTTP is implemented or secured. To mitigate these risks, HTTP is often paired with encryption through HTTPS (HTTP Secure), which uses TLS to protect data in transit. Understanding HTTP is essential for analyzing web traffic, configuring secure servers, and detecting malicious activity in network communications.
+:::
+
+Our HTTP server will be hosted on port 80 (the default http port). For the HTTP server, we will use Apache. 
 
 Complete the following steps to set up the server:
 
@@ -50,7 +58,15 @@ Complete the following steps to set up the server:
 
 # FTP Server
 
-FTP stands for File Transfer Protocol. Your FTP server will be hosted on port 21 (the default port). We will use Very Secure FTP Daemon, or vsftpd for short. For more about vsftpd, visit [https://security.appspot.com/vsftpd.html](https://security.appspot.com/vsftpd.html).
+::: {.callout-note}
+## File Transfer Protocol (FTP)
+
+**FTP (File Transfer Protocol)** is one of the oldest standard network protocols used to transfer files between a client and a server over a TCP/IP network. It was first standardized in the early 1970s and later formalized in RFC 959, making it older than even HTTP. FTP was designed in an era when networks were largely trusted, so its original implementation does not include encryption or strong authentication mechanisms. It operates using a client-server model and typically uses two separate channels: a control connection (for commands) and a data connection (for transferring files). FTP can function in either active or passive mode, which affects how these connections are established—an important detail when dealing with firewalls and network configurations.
+
+FTP has historically been widely used for tasks such as uploading website files to web servers, transferring large datasets, and managing files on remote systems. However, from a cybersecurity perspective, FTP presents significant risks because it transmits data—including usernames and passwords—in plaintext. This makes it highly vulnerable to packet sniffing, credential theft, and man-in-the-middle attacks. As a result, FTP has largely been replaced in secure environments by SFTP (SSH File Transfer Protocol) and FTPS (FTP Secure over TLS/SSL), both of which provide encryption for data in transit. Despite its decline in secure systems, understanding FTP remains important in cybersecurity for legacy system analysis, penetration testing, and recognizing insecure configurations that may expose sensitive data.
+:::
+
+Our FTP server will be hosted on port 21 (the default port). We will use Very Secure FTP Daemon, or vsftpd for short. 
 
 To setup the FTP server, complete the following:
 
@@ -201,7 +217,15 @@ You may need to install ftp with `brew install inetutils`. If you do not have ho
 
 # SSH Server
 
-SSH stands for Secure Shell. Your ssh server will be hosted on port 22 (the default port for ssh). We will use OpenSSH. For more info about OpenSSH visit [https://www.openssh.com/](https://www.openssh.com/).
+::: {.callout-note}
+## Secure Shell (SSH)
+
+**SSH (Secure Shell)** is a cryptographic network protocol used to securely access and manage remote systems over an unsecured network. It was developed in the mid-1990s by :contentReference[oaicite:0]{index=0} in response to the widespread use of insecure remote login protocols like Telnet, which transmitted data in plaintext. SSH provides a secure channel over a potentially hostile network by using encryption, ensuring confidentiality and integrity of data in transit. It also supports multiple authentication methods, including password-based login and public key authentication, making it both flexible and significantly more secure than its predecessors.
+
+SSH is widely used in system administration, cloud infrastructure, and cybersecurity for tasks such as remote server management, secure file transfers, and tunneling network traffic. It operates primarily over port 22 and is a critical service in most Linux environments. From a cybersecurity perspective, SSH is essential but must be properly configured to remain secure. Common risks include brute-force login attempts, weak passwords, and misconfigured key permissions. Best practices include disabling root login, enforcing key-based authentication, and using tools like fail2ban to limit repeated login attempts. SSH also underpins related secure protocols such as SFTP (SSH File Transfer Protocol), further extending its importance in protecting data and maintaining secure communications across networks.
+:::
+
+Our ssh server will be hosted on port 22 (the default port for ssh). We will use OpenSSH. 
 
 To setup the ssh server, complete the following:
 
@@ -273,6 +297,14 @@ To setup the ssh server, complete the following:
 
 
 # MySQL Server
+
+::: {.callout-note}
+## MySQL
+
+**MySQL** is an open-source relational database management system (RDBMS) that uses Structured Query Language (SQL) to store, retrieve, and manage data. It was originally developed in the mid-1990s and remains one of the most widely used database systems in the world. MySQL is a core component of the popular LAMP stack (Linux, Apache, MySQL, PHP/Python/Perl) and is commonly used to power dynamic websites, web applications, and data-driven services. It follows a client-server model, where clients send SQL queries to a MySQL server, which processes them and returns the requested data.
+
+MySQL is used extensively in web development, enterprise applications, and cloud environments due to its performance, reliability, and ease of use. From a cybersecurity perspective, MySQL is a high-value target because it often stores sensitive data such as user credentials, personal information, and financial records. Common vulnerabilities include weak authentication, improper access controls, and SQL injection attacks, where malicious input is used to manipulate database queries. To secure MySQL deployments, administrators should enforce strong authentication, limit user privileges, regularly patch the system, and use prepared statements or parameterized queries to prevent injection attacks. Proper configuration and monitoring are essential to protect the integrity and confidentiality of stored data.
+:::
 
 MySQL is an open-source relational database management system. MySQL is a combination of My, the name of the daughter of MySQL's cofounder, and SQL, the acronym for Structured Query Language. Your MySQL server will be hosted on port 3306 (the default port).
 

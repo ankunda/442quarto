@@ -1,0 +1,375 @@
+---
+title: "Lab 2 — Network Setup"
+subtitle: "Understanding and Configuring Linux Networking"
+format:
+    pdf:
+        toc: true
+        number-sections: true
+        colorlinks: true
+        output-file: "Lab 2 - Network Setup.pdf"
+---
+
+# Introduction
+
+Before you can attack or defend a networked system, you need to understand how
+networks are configured at a low level. In this lab you will learn to read your
+current network settings, manually assign an IP address from the terminal, and
+restore your original connection — all skills that are essential for the Cyber Storm
+competition.
+
+::: {.callout-note}
+## Key Concepts at a Glance
+
+| Term | What It Means |
+|---|---|
+| **IP Address** | A unique numerical label identifying a device on a network |
+| **Netmask / Subnet Mask** | Defines which portion of an IP address is the network vs. the host |
+| **CIDR Notation** | A compact way to write a network address and its mask (e.g. `10.0.0.0/8`) |
+| **DHCP** | A protocol that automatically assigns IP addresses to devices |
+| **NAT** | Network Address Translation — a technique that lets many devices share one public IP |
+| **Loopback** | A virtual interface (`lo`) that routes packets back to the same machine |
+| **Interface** | A network adapter — physical (Ethernet, Wi-Fi) or virtual |
+:::
+
+---
+
+# Background: How IP Addressing Works
+
+::: {.callout-note}
+## IP Addresses and Subnets
+
+Every device on an IP network needs three pieces of information to communicate:
+
+**1. IP Address**
+A 32-bit number (for IPv4) written as four decimal octets separated by dots, e.g.
+`138.47.166.224`. This uniquely identifies your machine on the network.
+
+**2. Subnet Mask (Netmask)**
+Also a 32-bit number, written the same way, e.g. `255.255.248.0`. The mask divides
+the IP address into two parts:
+
+- The **network portion** — bits covered by the `255` octets — identifies the
+  network your machine belongs to. All devices on the same network share this prefix.
+- The **host portion** — bits covered by the `0` octets — identifies your specific
+  machine within that network.
+
+For example, with the address `138.47.166.224` and mask `255.255.248.0`:
+
+- Network: `138.47.160.0` (the first 21 bits are fixed)
+- Host: `.166.224` (the last 11 bits are yours)
+- Valid host range on this subnet: `138.47.160.1` – `138.47.167.254`
+
+**3. Broadcast Address**
+The last address in a subnet (`138.47.167.255` above). A packet sent to the
+broadcast address is delivered to every device on the subnet.
+:::
+
+::: {.callout-note}
+## CIDR Notation
+
+Typing `255.255.248.0` is cumbersome. **CIDR (Classless Inter-Domain Routing)**
+notation expresses the same information more concisely by appending a `/` and the
+number of network bits to the IP address.
+
+`255.255.248.0` has 21 consecutive `1` bits, so it is written as `/21`.
+
+```
+138.47.166.224/21   ←→   IP: 138.47.166.224, Mask: 255.255.248.0
+10.0.0.0/8          ←→   IP: 10.0.0.0,       Mask: 255.0.0.0
+192.168.1.0/24      ←→   IP: 192.168.1.0,    Mask: 255.255.255.0
+```
+
+The `/8`, `/24`, and `/21` tell you how many bits belong to the network — and
+therefore how large the subnet is (how many hosts it can hold).
+:::
+
+::: {.callout-note}
+## DHCP — Dynamic Host Configuration Protocol
+
+When you connect a device to a network, it usually does not have an IP address yet.
+**DHCP** solves this automatically:
+
+1. Your device broadcasts a *DHCP Discover* message: "Is there a DHCP server here?"
+2. A DHCP server on the network replies with a *DHCP Offer*: "Here, use this IP address."
+3. Your device accepts the offer (*DHCP Request*) and the server confirms (*DHCP Ack*).
+
+The server also provides the **subnet mask**, **default gateway**, and **DNS servers**
+as part of the same exchange. This entire handshake happens in milliseconds every time
+you connect to a network.
+
+In this lab you will bypass DHCP and configure an address manually — this is called
+a **static** IP configuration.
+:::
+
+::: {.callout-note}
+## NAT vs. Bridged Adapter (VirtualBox)
+
+When running a virtual machine (VM), the way VirtualBox connects it to the network
+matters enormously:
+
+**NAT (Network Address Translation)**
+
+VirtualBox acts as a mini-router between your VM and the outside world. Your VM gets
+a private address (usually in the `10.X.Y.Z` range) that only VirtualBox can see.
+The host machine translates packets on the VM's behalf. The VM can reach the internet,
+but other machines on the real network *cannot reach the VM* by its IP — because that
+IP is not visible outside the host.
+
+**Bridged Adapter**
+
+VirtualBox bridges the VM's virtual network card directly onto your physical network.
+The VM gets a real IP address from your network's DHCP server (e.g. `138.47.X.Y` on
+the Louisiana Tech network) and is visible to other machines just like a physical
+device. This is required for Cyber Storm, where your VM must be reachable by other
+competitors on the same subnet.
+
+| Mode | VM gets real network IP | Other machines can reach VM | Internet access |
+|---|---|---|---|
+| NAT | no (private 10.x) | no | yes |
+| Bridged | yes | yes | yes |
+
+:::
+
+---
+
+# Using the Terminal
+
+## Checking Your Network Settings
+
+To inspect your current network configuration, run:
+
+```sh
+ifconfig
+```
+
+::: {.callout-tip}
+## Command Not Found?
+
+If `ifconfig` is not installed, add it with:
+
+```sh
+sudo apt install net-tools
+```
+:::
+
+The output will look something like this:
+
+```
+enp0s8: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 138.47.166.224  netmask 255.255.248.0  broadcast 138.47.167.255
+        inet6 fe80::a00:27ff:fe75:a790  prefixlen 64  scopeid 0x20<link>
+        ether 08:00:27:75:a7:90  txqueuelen 1000  (Ethernet)
+        RX packets 740731  bytes 1041970707 (1.0 GB)
+        RX errors 0  dropped 42  overruns 0  frame 0
+        TX packets 169179  bytes 16661316 (16.6 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 6152  bytes 687551 (687.5 KB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 6152  bytes 687551 (687.5 KB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+```
+
+### Reading the Output
+
+There are two network interfaces listed: `enp0s8` and `lo`.
+
+**`lo` — the Loopback Interface**
+
+The loopback interface is a virtual interface that routes packets straight back to
+your own machine without sending anything onto the physical network. It always has
+the address `127.0.0.1` (or `::1` for IPv6). You will see this used as `localhost`
+in many contexts — for example, when you ran `ftp localhost` or `ssh localhost` in
+Lab 3. It is mainly used for local testing and inter-process communication.
+
+**`enp0s8` — the Ethernet Interface**
+
+This is the interface connected to the real network.
+**Your interface label may differ** — common alternatives include `eth0`, `enp0s3`,
+or `ens33`. The naming convention for modern Linux interface names like `enp0s8` has
+three parts:
+
+| Part | Meaning |
+|---|---|
+| `en` | Ethernet |
+| `p0` | PCI bus 0 |
+| `s8` | Slot 8 on that bus |
+
+The key fields for this interface are:
+
+```
+enp0s8: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+        inet 138.47.166.224  netmask 255.255.248.0  broadcast 138.47.167.255
+        inet6 fe80::a00:27ff:fe75:a790  prefixlen 64  scopeid 0x20<link>
+        ether 08:00:27:75:a7:90  txqueuelen 1000  (Ethernet)
+```
+
+| Field | Value (example) | What It Means |
+|---|---|---|
+| `inet` | `138.47.166.224` | Your IPv4 address |
+| `netmask` | `255.255.248.0` | Defines your subnet (`/21` in CIDR) |
+| `broadcast` | `138.47.167.255` | Address used to reach all hosts on your subnet |
+| `inet6` | `fe80::a00:...` | Your IPv6 link-local address (auto-generated) |
+| `ether` | `08:00:27:75:a7:90` | MAC address — a hardware identifier burned into the NIC |
+| `RX / TX packets` | — | Counts of packets received / transmitted (useful for diagnosing issues) |
+
+The address `138.47.166.224/21` was assigned automatically by a **DHCP** server on
+Louisiana Tech's network.
+
+::: {.callout-caution}
+## Troubleshooting: IP Starts with `10.X.Y.Z`?
+
+If your IP address begins with `10`, your VM is in **NAT** mode. Other machines on
+the network cannot reach you, which will prevent you from participating in Cyber Storm.
+
+**Fix:**
+
+1. Power off the VM (do **not** save the machine state).
+2. In the VirtualBox main window, select the VM and click **Settings**.
+3. Go to **Network** → **Adapter 1**.
+4. Change *Attached to* from **NAT** to **Bridged Adapter**.
+5. Under *Name*, select your **Wi-Fi** adapter (often labeled with `802.11` or `WiFi`).
+6. Boot the VM back up and run `ifconfig` again.
+
+On Louisiana Tech's network the address should now begin with `138.47`.
+At home it will typically be `192.168.1.X`.
+:::
+
+---
+
+## Manually Configuring Your Network Settings
+
+For Cyber Storm, competitors are placed on the private `10.0.0.0/8` network and must
+manually assign their own static IP address. DHCP is not available in the competition
+environment.
+
+::: {.callout-note}
+## Why Manual Configuration?
+
+In competition and penetration testing scenarios, networks are often isolated from
+the internet and have no DHCP server. Being able to assign a static IP from memory
+— without a GUI — is a fundamental sysadmin and security skill. It also gives you
+precise control: you can place yourself on any subnet you choose, which matters when
+you need to communicate with specific target machines.
+:::
+
+Suppose you want to assign your machine the IP address `10.4.5.6` with a `/8`
+netmask. Run the following command, replacing `enp0s8` with your actual interface
+name:
+
+```sh
+sudo ifconfig enp0s8 10.4.5.6 netmask 255.0.0.0 up
+```
+
+Breaking this command down:
+
+| Part | Meaning |
+|---|---|
+| `sudo` | Run with administrator privileges — required to change network settings |
+| `ifconfig enp0s8` | Target this specific network interface |
+| `10.4.5.6` | The IP address to assign |
+| `netmask 255.0.0.0` | The subnet mask (`/8` — all `10.X.Y.Z` addresses are on the same network) |
+| `up` | Bring the interface online after configuring it |
+
+Verify the change by running `ifconfig` again and confirming the new address and
+netmask appear for your interface.
+
+::: {.callout-tip}
+## Testing That It Worked
+
+If you are doing this during the network setup lab, try visiting a website like
+[Google](https://www.google.com) in a browser. If the page **does not load**, that
+is expected and correct — you have moved your machine off Louisiana Tech's network
+and onto the isolated `10.0.0.0/8` network, which has no internet route.
+
+If the page **does** load, double-check that the IP address changed as expected with
+`ifconfig`.
+:::
+
+::: {.callout-warning}
+## Don't Forget Your Interface Name
+
+Every command in this section that includes `enp0s8` must use **your actual interface
+name**. Run `ifconfig` first and note the label of your Ethernet interface before
+proceeding.
+:::
+
+---
+
+## Switching Back to Louisiana Tech's Network
+
+When you are done with the competition or lab exercise, restore your connection to
+Tech's network by resetting the interface and requesting a new address from DHCP.
+Run the following three commands in order:
+
+**Step 1 — Remove the current IP address and bring the interface down:**
+
+```sh
+sudo ifconfig enp0s8 0.0.0.0 down
+```
+
+**Step 2 — Bring the interface back up (with no address yet):**
+
+```sh
+sudo ifconfig enp0s8 up
+```
+
+**Step 3 — Request a new IP address from the DHCP server:**
+
+```sh
+# On Linux Mint:
+sudo dhclient enp0s8
+
+# On Ubuntu Server (with systemd-networkd):
+sudo systemctl restart systemd-networkd
+```
+
+::: {.callout-tip}
+## Which command do I use in Step 3?
+
+- If you are running **Linux Mint** (or any Ubuntu desktop variant), use `dhclient`.
+- If you are running **Ubuntu Server**, use the `systemctl` command.
+
+Not sure? Try `dhclient` first. If it is not installed, fall back to the `systemctl`
+command.
+:::
+
+After running these commands, verify your address has returned to the `138.47.X.Y`
+range (on campus) or `192.168.X.X` (at home) by running `ifconfig`, then confirm
+internet access by visiting a website.
+
+---
+
+# Summary
+
+Here is the full sequence of what you can do in this lab, end to end:
+
+| Task | Command |
+|---|---|
+| View network interfaces | `ifconfig` |
+| Assign a static IP | `sudo ifconfig <iface> <ip> netmask <mask> up` |
+| Take an interface down | `sudo ifconfig <iface> 0.0.0.0 down` |
+| Bring an interface up | `sudo ifconfig <iface> up` |
+| Request a DHCP address (Mint) | `sudo dhclient <iface>` |
+| Request a DHCP address (Ubuntu Server) | `sudo systemctl restart systemd-networkd` |
+
+::: {.callout-tip}
+## Going Further
+
+- **Subnet math:** Practice converting between netmasks and CIDR notation. Given
+  `192.168.10.50/26`, can you work out the network address, broadcast address, and
+  valid host range?
+- **`ip` command:** The `ifconfig` command is considered legacy. The modern
+  replacement is the `ip` tool — try `ip addr show` and `ip link set enp0s8 up` to
+  see how the syntax differs.
+- **Wireshark:** Capture a DHCP handshake by running `sudo dhclient enp0s8` while
+  Wireshark is recording. You will see the four-step Discover → Offer → Request → Ack
+  exchange in real time.
+- **Static persistence:** Changes made with `ifconfig` are temporary and lost on
+  reboot. Research how to make a static IP address permanent via Netplan
+  (`/etc/netplan/*.yaml`) on Ubuntu or the Network Manager on Mint.
+:::
