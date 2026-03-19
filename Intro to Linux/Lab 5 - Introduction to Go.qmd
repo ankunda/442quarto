@@ -1,12 +1,12 @@
 ---
-title: "Lab 5 — Introduction to Go"
+title: "Lab 4 — Introduction to Go"
 subtitle: "Language Basics · Network Tools · Port Scanner Challenge"
 format:
     pdf:
         toc: true
         number-sections: true
         colorlinks: true
-        output-file: "Lab 5 - Introduction to Go.pdf"
+        output-file: "Lab 4 - Introduction to Go.pdf"
 ---
 
 # Introduction
