@@ -1,6 +1,6 @@
 ---
 title: "Cryptography"
-date: "March 23, 2026"
+date: "March 26, 2026"
 title-block-banner: "#002f8b"
 toc: true
 toc-depth: 2
@@ -530,26 +530,7 @@ Symmetric encryption is generally **fast** and computationally inexpensive, maki
 well-suited for encrypting large amounts of data — video streams, disk volumes,
 database records, and so on.
 
-```sh
-# create the file
-echo "This is a secret message" > secret.txt
-cat secret.txt
-
-# encrypt the file
-gpg --symmetric --cipher-algo AES256 secret.txt
-
-# show it is unreadable
-cat secret.txt.gpg
-
-# attempt decryption with wrong/right password
-gpg secret.txt.gpg
-
-# verify decrypted file
-cat secret.txt
-```
-
 ::: {.callout-warning}
-
 ## The Key Distribution Problem
 
 The fundamental weakness of symmetric encryption is the **key distribution problem**.
@@ -577,30 +558,6 @@ components. This asymmetry — easy one way, hard the other — is the foundatio
 systems like RSA.
 
 ![Asymmetric (Public-Key) Cryptography](3.png)
-
-```sh
-# generate the key pair
-gpg --full-generate-key
-
-# list your keys
-gpg --list-keys
-
-# create the message
-echo "This is a secret message" > secret.txt
-cat secret.txt
-
-# encrypt the file using the PUBLIC key
-gpg --encrypt --recipient "Demo User" secret.txt
-
-# show it is unreadable
-cat secret.txt.gpg
-
-# decrypt using the PRIVATE key
-gpg secret.txt.gpg
-
-# verify decrypted file
-cat secret.txt
-```
 
 ### Confidential Communication
 
@@ -651,6 +608,143 @@ impractical. Instead, modern protocols (like TLS/HTTPS) use asymmetric cryptogra
 to securely exchange a symmetric key at the start of a session, then use that fast
 symmetric key for the bulk of the data transfer. This hybrid approach gets the best
 of both worlds.
+:::
+
+---
+
+## Hands-On Demo: GPG in the Terminal
+
+`gpg` (GNU Privacy Guard) is a widely-used open-source tool that implements both
+symmetric and asymmetric encryption. It is installed by default on most Linux
+distributions and macOS, and is available for Windows. The demos below let you
+see both modes side-by-side on any Unix-like terminal.
+
+### Symmetric Encryption with GPG
+
+In symmetric mode, GPG prompts you for a passphrase and uses it to encrypt the
+file. The same passphrase is required to decrypt it — this is exactly the
+shared-secret model described above.
+
+```sh
+# --- ENCRYPT ---
+echo "This is a secret message." > plaintext.txt
+
+gpg --symmetric \
+    --cipher-algo AES256 \
+    --output encrypted.gpg \
+    plaintext.txt
+# GPG will prompt for a passphrase twice (enter: mysecretpassword)
+
+# Confirm the original is unreadable after encryption
+cat encrypted.gpg   # binary gibberish
+
+# --- DECRYPT ---
+gpg --decrypt \
+    --output decrypted.txt \
+    encrypted.gpg
+# Enter the same passphrase when prompted
+
+cat decrypted.txt   # → "This is a secret message."
+```
+
+::: {.callout-note}
+## What's Happening Under the Hood
+
+GPG derives an AES-256 key from your passphrase using a **key derivation
+function** (S2K — String-to-Key). The passphrase itself is never stored — only
+the ciphertext. Lose the passphrase and the data is gone.
+:::
+
+---
+
+### Asymmetric Encryption with GPG
+
+In asymmetric mode, GPG uses a **key pair**: a public key to encrypt and a
+private key to decrypt. The demo below simulates Alice generating a key pair,
+Bob encrypting a message to her, and Alice decrypting it.
+
+```sh
+# --- STEP 1: Alice generates a key pair ---
+gpg --batch --gen-key <<EOF
+Key-Type: RSA
+Key-Length: 4096
+Name-Real: Alice Example
+Name-Email: alice@example.com
+Expire-Date: 0
+%no-protection
+EOF
+# GPG stores the key in Alice's keyring (~/.gnupg/)
+
+# --- STEP 2: Alice exports her public key ---
+gpg --armor --export alice@example.com > alice_public.asc
+cat alice_public.asc   # Safe to share openly — this is the PUBLIC key
+
+# --- STEP 3: Bob imports Alice's public key and encrypts a message ---
+echo "Hey Alice, meet me at the library at noon." > message.txt
+
+gpg --import alice_public.asc   # Bob adds Alice's key to his keyring
+
+gpg --encrypt \
+    --recipient alice@example.com \
+    --armor \
+    --output message_for_alice.asc \
+    message.txt
+
+cat message_for_alice.asc   # Unreadable without Alice's private key
+
+# --- STEP 4: Alice decrypts with her private key ---
+gpg --decrypt \
+    --output received_message.txt \
+    message_for_alice.asc
+
+cat received_message.txt   # → "Hey Alice, meet me at the library at noon."
+```
+
+::: {.callout-tip}
+## Try Breaking It
+
+After Step 3, try decrypting `message_for_alice.asc` *without* importing or
+using Alice's key — for example by passing a different recipient key. GPG will
+refuse with a "no secret key" error. This concretely illustrates why the private
+key must remain secret: without it, the ciphertext is useless.
+:::
+
+### Digital Signatures with GPG
+
+GPG also supports **signing** — Alice uses her *private* key to sign a message,
+and anyone with her public key can verify the signature. This proves both
+**authenticity** (the message came from Alice) and **integrity** (it was not
+modified in transit).
+
+```sh
+# Alice signs a message
+echo "I, Alice, approve this document." > statement.txt
+
+gpg --clearsign \
+    --local-user alice@example.com \
+    --output statement_signed.asc \
+    statement.txt
+
+cat statement_signed.asc   # Plain text + GPG signature block appended
+
+# Anyone with Alice's public key can verify
+gpg --verify statement_signed.asc
+# → gpg: Good signature from "Alice Example <alice@example.com>"
+
+# Tamper with the signed file and verify again
+sed -i 's/approve/reject/' statement_signed.asc
+gpg --verify statement_signed.asc
+# → gpg: BAD signature from "Alice Example <alice@example.com>"
+```
+
+::: {.callout-note}
+## Clean Up
+
+When you are done experimenting, remove the test key from your keyring:
+
+```sh
+gpg --delete-secret-and-public-key alice@example.com
+```
 :::
 
 ---
