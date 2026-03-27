@@ -1,6 +1,6 @@
 ---
 title: "Covert Channels"
-date: "March 26, 2025"
+date: "March 27, 2026"
 title-block-banner: "#002f8b"
 toc: true
 toc-depth: 2

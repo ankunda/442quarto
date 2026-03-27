@@ -1,0 +1,297 @@
+---
+title: "Timing Covert Channel Lab"
+subtitle: "Hiding Messages in Delays (Python)"
+date: "March 28, 2025"
+title-block-banner: "#002f8b"
+toc: true
+toc-depth: 2
+number-sections: true
+format:
+  pdf:
+    code-copy: false
+    code-fold: true
+    geometry: margin=1in
+    fontsize: 11pt
+    colorlinks: true
+    linkcolor: "NavyBlue"
+jupyter: python3
+---
+
+In the last lecture, you covered different ways that someone might set up and exploit a covert channel. In the last lab, you set up a storage covert channel using the file permissions of an FTP server.
+
+In this lab, you will build a **timing covert channel**. You will set up a server that transmits an ordinary text message one character at a time, but encodes a *secret* message in the pauses between each successive character.
+
+As an example: a delay of 0.025 s between characters represents a `0`, while a delay of 0.1 s represents a `1`. The overt message is perfectly readable by anyone; only a receiver who knows the encoding scheme can recover the hidden message hidden in the timing.
+
+In order to transfer a longer covert message, you will need a longer overt message — each overt character carries exactly one covert bit. Using the values above, transmitting a single covert character (7 or 8 bits) requires transmitting at least 8 overt characters. This is not unreasonable: covert channels are typically **low bandwidth**, trading efficiency for secrecy.
+
+To signal the end of the covert message, the sender appends the string `"EOF"` (encoded in binary like any other text) to the covert bitstream. The receiver stops decoding once it detects this sentinel.
+
+# Setting Up the Server
+
+## A Basic TCP Server
+
+Let's start with a minimal Python TCP server using the built-in `socket` library. This version simply accepts a connection and sends two lines of text:
+
+```python
+import socket
+
+HOST = "127.0.0.1"  # localhost — no traffic leaves this machine
+PORT = 1337         # choose an unprivileged port (> 1024) not in common use
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(0)  # queue length 0: reject any new connection while busy
+
+print(f"Server is listening on {HOST}:{PORT}")
+
+while True:
+    # Accept a connection. c is the client socket; addr is their address.
+    c, addr = s.accept()
+    print(f"Connection from {addr} established")
+
+    # sendall() sends bytes — note the b"..." prefix.
+    c.sendall(b"Hello from the other side.")
+    c.sendall(b"I must have called a thousand times")
+
+    c.close()
+```
+
+:::{.callout-tip}
+Before adding timing logic, test this basic server. In a separate terminal, connect using one of these tools:
+
+**telnet** (plain text, unencrypted — do not use for sensitive data):
+```sh
+telnet 127.0.0.1 1337
+```
+
+**netcat** (general-purpose network utility):
+```sh
+nc 127.0.0.1 1337
+```
+
+Press `Ctrl+C` or type `exit` to disconnect from netcat. You should see the server's two lines appear immediately.
+:::
+
+## Sending One Character at a Time
+
+The simple server above sends everything at once. To build our covert channel, we need two changes:
+
+1. Switch from `sendall()` to `send()`, which lets us send smaller chunks.
+2. Sleep for a specific duration after each character — the duration encodes a covert bit.
+
+Add the necessary imports and timing constants:
+
+```python
+from time import sleep
+
+ZERO = 0.025  # seconds — delay to signal a 0 bit
+ONE  = 0.1    # seconds — delay to signal a 1 bit
+```
+
+The ratio between `ZERO` and `ONE` (here 4×) should be large enough that clock jitter on the receiving side does not cause a misread. A good rule of thumb: the receiver classifies any delay above the midpoint `(ZERO + ONE) / 2 = 0.0625 s` as a `1`.
+
+The core sending loop looks like this:
+
+```python
+msg = "Some overt message..."
+for char in msg:
+    c.send(char.encode())
+    if <this character's covert bit is 0>:
+        sleep(ZERO)
+    else:
+        sleep(ONE)
+c.send(b"EOF")  # sentinel — signals end of covert message
+c.close()
+```
+
+## Encoding the Covert Message
+
+We have the structure — but how does the server know whether to sleep for `ZERO` or `ONE` after each character? We need to convert the covert message to a binary string first.
+
+The helper below converts each character to its 8-bit binary representation and concatenates them:
+
+```python
+from binascii import hexlify
+
+covert = "secret" + "EOF"  # append EOF sentinel
+covert_bin = ""
+
+for char in covert:
+    # hexlify:  ASCII -> hex bytes  (e.g. 'A' -> b'41')
+    # int(_, 16): hex string -> integer  (e.g. '41' -> 65)
+    # bin(_):   integer -> binary string  (e.g. 65 -> '0b1000001')
+    # [2:]:     strip the '0b' prefix
+    # zfill(8): left-pad to 8 bits  (e.g. '1000001' -> '01000001')
+    covert_bin += bin(int(hexlify(char), 16))[2:].zfill(8)
+
+# Example: "ABC" -> "010000010100001001000011"
+```
+
+Now assemble the full server loop, indexing into `covert_bin` for each character sent:
+
+```python
+import socket
+from time import sleep
+from binascii import hexlify
+
+HOST = "127.0.0.1"
+PORT = 1337
+ZERO = 0.025
+ONE  = 0.1
+
+# --- Prepare covert bitstream ---
+covert = "secret" + "EOF"
+covert_bin = ""
+for char in covert:
+    covert_bin += bin(int(hexlify(char), 16))[2:].zfill(8)
+
+# --- Overt message (must be at least as long as covert_bin) ---
+overt_msg = ("The weather today is partly cloudy with a high of 72 degrees. "
+             "Winds from the southwest at 10 mph. Have a pleasant afternoon.")
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(0)
+print(f"Server listening on {HOST}:{PORT}")
+
+while True:
+    c, addr = s.accept()
+    print(f"Connected: {addr}")
+
+    n = 0
+    for char in overt_msg:
+        c.send(char.encode())
+        bit = covert_bin[n % len(covert_bin)]
+        sleep(ZERO if bit == "0" else ONE)
+        n += 1
+
+    c.send(b"EOF")
+    c.close()
+    print("Connection closed.")
+```
+
+:::{.callout-tip}
+Make sure your overt message is **at least as long as** your covert bitstream. Each covert character requires 8 overt characters. The word `"secret"` plus `"EOF"` is 9 characters × 8 bits = 72 bits, so the overt message must be at least 72 characters long.
+:::
+
+# Setting Up the Client
+
+:::{.callout-tip}
+Timing has historically been less reliable on Windows when running Python scripts. If your measured delays are inconsistent, try widening the gap between `ZERO` and `ONE`, or run on a native Linux machine. Linux VMs hosted on Windows have also occasionally shown this problem.
+:::
+
+## A Basic Receiver
+
+Start with the simplest possible client — connect, receive everything, print it:
+
+```python
+import socket
+
+HOST = "127.0.0.1"
+PORT = 1337
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+try:
+    s.connect((HOST, PORT))
+    print("Connected to server.")
+
+    data = s.recv(1024)
+    print("Received:", data.decode("utf-8"))
+finally:
+    s.close()
+```
+
+## Receiving One Character at a Time
+
+The basic client above may buffer incoming data and display it in large chunks rather than character-by-character. This breaks our timing measurements. We need three changes:
+
+1. Use `sys.stdout.write()` instead of `print()` so each character is written immediately.
+2. Call `sys.stdout.flush()` after each write to force the output buffer to empty.
+3. Loop continuously, receiving one chunk at a time, until the `"EOF"` sentinel arrives.
+
+```python
+import sys
+
+# ... (connection setup as above) ...
+
+data = s.recv(4096)
+while data.rstrip(b"\n") != b"EOF":
+    sys.stdout.write(data.decode("utf-8", errors="replace"))
+    sys.stdout.flush()
+    data = s.recv(4096)   # block here until the next character arrives
+```
+
+## Measuring the Delays
+
+To decode the covert bits, measure the elapsed time between receiving successive characters. `time()` returns the current wall-clock time as a float (seconds):
+
+```python
+from time import time
+
+ONE       = 0.1
+THRESHOLD = 0.0625  # midpoint between ZERO (0.025) and ONE (0.1)
+
+covert_bin = ""
+
+t0 = time()               # timestamp before the receive call
+data = s.recv(4096)
+t1 = time()               # timestamp after data arrives
+
+delta = round(t1 - t0, 3) # elapsed time in seconds, rounded to ms
+
+# Classify: delay >= threshold -> 1, otherwise -> 0
+if delta >= THRESHOLD:
+    covert_bin += "1"
+else:
+    covert_bin += "0"
+```
+
+Using the midpoint threshold is more robust than comparing directly to `ONE`, because system and network jitter will nudge measured delays slightly away from the exact intended values.
+
+## Decoding the Bit String
+
+Once you have collected enough bits, convert them back to characters. Process 8 bits at a time, stopping when you detect the `"EOF"` sentinel:
+
+```python
+from binascii import unhexlify
+
+covert = ""
+i = 0
+
+while i < len(covert_bin):
+    byte = covert_bin[i : i + 8]         # take 8 bits
+    n = int("0b" + byte, 2)              # binary string -> integer
+
+    try:
+        covert += unhexlify(f"{n:02x}").decode("ascii")
+    except Exception:
+        covert += "?"   # bit error — substitute a placeholder
+
+    if covert.endswith("EOF"):
+        covert = covert[:-3]             # strip the sentinel
+        break
+
+    i += 8
+
+print("\n\n[Covert message]:", covert)
+```
+
+The `"?"` substitution is a useful debugging hint: too many question marks indicate that your threshold is wrong or that timing is unreliable on your system. Try increasing the gap between `ZERO` and `ONE`.
+
+# Your Challenge
+
+:::{.callout-note}
+The entire **client** section of this lab has been intentionally vague — all the pieces are here but they are not assembled into a single working script. It is up to you to combine them into a client that:
+
+1. Connects to the server
+2. Receives the overt message one character at a time and displays it
+3. Measures the inter-character delay for each received character
+4. Classifies each delay as `0` or `1` using the midpoint threshold
+5. Decodes the accumulated bit string into ASCII characters, 8 bits at a time
+6. Stops when the `"EOF"` sentinel is detected
+7. Prints the recovered covert message
+
+*Good luck.*
+:::

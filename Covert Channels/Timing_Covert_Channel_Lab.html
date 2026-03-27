@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timing Covert Channel Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #002f8b;
+    --navy-light: #1a47a0;
+    --accent: #e8b800;
+    --accent-soft: #fff8e1;
+    --green: #1a6b3c;
+    --green-bg: #e8f5ee;
+    --teal: #0d6b8a;
+    --teal-bg: #e0f4fa;
+    --red: #c0392b;
+    --text: #1a1a2e;
+    --text-muted: #5a6075;
+    --bg: #f7f8fc;
+    --bg-card: #ffffff;
+    --border: #d0d6e8;
+    --code-bg: #0d1b3e;
+    --code-text: #a8d8ff;
+    --zero-color: #4ade80;
+    --one-color: #facc15;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+
+  .site-header {
+    background: var(--navy);
+    padding: 3rem 2rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .site-header::before {
+    content: '';
+    position: absolute;
+    top: 50%; right: 5%;
+    transform: translateY(-50%);
+    width: 260px; height: 260px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(232,184,0,0.12);
+    pointer-events: none;
+  }
+  .site-header::after {
+    content: '';
+    position: absolute;
+    top: 50%; right: 5%;
+    transform: translateY(-50%);
+    width: 180px; height: 180px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(232,184,0,0.08);
+    pointer-events: none;
+  }
+  .header-inner { max-width: 860px; margin: 0 auto; position: relative; }
+  .header-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+  .lab-badge {
+    display: inline-block;
+    background: rgba(232,184,0,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(232,184,0,0.35);
+    border-radius: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.7rem;
+    margin-right: 0.6rem;
+    text-transform: uppercase;
+  }
+  .site-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+    color: #fff;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+  .site-header h1 em { color: var(--accent); font-style: normal; }
+  .header-meta {
+    margin-top: 0.9rem;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.4);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .page-body {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    gap: 0;
+  }
+
+  .toc {
+    position: sticky;
+    top: 1.5rem;
+    height: fit-content;
+    padding-right: 2rem;
+    border-right: 2px solid var(--border);
+  }
+  .toc-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+  }
+  .toc ol { list-style: none; }
+  .toc li { margin-bottom: 0.35rem; }
+  .toc a {
+    color: var(--navy-light);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: block;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .toc a:hover { background: var(--accent-soft); }
+  .toc .sub {
+    margin-left: 0.8rem;
+    font-weight: 400;
+    font-size: 0.77rem;
+  }
+
+  .content { padding-left: 2.5rem; }
+  .content > * + * { margin-top: 1.3rem; }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--navy);
+    font-weight: 700;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--navy);
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+  }
+  h2 .sec-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    background: var(--navy);
+    color: var(--accent);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-top: 2rem;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  h3::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 1em;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 8px;
+    padding: 1.1rem 1.3rem;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    margin: 0.8rem 0;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  code { font-family: 'IBM Plex Mono', monospace; }
+  p code {
+    background: #e8ecf8;
+    color: var(--navy);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    font-size: 0.86em;
+  }
+
+  .callout {
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid;
+    margin: 1.2rem 0;
+  }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+  }
+  .callout p, .callout li { font-size: 0.92rem; }
+  .callout ul { padding-left: 1.2rem; margin-top: 0.4rem; }
+  .callout li { margin-bottom: 0.3rem; }
+  .callout-tip { background: var(--green-bg); border-color: var(--green); }
+  .callout-tip .callout-label { color: var(--green); }
+  .callout-note { background: #eef2ff; border-color: var(--navy-light); }
+  .callout-note .callout-label { color: var(--navy); }
+  .callout-warning { background: #fff8e1; border-color: #d4a017; }
+  .callout-warning .callout-label { color: #b8860b; }
+
+  /* Timing diagram */
+  .timing-diagram {
+    background: var(--code-bg);
+    border-radius: 10px;
+    padding: 1.4rem 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    margin: 1.2rem 0;
+    border: 1px solid rgba(255,255,255,0.05);
+    overflow-x: auto;
+  }
+  .timing-diagram .td-label {
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    margin-bottom: 1rem;
+  }
+  .timing-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    margin-bottom: 1rem;
+  }
+  .timing-row .tl { font-size: 0.72rem; color: rgba(255,255,255,0.4); width: 4rem; flex-shrink: 0; }
+  .timing-chars {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: nowrap;
+  }
+  .tc {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .tc-char {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    width: 1.5rem; height: 1.5rem;
+    font-size: 0.78rem;
+    color: #e2e8f0;
+  }
+  .tc-gap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    color: rgba(255,255,255,0.2);
+    padding: 0 0.15rem;
+  }
+  .tc-bit {
+    margin-top: 0.3rem;
+    font-size: 0.65rem;
+    font-weight: 600;
+  }
+  .tc-bit.bit0 { color: var(--zero-color); }
+  .tc-bit.bit1 { color: var(--one-color); }
+  .tc-delay {
+    display: flex;
+    align-items: center;
+  }
+  .delay-bar {
+    height: 3px;
+    border-radius: 2px;
+    margin: 0 0.1rem;
+  }
+  .delay-zero { background: var(--zero-color); width: 0.6rem; opacity: 0.7; }
+  .delay-one  { background: var(--one-color);  width: 1.6rem; opacity: 0.7; }
+
+  /* step boxes */
+  .step-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; margin: 1rem 0; }
+  .step-list li {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.8rem;
+    align-items: start;
+  }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--navy);
+    background: var(--accent-soft);
+    width: 1.7rem; height: 1.7rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-list p, .step-list li > div > p { font-size: 0.9rem; }
+
+  /* flow diagram */
+  .flow {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin: 1.5rem 0;
+    overflow-x: auto;
+  }
+  .flow-box {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1rem;
+    text-align: center;
+    flex: 1;
+    min-width: 120px;
+  }
+  .flow-box .fb-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 0.3rem;
+  }
+  .flow-box .fb-title {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--navy);
+  }
+  .flow-arrow {
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    flex-shrink: 0;
+  }
+
+  /* two column layout for server/client */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.2rem 0;
+  }
+  .col-card {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .col-card-header {
+    background: var(--navy);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .col-card-header .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .col-card-body { padding: 1rem; font-size: 0.88rem; }
+
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 3rem;
+  }
+
+  @media (max-width: 720px) {
+    .page-body { grid-template-columns: 1fr; }
+    .toc { display: none; }
+    .content { padding-left: 0; }
+    .two-col { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-eyebrow">
+      <span class="lab-badge">Lab</span>Timing Covert Channel
+    </div>
+    <h1>Hiding Messages in <em>Delays</em></h1>
+    <div class="header-meta">March 28, 2025 &nbsp;·&nbsp; CSC / CYEN</div>
+  </div>
+</header>
+
+<div class="page-body">
+
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-label">Contents</div>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#server">1 &nbsp;Server</a>
+        <ol>
+          <li><a href="#basic-server" class="sub">1.1 Basic TCP Server</a></li>
+          <li><a href="#covert-message" class="sub">1.2 Encoding the Message</a></li>
+          <li><a href="#full-server" class="sub">1.3 Full Server Loop</a></li>
+        </ol>
+      </li>
+      <li><a href="#client">2 &nbsp;Client</a>
+        <ol>
+          <li><a href="#basic-client" class="sub">2.1 Basic Receiver</a></li>
+          <li><a href="#stream" class="sub">2.2 Streaming Fix</a></li>
+          <li><a href="#measure" class="sub">2.3 Measuring Delays</a></li>
+          <li><a href="#decode" class="sub">2.4 Decoding Bits</a></li>
+        </ol>
+      </li>
+      <li><a href="#challenge">3 &nbsp;Your Challenge</a></li>
+    </ol>
+  </nav>
+
+  <main class="content">
+
+    <section id="overview">
+      <p>In the previous lab you built a <em>storage</em> covert channel — a message hidden in file permission bits. In this lab you will build a <strong>timing covert channel</strong>: a TCP server that transmits a perfectly ordinary text message one character at a time, but encodes a <em>secret</em> message in the pauses between each character.</p>
+
+      <!-- Timing diagram -->
+      <div class="timing-diagram">
+        <div class="td-label">How timing encodes bits — overt text: "Hello" · covert bit per gap</div>
+        <div class="timing-row">
+          <div class="tl">overt →</div>
+          <div class="timing-chars">
+            <div class="tc"><div class="tc-char">H</div><div class="tc-bit bit1">1</div></div>
+            <div class="tc-delay"><div class="delay-bar delay-one"></div></div>
+            <div class="tc"><div class="tc-char">e</div><div class="tc-bit bit0">0</div></div>
+            <div class="tc-delay"><div class="delay-bar delay-zero"></div></div>
+            <div class="tc"><div class="tc-char">l</div><div class="tc-bit bit1">1</div></div>
+            <div class="tc-delay"><div class="delay-bar delay-one"></div></div>
+            <div class="tc"><div class="tc-char">l</div><div class="tc-bit bit0">0</div></div>
+            <div class="tc-delay"><div class="delay-bar delay-zero"></div></div>
+            <div class="tc"><div class="tc-char">o</div><div class="tc-bit bit0">0</div></div>
+          </div>
+        </div>
+        <div style="margin-top:0.8rem;font-size:0.68rem;color:rgba(255,255,255,0.3)">
+          Short gap (0.025 s) → <span style="color:var(--zero-color)">0</span> &nbsp;&nbsp; Long gap (0.1 s) → <span style="color:var(--one-color)">1</span>
+        </div>
+      </div>
+
+      <p>The overt message can be completely mundane — a weather report, a poem, a status message. The receiver, watching the arrival time of each character, accumulates bits and silently reconstructs the hidden message. An observer who does not know the encoding scheme sees only the text.</p>
+
+      <p>Because each character of the overt message carries only <strong>one bit</strong> of the covert message, low bandwidth is unavoidable: sending a single ASCII character (7–8 bits) requires transmitting at least 8 overt characters. This is a fundamental property of covert channels.</p>
+
+      <p>We will terminate the covert message with the sentinel string <code>EOF</code> (encoded in binary like any other string), so the receiver knows when the hidden message is complete.</p>
+    </section>
+
+    <!-- Section 1: Server -->
+    <section id="server">
+      <h2><span class="sec-num">1</span> Setting Up the Server</h2>
+
+      <h3 id="basic-server">1.1 A Basic TCP Server</h3>
+
+      <p>Start with a minimal Python TCP server using the built-in <code>socket</code> library. This version simply accepts a connection and sends two lines of text:</p>
+
+      <pre>import socket
+
+HOST = "127.0.0.1"  # localhost — no traffic leaves this machine
+PORT = 1337         # pick an unprivileged port (> 1024) not in common use
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(0)  # queue length 0: reject any connection while busy
+
+print(f"Server is listening on {HOST}:{PORT}")
+
+while True:
+    c, addr = s.accept()
+    print(f"Connection from {addr} established")
+
+    c.sendall(b"Hello from the other side.")
+    c.sendall(b"I must have called a thousand times")
+
+    c.close()</pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-label">💡 Test it now</div>
+        <p>Before adding the timing logic, test this basic server. In a separate terminal, connect with either of these tools:</p>
+        <ul>
+          <li><strong>telnet</strong> (plain text, unencrypted): <code>telnet 127.0.0.1 1337</code></li>
+          <li><strong>netcat</strong> (general-purpose network utility): <code>nc 127.0.0.1 1337</code></li>
+        </ul>
+        <p>Press <code>Ctrl+C</code> or type <code>exit</code> to disconnect from netcat. You should see the server's two lines appear in your terminal.</p>
+      </div>
+
+      <h3 id="covert-message">1.2 Encoding the Covert Message</h3>
+
+      <p>Now we need to prepare the hidden message as a binary string. We will convert each character to its 8-bit binary representation, then concatenate everything into one long bitstream:</p>
+
+      <pre>from binascii import hexlify
+
+covert = "secret" + "EOF"  # append EOF sentinel so the receiver knows when to stop
+covert_bin = ""
+
+for char in covert:
+    # hexlify:  ASCII → hex string  (e.g. 'A' → b'41')
+    # int(..., 16): hex → integer   (e.g. '41' → 65)
+    # bin(...):  integer → binary   (e.g. 65  → '0b1000001')
+    # [2:]:      strip the '0b' prefix
+    # zfill(8):  left-pad to 8 bits (e.g. '1000001' → '01000001')
+    covert_bin += bin(int(hexlify(char), 16))[2:].zfill(8)
+
+# Example: "ABC" → "010000010100001001000011"
+print(covert_bin)</pre>
+
+      <p>We also need two time constants — one for a short delay (bit <code>0</code>) and one for a long delay (bit <code>1</code>). These values are negotiated implicitly between sender and receiver; both must use the same constants:</p>
+
+      <pre>ZERO = 0.025  # seconds — delay to signal a 0 bit
+ONE  = 0.1    # seconds — delay to signal a 1 bit</pre>
+
+      <p>The ratio between <code>ZERO</code> and <code>ONE</code> (here 4×) should be large enough that measurement jitter on the client side does not cause a misread. For a robust threshold, the client can treat any delay above <code>(ZERO + ONE) / 2 = 0.0625 s</code> as a <code>1</code>.</p>
+
+      <h3 id="full-server">1.3 The Full Server Loop</h3>
+
+      <p>Putting it together: the server sends each character of the overt message using <code>send()</code> (not <code>sendall()</code>), then sleeps for the appropriate duration based on the next bit of the covert message. Once the overt message is exhausted, it sends the <code>EOF</code> sentinel and closes:</p>
+
+      <pre>import socket
+from time import sleep
+from binascii import hexlify
+
+HOST = "127.0.0.1"
+PORT = 1337
+ZERO = 0.025
+ONE  = 0.1
+
+# --- Prepare covert bitstream ---
+covert = "secret" + "EOF"
+covert_bin = ""
+for char in covert:
+    covert_bin += bin(int(hexlify(char), 16))[2:].zfill(8)
+
+# --- Prepare overt message (must be at least as long as covert_bin) ---
+overt_msg = ("The weather today is partly cloudy with a high of 72 degrees. "
+             "Winds from the southwest at 10 mph. Have a pleasant afternoon.")
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.bind((HOST, PORT))
+s.listen(0)
+print(f"Server listening on {HOST}:{PORT}")
+
+while True:
+    c, addr = s.accept()
+    print(f"Connected: {addr}")
+
+    n = 0
+    for char in overt_msg:
+        c.send(char.encode())          # send one character of the overt message
+        bit = covert_bin[n % len(covert_bin)]
+        sleep(ZERO if bit == "0" else ONE)  # encode the covert bit in the delay
+        n += 1
+
+    c.send(b"EOF")   # signal end of covert message
+    c.close()
+    print("Connection closed.")</pre>
+
+    </section>
+
+    <!-- Section 2: Client -->
+    <section id="client">
+      <h2><span class="sec-num">2</span> Setting Up the Client</h2>
+
+      <div class="callout callout-warning">
+        <div class="callout-label">⚠️ Windows / VM Timing Note</div>
+        <p>Timing covert channels depend on accurate sleep and clock measurements. These have historically been less reliable on Windows and on Linux VMs hosted on Windows. If your measurements are inconsistent, try widening the gap between <code>ZERO</code> and <code>ONE</code>, or run on a native Linux machine.</p>
+      </div>
+
+      <h3 id="basic-client">2.1 A Basic Receiver</h3>
+
+      <p>Start with the simplest possible client — connect, receive everything, print it:</p>
+
+      <pre>import socket
+
+HOST = "127.0.0.1"
+PORT = 1337
+
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+try:
+    s.connect((HOST, PORT))
+    print("Connected to server.")
+
+    data = s.recv(1024)
+    print("Received:", data.decode("utf-8"))
+finally:
+    s.close()</pre>
+
+      <h3 id="stream">2.2 Receiving One Character at a Time</h3>
+
+      <p>The basic client may buffer incoming data and display it in chunks rather than character-by-character. This breaks our timing measurements. We need to:</p>
+
+      <ul class="step-list">
+        <li><div class="step-num">1</div><div><p>Use <code>sys.stdout.write()</code> instead of <code>print()</code> so each character is written immediately.</p></div></li>
+        <li><div class="step-num">2</div><div><p>Call <code>sys.stdout.flush()</code> after each write to force the output buffer to empty.</p></div></li>
+        <li><div class="step-num">3</div><div><p>Loop, receiving one chunk at a time, until the <code>EOF</code> sentinel is received.</p></div></li>
+      </ul>
+
+      <pre>import sys
+import socket
+
+# ... (connection setup as above) ...
+
+data = s.recv(4096)
+while data.rstrip(b"\n") != b"EOF":
+    sys.stdout.write(data.decode("utf-8", errors="replace"))
+    sys.stdout.flush()
+    data = s.recv(4096)   # wait for the next character</pre>
+
+      <h3 id="measure">2.3 Measuring Delays</h3>
+
+      <p>To decode the covert bits, we measure the elapsed time between receiving successive characters. The <code>time()</code> function returns the current time as a float in seconds:</p>
+
+      <pre>from time import time
+
+ONE  = 0.1     # must match the server's ONE constant
+THRESHOLD = 0.0625  # midpoint between ZERO (0.025) and ONE (0.1)
+
+covert_bin = ""
+
+t0 = time()               # timestamp before receiving anything
+data = s.recv(4096)
+t1 = time()               # timestamp after receiving something
+
+delta = round(t1 - t0, 3) # elapsed time, rounded to milliseconds
+
+# Classify: if delta >= threshold, it was a long delay (1); otherwise short (0)
+if delta >= THRESHOLD:
+    covert_bin += "1"
+else:
+    covert_bin += "0"</pre>
+
+      <p>The threshold approach is more robust than comparing directly to <code>ONE</code>, because network and system jitter can nudge the measured delay away from the exact intended value.</p>
+
+      <h3 id="decode">2.4 Decoding the Bit String</h3>
+
+      <p>Once you have accumulated enough bits (stop when you see the <code>EOF</code> sentinel decoded), convert them back to characters. Process 8 bits at a time:</p>
+
+      <pre>from binascii import unhexlify
+
+covert = ""
+i = 0
+
+while i < len(covert_bin):
+    byte = covert_bin[i : i + 8]         # take 8 bits
+    n = int("0b" + byte, 2)              # binary string → integer
+    try:
+        covert += unhexlify(f"{n:02x}") .decode("ascii")
+    except Exception:
+        covert += "?"   # bit error — character could not be decoded
+
+    if covert.endswith("EOF"):           # stop when sentinel is found
+        covert = covert[:-3]            # strip the sentinel
+        break
+
+    i += 8
+
+print("\n\n[Covert message]:", covert)</pre>
+    </section>
+
+    <!-- Section 3: Challenge -->
+    <section id="challenge">
+      <h2><span class="sec-num">3</span> Your Challenge</h2>
+
+      <div class="callout callout-note">
+        <div class="callout-label">🎯 Lab Challenge</div>
+        <p>The server code above is complete. The client section has given you all the necessary <strong>components</strong>, but they are deliberately not assembled into a single working script. Your job is to combine them into a client that:</p>
+        <ul>
+          <li>Connects to the server</li>
+          <li>Receives the overt message character by character</li>
+          <li>Measures the inter-character delay and classifies each as <code>0</code> or <code>1</code></li>
+          <li>Accumulates the bit string and decodes it into ASCII</li>
+          <li>Stops when it detects the <code>EOF</code> sentinel</li>
+          <li>Prints the recovered covert message</li>
+        </ul>
+        <p>The flow through your client should be:</p>
+      </div>
+
+      <div class="flow">
+        <div class="flow-box"><div class="fb-label">Step 1</div><div class="fb-title">Connect to server</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><div class="fb-label">Step 2</div><div class="fb-title">Recv char + measure delay</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><div class="fb-label">Step 3</div><div class="fb-title">Classify bit (0 or 1)</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><div class="fb-label">Step 4</div><div class="fb-title">Decode when 8 bits ready</div></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-box"><div class="fb-label">Step 5</div><div class="fb-title">Stop at EOF sentinel</div></div>
+      </div>
+
+      <p>A few things to keep in mind as you build your solution:</p>
+
+      <ul class="step-list">
+        <li>
+          <div class="step-num">→</div>
+          <div><p><strong>Threshold vs. exact comparison.</strong> Don't compare <code>delta == ONE</code>. Use the midpoint threshold (<code>THRESHOLD = (ZERO + ONE) / 2</code>) to handle timing jitter gracefully.</p></div>
+        </li>
+        <li>
+          <div class="step-num">→</div>
+          <div><p><strong>Buffer flushing.</strong> Use <code>sys.stdout.write()</code> + <code>sys.stdout.flush()</code> to see the overt message appear in real time as the server sends it.</p></div>
+        </li>
+        <li>
+          <div class="step-num">→</div>
+          <div><p><strong>Error handling.</strong> The <code>?</code> substitution for undecodable characters is a useful debugging hint: too many question marks indicate that your threshold is wrong or timing is unreliable.</p></div>
+        </li>
+        <li>
+          <div class="step-num">→</div>
+          <div><p><strong>Socket cleanup.</strong> Always close the socket in a <code>finally</code> block so the port is freed even if an exception occurs.</p></div>
+        </li>
+      </ul>
+
+      <p>Good luck!</p>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  Cybersecurity Lab &nbsp;·&nbsp; Timing Covert Channel &nbsp;·&nbsp; March 28, 2025
+</footer>
+
+</body>
+</html>

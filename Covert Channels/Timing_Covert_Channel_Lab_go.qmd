@@ -1,0 +1,436 @@
+---
+title: "Timing Covert Channel Lab"
+subtitle: "Hiding Messages in Delays (Go)"
+date: "March 27, 2026"
+title-block-banner: "#002f8b"
+toc: true
+toc-depth: 2
+number-sections: true
+format:
+  pdf:
+    code-copy: false
+    code-fold: true
+    geometry: margin=1in
+    fontsize: 11pt
+    colorlinks: true
+    linkcolor: "NavyBlue"
+---
+
+In the last lecture, you covered different ways that someone might set up and exploit a covert channel. In the last lab, you set up a storage covert channel using the file permissions of an FTP server.
+
+In this lab, you will build a **timing covert channel**. You will set up a server that transmits an ordinary text message one character at a time, but encodes a *secret* message in the pauses between each successive character.
+
+As an example: a delay of 25 ms between characters could represent a `0`, while a delay of 100 ms represents a `1`. The overt message is perfectly readable by anyone; only a receiver who knows the encoding scheme can recover the hidden message.
+
+In order to transfer a longer covert message, you will need a longer overt message — each overt character carries exactly one covert bit. Using the values above, transmitting a single covert character (7 or 8 bits) requires transmitting at least 8 overt characters. This is not unreasonable: covert channels are typically **low bandwidth**, trading efficiency for secrecy.
+
+To signal the end of the covert message, the sender appends the string `"EOF"` (encoded in binary like any other text) to the covert bitstream. The receiver stops decoding once it detects this sentinel.
+
+# Setting Up the Server
+
+## A Basic Chat Server {#sec-basicserver}
+
+Let's start with a basic TCP server using Go's `net` library. This first version acts as an **echo server** — it accepts connections, reads any message the client sends, and echoes it back. This gives you a working baseline to test before adding covert channel logic.
+
+```go
+package main
+
+/*
+*  We'll need bufio for buffered I/O, fmt for printing, net for
+*  networking functions, and os to exit gracefully on errors.
+*/
+import (
+    "bufio"
+    "fmt"
+    "net"
+    "os"
+)
+
+// Constants make the server easy to tweak without hunting through code.
+const (
+    address = ""      // empty string = accept connections on all interfaces.
+                      // Use "127.0.0.1" to restrict to local connections only.
+    port    = "1337"  // choose an unprivileged port (> 1024) not in common use
+)
+
+func main() {
+    // Start listening for TCP connections on the specified address and port.
+    listener, err := net.Listen("tcp", address+":"+port)
+
+    // If the server can't start (e.g. port already in use), exit with an error.
+    if err != nil {
+        fmt.Println("Error starting server:", err)
+        os.Exit(1)
+    }
+
+    // defer ensures listener.Close() is called when main() returns,
+    // even if something goes wrong.
+    defer listener.Close()
+
+    fmt.Printf("Server listening on %s:%s\n", address, port)
+
+    // Accept and handle connections indefinitely.
+    for {
+        conn, err := listener.Accept()
+
+        if err != nil {
+            // A bad incoming connection shouldn't crash the server —
+            // log it and move on to the next one.
+            fmt.Println("Error accepting connection:", err)
+            continue
+        }
+
+        fmt.Println("New client connected!")
+
+        // Handle each connection in its own goroutine (lightweight thread)
+        // so the server can serve multiple clients concurrently.
+        go handleConnection(conn)
+    }
+}
+
+// handleConnection reads messages from the client and echoes them back.
+func handleConnection(conn net.Conn) {
+
+    // Close the connection when this function returns, no matter what.
+    defer conn.Close()
+
+    reader := bufio.NewReader(conn)
+
+    for {
+        // ReadString reads until it finds the delimiter '\n'.
+        message, err := reader.ReadString('\n')
+
+        if err != nil {
+            // The client has disconnected or the connection broke.
+            fmt.Println("Client disconnected.")
+            return
+        }
+
+        fmt.Print("Message received:", message)
+
+        // Echo the message back to the client.
+        conn.Write([]byte("You said: " + message))
+    }
+}
+```
+
+:::{.callout-tip}
+This is a great place to pause and test your server before adding timing logic.
+
+You don't need a custom client yet — use one of these built-in terminal tools:
+
+**telnet** (plain text, unencrypted — do not use for sensitive data):
+```sh
+telnet localhost 1337
+```
+
+**netcat** (general-purpose network utility):
+```sh
+nc localhost 1337
+```
+
+Press `Ctrl+C` or type `exit` to disconnect. You can also share your server's IP address with a classmate and have them connect from their machine:
+
+```sh
+telnet ip.ad.re.ss 1337   # or
+nc    ip.ad.re.ss 1337
+```
+:::
+
+## Sending an Overt Message One Character at a Time
+
+The echo server above is just a starting point. To build our covert channel we need to make two key changes:
+
+1. **Stop reading from the client** — our server only needs to *send*, not receive.
+2. **Send the overt message one character at a time**, with a deliberate delay after each character. That delay is where the covert message lives.
+
+Start by adding the `time` package to your imports:
+
+```go
+import (
+    "bufio"
+    "fmt"
+    "net"
+    "os"
+    "time"  // needed for time.Sleep and time.Millisecond
+)
+```
+
+Add timing constants alongside your existing ones:
+
+```go
+const (
+    address = ""
+    port    = "1337"
+    zero    = 25    // milliseconds — delay to signal a 0 bit
+    one     = 100   // milliseconds — delay to signal a 1 bit
+)
+```
+
+The ratio between `zero` and `one` (here 4×) should be large enough that clock jitter on the receiving side does not cause a misread. A good rule of thumb: the receiver classifies any delay above the midpoint `(zero + one) / 2 = 62.5 ms` as a `1`.
+
+Now replace `handleConnection` with a new function `sendMessage` that sends the overt message character by character:
+
+```go
+func sendMessage(message string, conn net.Conn) {
+    defer conn.Close()
+
+    for i, ch := range message {
+        _, err := conn.Write([]byte(string(ch)))
+
+        if err != nil {
+            fmt.Println("Error writing to client:", err)
+            return
+        }
+
+        /*
+        * For now, alternate between one and zero delays based on
+        * position — just to verify the timing mechanism works before
+        * we wire in the actual covert bitstream.
+        */
+        if i%2 == 0 {
+            time.Sleep(one * time.Millisecond)
+        } else {
+            time.Sleep(zero * time.Millisecond)
+        }
+    }
+
+    fmt.Println("Overt message sent. Closing connection.")
+}
+```
+
+Update `main` to use the new function:
+
+```go
+// Inside the for loop in main(), after listener.Accept():
+message := "This is a message that will be sent one character at a time."
+
+// go handleConnection(conn)   <- replace this
+go sendMessage(message, conn)  // <- with this
+```
+
+## Encoding the Covert Message
+
+We now have a server that sends a message with timing delays. The final step is to replace the alternating dummy delays with delays driven by the actual covert bitstream.
+
+The helper function `getCovert` converts a string to its binary representation — one 8-bit sequence per character, concatenated into a single string. Note that the `"EOF"` sentinel is appended to the covert message so the receiver knows when to stop decoding.
+
+```go
+import "strings"
+
+func getCovert() string {
+    covert := "secret" + "EOF"
+    var result strings.Builder
+
+    for _, c := range covert {
+        // %08b formats the Unicode code point as an 8-bit binary string,
+        // left-padded with zeros. For standard ASCII, this is equivalent
+        // to the character's ASCII value in binary.
+        result.WriteString(fmt.Sprintf("%08b", c))
+    }
+    return result.String()
+}
+```
+
+As an example: if `covert == "ABC"`, then `getCovert()` returns `"010000010100001001000011"`.
+
+Now update `sendMessage` to look up the covert bit for each character position and choose the appropriate delay:
+
+```go
+func sendMessage(message string, conn net.Conn) {
+    defer conn.Close()
+
+    covert := getCovert()
+
+    for i, ch := range message {
+        _, err := conn.Write([]byte(string(ch)))
+        if err != nil {
+            fmt.Println("Error writing to client:", err)
+            return
+        }
+
+        // Use modulo so the covert message repeats if the overt
+        // message is longer than the covert bitstream.
+        if covert[i%len(covert)] == '1' {
+            time.Sleep(one * time.Millisecond)
+        } else {
+            time.Sleep(zero * time.Millisecond)
+        }
+    }
+
+    fmt.Println("Overt message sent. Closing connection.")
+}
+```
+
+:::{.callout-tip}
+Make sure your overt message is **at least as long as** your covert bitstream. Each covert character requires 8 overt characters. The word `"secret"` plus the `"EOF"` sentinel is 9 characters × 8 bits = 72 bits, so the overt message must be at least 72 characters long.
+:::
+
+# Setting Up the Client
+
+:::{.callout-tip}
+Timing covert channels depend on accurate sleep and clock measurements. These have historically been less reliable on Windows when running Python scripts. This is our first attempt using Go — so you will be our guinea pigs. If your measurements are inconsistent, try widening the gap between `zero` and `one`, or run on a native Linux machine.
+:::
+
+## A Basic Chat Client
+
+Let's start with a basic client that can connect to the echo server from @sec-basicserver, send messages, and display the server's responses. This gives you a working foundation before adding timing measurement logic.
+
+```go
+package main
+
+import (
+    "bufio"
+    "fmt"
+    "net"
+    "os"
+)
+
+func main() {
+    conn, err := net.Dial("tcp", "localhost:1337")
+    if err != nil {
+        fmt.Println("Error connecting:", err)
+        os.Exit(1)
+    }
+    defer conn.Close()
+
+    fmt.Println("Connected to server. Type a message and press Enter:")
+
+    // Read lines from stdin and send them to the server.
+    scanner := bufio.NewScanner(os.Stdin)
+    for scanner.Scan() {
+        text := scanner.Text()
+
+        fmt.Fprintf(conn, text+"\n")
+
+        // Read the server's response (terminated by '\n').
+        response, err := bufio.NewReader(conn).ReadString('\n')
+        if err != nil {
+            fmt.Println("Error reading from server:", err)
+            break
+        }
+        fmt.Print("Server replied: " + response)
+    }
+}
+```
+
+## Receiving One Character at a Time
+
+The client above is designed for the echo server — it reads whole lines and sends messages. For our covert channel receiver, we need different behaviour:
+
+- The client should **only receive** — it sends nothing to the server.
+- It should **display each character as soon as it arrives**, rather than buffering until a newline or connection close.
+
+Use `reader.ReadRune()` to read one Unicode character at a time, and display it immediately with `fmt.Printf`:
+
+```go
+// Add "io" to your imports — needed to identify a true EOF from
+// the server closing the connection (distinct from our "EOF" sentinel).
+import "io"
+
+// ...
+
+reader := bufio.NewReader(conn)
+
+for {
+    r, _, err := reader.ReadRune()
+
+    if err != nil {
+        if err == io.EOF {
+            fmt.Println("\nServer closed connection.")
+            break
+        }
+        fmt.Println("\nError reading from server:", err)
+        break
+    }
+
+    // Print the character immediately as it arrives.
+    fmt.Printf("%c", r)
+}
+```
+
+## Measuring the Delays
+
+We now need to measure the elapsed time between receiving successive characters and classify each gap as a `0` or `1`. Use `time.Now()` before the read and `time.Since()` after it to get the duration:
+
+```go
+import "time"
+
+// ...
+
+// Collect all measured durations for inspection.
+var times []time.Duration
+
+// ...
+
+// Inside the receive loop:
+start := time.Now()
+r, _, err := reader.ReadRune()
+elapsed := time.Since(start)
+
+times = append(times, elapsed)
+```
+
+After the loop, print the collected durations to inspect them:
+
+```go
+fmt.Println(times)
+```
+
+You should see two clusters of values — one near `zero` milliseconds and one near `one` milliseconds. This visual inspection step is useful for choosing a robust threshold before you write the classification logic.
+
+## From Times to Characters {#sec-decode}
+
+Once you can observe two distinct timing clusters, converting them to bits is straightforward: any duration above the midpoint threshold is a `1`, anything below is a `0`.
+
+```go
+threshold := time.Duration((zero + one) / 2) * time.Millisecond
+// threshold = 62 ms with our default constants
+
+var covertBits string
+// For each elapsed duration:
+if elapsed >= threshold {
+    covertBits += "1"
+} else {
+    covertBits += "0"
+}
+```
+
+Once you have accumulated enough bits, convert them back to characters. Process 8 bits at a time. A helper function in Go might look like this:
+
+```go
+import (
+    "strconv"
+    "strings"
+)
+
+func bitsToString(bits string) string {
+    var result strings.Builder
+    for i := 0; i+8 <= len(bits); i += 8 {
+        // Parse one byte (8 bits) as a base-2 integer.
+        n, err := strconv.ParseInt(bits[i:i+8], 2, 32)
+        if err != nil {
+            result.WriteRune('?') // bit error — character undecodable
+            continue
+        }
+        result.WriteRune(rune(n))
+    }
+    return result.String()
+}
+```
+
+Keep decoding until the recovered string ends with `"EOF"`, then strip the sentinel to reveal the covert message.
+
+:::{.callout-note}
+The entire **client** section of this lab has been intentionally vague — all the pieces are here but they are not assembled into a complete, working program. Code snippets are deliberately sparse. It is up to you to design a well-structured Go program that:
+
+1. Connects to the server
+2. Receives the overt message one character at a time and prints it
+3. Measures the inter-character delay for each received character
+4. Classifies each delay as `0` or `1` using the midpoint threshold
+5. Decodes the accumulated bit string into ASCII characters, 8 bits at a time
+6. Stops when the `"EOF"` sentinel is detected
+7. Prints the recovered covert message
+
+*Good luck.*
+:::

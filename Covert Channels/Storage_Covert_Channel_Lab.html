@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Storage Covert Channel Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #002f8b;
+    --navy-dark: #001a52;
+    --navy-light: #1a47a0;
+    --accent: #e8b800;
+    --accent-soft: #fff8e1;
+    --green: #1a6b3c;
+    --green-bg: #e8f5ee;
+    --red: #c0392b;
+    --text: #1a1a2e;
+    --text-muted: #5a6075;
+    --bg: #f7f8fc;
+    --bg-card: #ffffff;
+    --border: #d0d6e8;
+    --code-bg: #0d1b3e;
+    --code-text: #a8d8ff;
+    --perm-bg: #0a1628;
+    --perm-on: #4ade80;
+    --perm-off: #475569;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.75;
+    font-size: 16px;
+  }
+
+  .site-header {
+    background: var(--navy);
+    padding: 3rem 2rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .site-header::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -50px;
+    width: 280px; height: 280px;
+    border-radius: 50%;
+    border: 2px solid rgba(232,184,0,0.15);
+    pointer-events: none;
+  }
+  .header-inner { max-width: 860px; margin: 0 auto; position: relative; }
+  .header-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+  }
+  .site-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 4.5vw, 2.8rem);
+    color: #fff;
+    font-weight: 900;
+    line-height: 1.1;
+  }
+  .site-header h1 em { color: var(--accent); font-style: normal; }
+  .header-meta {
+    margin-top: 0.9rem;
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.45);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  .lab-badge {
+    display: inline-block;
+    background: rgba(232,184,0,0.15);
+    color: var(--accent);
+    border: 1px solid rgba(232,184,0,0.35);
+    border-radius: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    letter-spacing: 0.1em;
+    padding: 0.2rem 0.7rem;
+    margin-right: 0.6rem;
+    text-transform: uppercase;
+  }
+
+  .page-body {
+    display: grid;
+    grid-template-columns: 210px 1fr;
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+    gap: 0;
+  }
+
+  .toc {
+    position: sticky;
+    top: 1.5rem;
+    height: fit-content;
+    padding-right: 2rem;
+    border-right: 2px solid var(--border);
+  }
+  .toc-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.6rem;
+  }
+  .toc ol { list-style: none; }
+  .toc li { margin-bottom: 0.4rem; }
+  .toc a {
+    color: var(--navy-light);
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 600;
+    display: block;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: background 0.15s;
+  }
+  .toc a:hover { background: var(--accent-soft); }
+  .toc .sub {
+    margin-left: 0.8rem;
+    font-weight: 400;
+    font-size: 0.78rem;
+  }
+
+  .content { padding-left: 2.5rem; }
+  .content > * + * { margin-top: 1.3rem; }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    color: var(--navy);
+    font-weight: 700;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--navy);
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+  }
+  h2 .sec-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    background: var(--navy);
+    color: var(--accent);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  h3 {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--navy);
+    margin-top: 2rem;
+    margin-bottom: 0.4rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  h3::before {
+    content: '';
+    display: inline-block;
+    width: 4px; height: 1em;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  pre, .perm-block {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 8px;
+    padding: 1.1rem 1.3rem;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.65;
+    margin: 0.8rem 0;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  code {
+    font-family: 'IBM Plex Mono', monospace;
+  }
+  p code {
+    background: #e8ecf8;
+    color: var(--navy);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    font-size: 0.86em;
+  }
+
+  .callout {
+    border-radius: 6px;
+    padding: 1rem 1.25rem;
+    border-left: 4px solid;
+    margin: 1.2rem 0;
+  }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.45rem;
+  }
+  .callout p { font-size: 0.92rem; }
+  .callout code { font-size: 0.84em; }
+  .callout-tip { background: var(--green-bg); border-color: var(--green); }
+  .callout-tip .callout-label { color: var(--green); }
+  .callout-note { background: #eef2ff; border-color: var(--navy-light); }
+  .callout-note .callout-label { color: var(--navy); }
+
+  /* collapse tip */
+  details.callout-tip {
+    cursor: pointer;
+  }
+  details.callout-tip summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--green);
+    letter-spacing: 0.06em;
+  }
+  details.callout-tip summary::after { content: ' ▶ expand'; font-weight: 400; }
+  details[open].callout-tip summary::after { content: ' ▼ collapse'; }
+  details.callout-tip .detail-body { margin-top: 0.8rem; }
+
+  /* permission visualizer */
+  .perm-visual {
+    background: var(--perm-bg);
+    border-radius: 10px;
+    padding: 1.4rem 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    margin: 1.2rem 0;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .perm-visual .pv-title {
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    margin-bottom: 0.9rem;
+  }
+  .perm-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .perm-row .label {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.45);
+    width: 3.5rem;
+    text-align: right;
+    flex-shrink: 0;
+  }
+  .bit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.6rem; height: 1.6rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .bit-on { background: rgba(74,222,128,0.15); color: var(--perm-on); border: 1px solid rgba(74,222,128,0.3); }
+  .bit-off { background: rgba(71,85,105,0.3); color: #4b5563; border: 1px solid rgba(71,85,105,0.3); }
+  .bit-type { background: rgba(232,184,0,0.12); color: var(--accent); border: 1px solid rgba(232,184,0,0.25); }
+  .perm-row .arrow { color: rgba(255,255,255,0.2); font-size: 0.8rem; }
+  .perm-row .result { font-size: 0.8rem; color: rgba(255,255,255,0.6); margin-left: 0.2rem; }
+  .perm-separator { width: 0.2rem; }
+
+  /* step boxes */
+  .step-list { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 0.8rem; }
+  .step-list li {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.8rem;
+    align-items: start;
+  }
+  .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--navy);
+    background: var(--accent-soft);
+    width: 1.7rem; height: 1.7rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .step-list p { font-size: 0.9rem; }
+
+  /* decode table */
+  .decode-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    margin: 1rem 0;
+  }
+  .decode-table th {
+    background: var(--navy);
+    color: var(--accent);
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .decode-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+  }
+  .decode-table tr:nth-child(even) td { background: #f0f3fb; }
+  .decode-table .char { font-weight: 600; color: var(--navy); }
+  .decode-table .bits { color: var(--text-muted); }
+
+  /* perm challenge */
+  .perm-challenge {
+    background: var(--code-bg);
+    border-radius: 10px;
+    padding: 1.3rem 1.5rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    line-height: 2;
+    color: var(--code-text);
+    margin: 1rem 0;
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+  .perm-challenge .perm-line { display: flex; gap: 0.5rem; align-items: center; }
+  .perm-challenge .sig { color: #94a3b8; }
+  .perm-challenge .fname { color: #e2e8f0; margin-left: auto; }
+  .perm-challenge .bits-live { color: var(--perm-on); }
+
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 3rem;
+  }
+
+  @media (max-width: 720px) {
+    .page-body { grid-template-columns: 1fr; }
+    .toc { display: none; }
+    .content { padding-left: 0; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-eyebrow">
+      <span class="lab-badge">Lab</span>Storage Covert Channel
+    </div>
+    <h1>Hiding Messages in <em>File Permissions</em></h1>
+    <div class="header-meta">March 27, 2025 &nbsp;·&nbsp; CSC / CYEN</div>
+  </div>
+</header>
+
+<div class="page-body">
+
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-label">Contents</div>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#ftp-setup">1 &nbsp;FTP Server Setup</a>
+        <ol>
+          <li><a href="#install" class="sub">1.1 Installation</a></li>
+          <li><a href="#login" class="sub">1.2 Logging In</a></li>
+          <li><a href="#config" class="sub">1.3 Configuration</a></li>
+        </ol>
+      </li>
+      <li><a href="#channel">2 &nbsp;Storage Channel</a>
+        <ol>
+          <li><a href="#seven-bit" class="sub">2.1 7-bit Scheme</a></li>
+          <li><a href="#ten-bit" class="sub">2.2 10-bit Scheme</a></li>
+        </ol>
+      </li>
+    </ol>
+  </nav>
+
+  <main class="content">
+
+    <section id="overview">
+      <p>In the lecture, you covered different ways that someone might set up and exploit a covert channel. In this lab, you will build one from scratch — a <strong>storage covert channel</strong> that hides a secret message inside the file permission bits of an FTP server.</p>
+      <p>To an ordinary observer browsing the FTP server, everything looks normal. But someone who knows the encoding scheme can read the hidden message simply by examining which permission bits are set on each file.</p>
+    </section>
+
+    <!-- Section 1: FTP Setup -->
+    <section id="ftp-setup">
+      <h2><span class="sec-num">1</span> Setting Up an FTP Server</h2>
+
+      <div class="callout callout-tip">
+        <div class="callout-label">💡 Tip</div>
+        <p>Depending on how far you got in a previous lab, you may not need to repeat the FTP server setup. Skip ahead to <a href="#channel">Section 2</a> if your server is already configured and running.</p>
+      </div>
+
+      <h3 id="install">1.1 Installation</h3>
+      <p>You will use <strong>vsftpd</strong> (Very Secure FTP Daemon), a lightweight and widely-used FTP server for Linux. Install it with the following commands:</p>
+      <pre>sudo apt update          # refresh the package index
+sudo apt install vsftpd  # install vsftpd</pre>
+
+      <p>Once installed, verify that vsftpd is running and listening on the network:</p>
+      <pre>sudo netstat -alpn | grep ' LISTEN '</pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-label">💡 Tip — netstat not found?</div>
+        <p>If <code>netstat</code> isn't available, install it with:<br>
+        <code>sudo apt install net-tools</code><br>
+        Then re-run the <code>netstat | grep</code> command above. Look for a line containing <code>vsftpd</code> to confirm it's active.</p>
+      </div>
+
+      <h3 id="login">1.2 Logging In</h3>
+      <p>Try connecting to your own FTP server from the same machine:</p>
+      <pre>ftp localhost</pre>
+      <p>This will prompt for a username and password — use your system credentials. Once connected, explore your available files using standard FTP commands:</p>
+      <pre>ls         # list files
+ls -lh     # list files with permissions and sizes
+cd folder  # change into a directory
+cd ..      # go up one level
+Ctrl + D   # disconnect</pre>
+
+      <h3 id="config">1.3 Configuration</h3>
+      <p>Make a few tweaks to improve the experience. Open the vsftpd configuration file:</p>
+      <pre>sudo vim /etc/vsftpd.conf   # or use nano, gedit, etc.</pre>
+      <p>Find and adjust the following settings:</p>
+      <pre>anonymous_enable=YES
+local_enable=NO
+ftpd_banner=My First FTP Server   # customise as you like
+anon_root=/home/ftp               # create this directory if it doesn't exist</pre>
+
+      <p>Then restart the server to apply your changes:</p>
+      <pre>sudo service vsftpd restart
+ftp localhost</pre>
+
+      <p>This time you should be able to log in <strong>anonymously</strong> — username <code>anonymous</code>, blank password (just press Enter). You can also connect from another machine on the same network using the server's IP address:</p>
+      <pre>ftp 138.47.x.x   # replace with your server's IP address</pre>
+
+      <div class="callout callout-tip">
+        <div class="callout-label">💡 Virtual Machine Tip</div>
+        <p>If your FTP server is running in a VM with a bridged or NAT network adapter, the VM will have its own IP address distinct from the host. You can FTP into it from the host machine using that IP.</p>
+      </div>
+    </section>
+
+    <!-- Section 2: Channel -->
+    <section id="channel">
+      <h2><span class="sec-num">2</span> Storage Covert Channel</h2>
+
+      <p>Now for the interesting part. Linux file permissions consist of <strong>10 characters</strong> — a file type indicator followed by three groups of read/write/execute flags for the owner, group, and others:</p>
+
+      <!-- Permission visualizer -->
+      <div class="perm-visual">
+        <div class="pv-title">Permission String Anatomy</div>
+        <div class="perm-row">
+          <div class="label">example</div>
+          <span class="bit bit-type">d</span>
+          <span class="perm-separator"></span>
+          <span class="bit bit-on">r</span><span class="bit bit-on">w</span><span class="bit bit-off">-</span>
+          <span class="perm-separator"></span>
+          <span class="bit bit-on">r</span><span class="bit bit-off">-</span><span class="bit bit-off">-</span>
+          <span class="perm-separator"></span>
+          <span class="bit bit-on">r</span><span class="bit bit-off">-</span><span class="bit bit-off">-</span>
+        </div>
+        <div class="perm-row">
+          <div class="label">meaning</div>
+          <span class="bit bit-type" style="width:auto;padding:0 0.5rem;font-size:0.65rem">type</span>
+          <span class="perm-separator"></span>
+          <span style="font-size:0.68rem;color:rgba(255,255,255,0.35)">owner</span>
+          <span class="perm-separator"></span>
+          <span style="font-size:0.68rem;color:rgba(255,255,255,0.35)">group</span>
+          <span class="perm-separator"></span>
+          <span style="font-size:0.68rem;color:rgba(255,255,255,0.35)">other</span>
+        </div>
+        <div class="perm-row" style="margin-top:0.5rem">
+          <div class="label">as bits</div>
+          <span class="bit bit-type">?</span>
+          <span class="perm-separator"></span>
+          <span class="bit bit-on">1</span><span class="bit bit-on">1</span><span class="bit bit-off">0</span>
+          <span class="perm-separator"></span>
+          <span class="bit bit-on">1</span><span class="bit bit-off">0</span><span class="bit bit-off">0</span>
+          <span class="perm-separator"></span>
+          <span class="bit bit-on">1</span><span class="bit bit-off">0</span><span class="bit bit-off">0</span>
+          <span class="arrow">→</span>
+          <span class="result">9 usable bits (+ type flag)</span>
+        </div>
+      </div>
+
+      <p>The convention is simple: <strong>any letter present = 1; a dash = 0</strong>. This gives us up to 10 bits of information per file. The two labs below show two different ways to exploit this.</p>
+
+      <!-- 7-bit -->
+      <h3 id="seven-bit">2.1 The 7-Bit Scheme</h3>
+
+      <p>Standard ASCII characters use 7 bits. We can encode one character per file by using the <strong>last 7 permission bits</strong> (the group and other permission bits), and deliberately leaving the first 3 bits (the owner permissions) unset. The file type character is ignored.</p>
+
+      <p>Files carrying part of the message will have no owner permissions set. To avoid suspicion, we intersperse <strong>noise files</strong> — files where at least one of the first 3 bits <em>is</em> set. Noise files are skipped by the receiver.</p>
+
+      <p>Let's walk through encoding the word <strong>"Demigod"</strong>:</p>
+
+      <table class="decode-table">
+        <thead><tr><th>Char</th><th>Decimal</th><th>7-bit</th><th>9-bit (with 00 prefix)</th><th>chmod</th></tr></thead>
+        <tbody>
+          <tr><td class="char">D</td><td>68</td><td class="bits">1000100</td><td class="bits">00 100 010 0</td><td>104</td></tr>
+          <tr><td class="char">e</td><td>101</td><td class="bits">1100101</td><td class="bits">00 110 010 1</td><td>145</td></tr>
+          <tr><td class="char">m</td><td>109</td><td class="bits">1101101</td><td class="bits">00 110 110 1</td><td>155</td></tr>
+          <tr><td class="char">i</td><td>105</td><td class="bits">1101001</td><td class="bits">00 110 100 1</td><td>151</td></tr>
+          <tr><td class="char">g</td><td>103</td><td class="bits">1100111</td><td class="bits">00 110 011 1</td><td>147</td></tr>
+          <tr><td class="char">o</td><td>111</td><td class="bits">1101111</td><td class="bits">00 110 111 1</td><td>157</td></tr>
+          <tr><td class="char">d</td><td>100</td><td class="bits">1100100</td><td class="bits">00 110 010 0</td><td>144</td></tr>
+        </tbody>
+      </table>
+
+      <p>The 9-bit representation groups neatly into three octal digits (owner / group / other), which is exactly how <code>chmod</code> expects its argument. Create the files and set permissions:</p>
+
+      <pre>touch file1 && chmod 104 file1
+touch file2 && chmod 145 file2
+touch file3 && chmod 155 file3
+touch file4 && chmod 151 file4
+touch file5 && chmod 147 file5
+touch file6 && chmod 157 file6
+touch file7 && chmod 144 file7</pre>
+
+      <p>The resulting directory listing looks like this — note that no message file has any owner permission set:</p>
+      <pre>---x---r-- 1 prof prof 0 Mar 27 16:15 file1
+---xr--r-x 1 prof prof 0 Mar 27 16:15 file2
+---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3
+---xr-x--x 1 prof prof 0 Mar 27 16:15 file4
+---xr--rwx 1 prof prof 0 Mar 27 16:15 file5
+---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6
+---xr--r-- 1 prof prof 0 Mar 27 16:15 file7</pre>
+
+      <p>Now add noise files (each with at least one owner permission bit set) to make the listing look natural:</p>
+
+      <pre>---x---r-- 1 prof prof 0 Mar 27 16:15 file1
+d--xrw-r-- 1 prof prof 0 Mar 27 16:15 file1.5    ← noise
+---xr--r-x 1 prof prof 0 Mar 27 16:15 file2
+---xr-xr-x 1 prof prof 0 Mar 27 16:15 file3
+-r-xrwxrwx 1 prof prof 0 Mar 27 16:15 file3.5    ← noise
+---xr-x--x 1 prof prof 0 Mar 27 16:15 file4
+---xr--rwx 1 prof prof 0 Mar 27 16:15 file5
+-rwx--xr-x 1 prof prof 0 Mar 27 16:15 file5.5    ← noise
+---xr-xrwx 1 prof prof 0 Mar 27 16:15 file6
+-rw-r---wx 1 prof prof 0 Mar 27 16:15 file6.5    ← noise
+---xr--r-- 1 prof prof 0 Mar 27 16:15 file7
+drwxr-xrw- 1 prof prof 0 Mar 27 16:15 file7.5    ← noise</pre>
+
+      <p>To <strong>decode</strong>, a receiver scans each file, skips any with an owner permission bit set (noise), and reads the remaining 9 bits as a character:</p>
+
+      <pre>---x---r-- → 0001000100 → bits 1–9 = 001000100 → D
+d--xrw-r-- → first char is 'd' (owner bit set) → SKIP (noise)
+---xr--r-x → 0001100101 → e
+...and so on</pre>
+
+      <!-- 10-bit -->
+      <h3 id="ten-bit">2.2 The 10-Bit Scheme</h3>
+
+      <p>The 7-bit scheme wastes the first 3 permission bits. With a small change, we can use all <strong>10 bits</strong> — squeezing more data out of each file.</p>
+
+      <p>The trade-off: without those "empty owner bits" to distinguish message files from noise files, we can no longer include noise. Every file in the listing carries part of the message, and the receiver processes them all.</p>
+
+      <ul class="step-list">
+        <li><div class="step-num">1</div><div><p><strong>Sort alphabetically.</strong> The receiver must process files in a consistent order. Alphabetical filename order provides a natural, reproducible sequence.</p></div></li>
+        <li><div class="step-num">2</div><div><p><strong>Flatten the bitstream.</strong> Convert the entire covert message to binary, concatenate all bits into one long string, then split into groups of 10. Assign one group per file.</p></div></li>
+        <li><div class="step-num">3</div><div><p><strong>Pad if necessary.</strong> If the message doesn't divide evenly into groups of 10, pad the end with zeros.</p></div></li>
+        <li><div class="step-num">4</div><div><p><strong>Decode in 7-bit chunks.</strong> The receiver collects all bits in order, splits them into 7-bit groups (standard ASCII), and converts each group to its character.</p></div></li>
+      </ul>
+
+      <div class="callout callout-note">
+        <div class="callout-label">🔍 Challenge — Decode This</div>
+        <p>Can you work out the hidden message in the listing below? Files are already sorted alphabetically. Each file's permission string maps to 10 bits. Collect the bits in order, split into 7s, and convert to ASCII.</p>
+      </div>
+
+      <pre>d---r--rwx 2 prof prof 4K Mar 27 20:57 0fd1b45f22e18b3
+-r-xrw--w- 1 prof prof  0 Mar 27 20:57 17c455d90e49
+-rw--w-r-x 1 prof prof  0 Mar 27 20:57 302289542768697c
+-rw---x--- 1 prof prof  0 Mar 27 20:57 4bdf419390d83b860cec
+--wxr-xrwx 1 prof prof  0 Mar 27 20:57 51451ddb647ff3566601f232
+d-w---xr-- 2 prof prof 4K Mar 27 20:57 6e8dd5f0924ce30b35aeaed9
+d-wxrw--w- 2 prof prof 4K Mar 27 20:57 70a8cbb30
+dr--r-x-w- 2 prof prof 4K Mar 27 20:57 79bf30d265cbd436079e
+-rwxrwx--x 1 prof prof  0 Mar 27 20:57 81052541de641ff1ed7ca40
+d-w-----wx 2 prof prof 4K Mar 27 20:57 a8b18ffb171e161c753ab8d
+-rw-rwxrw- 1 prof prof  0 Mar 27 20:57 c52eda933ff95be8f914eaf62
+-r-x-----x 1 prof prof  0 Mar 27 20:57 daf9509999adb4f6e6b49c7e91
+d---rwxr-- 2 prof prof 4K Mar 27 20:57 f35c8e8ed0fb8a609
+--wxrw--w- 1 prof prof  0 Mar 27 20:57 f4ed4ab4e61c850de968
+-rwxrwx-w- 1 prof prof  0 Mar 27 20:57 f59a77545fe6d10
+---x------ 1 prof prof  0 Mar 27 20:57 fce47615d2</pre>
+
+      <details class="callout callout-tip">
+        <summary>Answer</summary>
+        <div class="detail-body">
+          <p>Decode each permission string to 10 bits, collect them all, and group into 7s:</p>
+          <pre>1000100 1110101 1100100 1100101 0101100 0100000 1110111 1101000
+D        u        d        e        ,        [sp]     w        h
+
+1100101 1110010 1100101 0100111 1110011 0100000 1101101 1111001
+e        r        e        '        s        [sp]     m        y
+
+0100000 1100011 1100001 1110010 0111111 0100001 [ignored padding]
+[sp]     c        a        r        ?        !</pre>
+          <p>The hidden message is: <strong><em>Dude, where's my car?!</em></strong></p>
+        </div>
+      </details>
+
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  Cybersecurity Lab &nbsp;·&nbsp; Storage Covert Channel &nbsp;·&nbsp; March 27, 2025
+</footer>
+
+</body>
+</html>

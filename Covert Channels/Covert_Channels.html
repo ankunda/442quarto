@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Covert Channels</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,600;1,400&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #002f8b;
+    --navy-dark: #001a52;
+    --navy-light: #1a47a0;
+    --accent: #e8b800;
+    --accent-soft: #fff3cc;
+    --red: #c0392b;
+    --green: #1a6b3c;
+    --green-bg: #e8f5ee;
+    --text: #1a1a2e;
+    --text-muted: #5a6075;
+    --bg: #f7f8fc;
+    --bg-card: #ffffff;
+    --border: #d0d6e8;
+    --code-bg: #0d1b3e;
+    --code-text: #a8d8ff;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'IBM Plex Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.7;
+    font-size: 16px;
+  }
+
+  /* ── HEADER ── */
+  .site-header {
+    background: var(--navy);
+    padding: 3rem 2rem 2.5rem;
+    position: relative;
+    overflow: hidden;
+  }
+  .site-header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -60px;
+    width: 320px; height: 320px;
+    border-radius: 50%;
+    border: 2px solid rgba(232,184,0,0.18);
+  }
+  .site-header::after {
+    content: '';
+    position: absolute;
+    bottom: -80px; left: 40%;
+    width: 220px; height: 220px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255,255,255,0.07);
+  }
+  .header-inner {
+    max-width: 860px;
+    margin: 0 auto;
+    position: relative;
+  }
+  .header-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--accent);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .site-header h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2rem, 5vw, 3rem);
+    color: #fff;
+    font-weight: 900;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+  }
+  .site-header h1 span {
+    color: var(--accent);
+  }
+  .header-meta {
+    margin-top: 1rem;
+    font-size: 0.82rem;
+    color: rgba(255,255,255,0.5);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── LAYOUT ── */
+  .page-body {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 0;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 2.5rem 1.5rem;
+  }
+
+  /* ── TOC ── */
+  .toc {
+    position: sticky;
+    top: 1.5rem;
+    height: fit-content;
+    padding-right: 2rem;
+    border-right: 2px solid var(--border);
+  }
+  .toc-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+  }
+  .toc ol {
+    list-style: none;
+    padding: 0;
+  }
+  .toc li { margin-bottom: 0.5rem; }
+  .toc a {
+    color: var(--navy-light);
+    text-decoration: none;
+    font-size: 0.83rem;
+    font-weight: 600;
+    display: block;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .toc a:hover { background: var(--accent-soft); color: var(--navy); }
+
+  /* ── CONTENT ── */
+  .content { padding-left: 2.5rem; }
+
+  .content > * + * { margin-top: 1.4rem; }
+
+  .content p { color: var(--text); }
+
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.65rem;
+    color: var(--navy);
+    font-weight: 700;
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 2px solid var(--navy);
+    display: flex;
+    align-items: baseline;
+    gap: 0.7rem;
+  }
+  h2 .sec-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--accent);
+    background: var(--navy);
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    position: relative;
+    top: -0.15rem;
+  }
+
+  .lead-text {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: var(--text);
+    margin-bottom: 1.5rem;
+  }
+  .lead-text strong { color: var(--navy); }
+
+  /* ── CALLOUTS ── */
+  .callout {
+    border-radius: 6px;
+    padding: 1.1rem 1.3rem;
+    margin: 1.5rem 0;
+    border-left: 4px solid;
+    position: relative;
+  }
+  .callout-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .callout-important {
+    background: #fff5f5;
+    border-color: var(--red);
+  }
+  .callout-important .callout-label { color: var(--red); }
+  .callout-note {
+    background: #eef2ff;
+    border-color: var(--navy-light);
+  }
+  .callout-note .callout-label { color: var(--navy); }
+  .callout p { font-size: 0.93rem; line-height: 1.7; }
+
+  /* ── EXAMPLE LIST ── */
+  .example-list {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .example-list li {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    display: grid;
+    grid-template-columns: 2rem 1fr;
+    gap: 0.7rem;
+    align-items: start;
+  }
+  .example-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--navy);
+    background: var(--accent-soft);
+    width: 1.8rem; height: 1.8rem;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .example-list p { font-size: 0.92rem; }
+
+  /* ── CODE BLOCK ── */
+  pre {
+    background: var(--code-bg);
+    color: var(--code-text);
+    border-radius: 8px;
+    padding: 1.2rem 1.4rem;
+    overflow-x: auto;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.82rem;
+    line-height: 1.6;
+    margin: 1rem 0;
+    border: 1px solid rgba(255,255,255,0.05);
+  }
+  code { font-family: 'IBM Plex Mono', monospace; }
+  p code {
+    background: #e8ecf8;
+    color: var(--navy);
+    padding: 0.1em 0.35em;
+    border-radius: 3px;
+    font-size: 0.87em;
+  }
+
+  /* ── CATEGORY CARDS ── */
+  .category-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+  .category-card {
+    background: var(--bg-card);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem;
+    border-top: 4px solid var(--navy);
+  }
+  .category-card h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    color: var(--navy);
+    margin-bottom: 0.4rem;
+  }
+  .category-card p { font-size: 0.88rem; color: var(--text-muted); }
+
+  /* ── PROPERTIES LIST ── */
+  .props {
+    list-style: none;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 1rem 0;
+  }
+  .props li {
+    background: var(--navy);
+    color: #fff;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+  .props li::before { content: '→'; color: var(--accent); }
+
+  /* ── FOOTNOTE ── */
+  .footnote {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    padding-top: 0.6rem;
+    margin-top: 1rem;
+  }
+  .footnote a { color: var(--navy-light); }
+
+  /* ── STEGANOGRAPHY NOTE ── */
+  .vs-box {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 1rem;
+    align-items: center;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.2rem 1.5rem;
+    margin: 1.5rem 0;
+    text-align: center;
+  }
+  .vs-box .term {
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 0.3rem;
+  }
+  .vs-box .desc { font-size: 0.82rem; color: var(--text-muted); }
+  .vs-divider {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 2rem 1rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 720px) {
+    .page-body { grid-template-columns: 1fr; }
+    .toc { display: none; }
+    .content { padding-left: 0; }
+    .category-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="header-inner">
+    <div class="header-eyebrow">Cybersecurity Lecture Notes</div>
+    <h1>Covert <span>Channels</span></h1>
+    <div class="header-meta">March 26, 2025 &nbsp;·&nbsp; CSC / CYEN</div>
+  </div>
+</header>
+
+<div class="page-body">
+
+  <!-- TOC -->
+  <nav class="toc" aria-label="Table of contents">
+    <div class="toc-title">Contents</div>
+    <ol>
+      <li><a href="#intro">Introduction</a></li>
+      <li><a href="#storage">1 &nbsp;Storage Channels</a></li>
+      <li><a href="#timing">2 &nbsp;Timing Channels</a></li>
+      <li><a href="#network">3 &nbsp;Network Channels</a></li>
+      <li><a href="#next">What's Next</a></li>
+    </ol>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="content">
+
+    <!-- Intro -->
+    <section id="intro">
+      <p class="lead-text">
+        A <strong>Covert Channel</strong> in cybersecurity is a method used to secretly transfer information in a way that <strong>violates security policies</strong>. These channels operate by exploiting legitimate communication or computing mechanisms in unintended ways, allowing unauthorized data exfiltration without detection.
+      </p>
+
+      <p>Covert channels typically imply the existence of an <strong>overt channel</strong> — a legitimate, sanctioned communication channel that is being exploited to carry the hidden message. Examples of overt channels include websites, FTP servers, phone conversations, chat applications, social media feeds, and TCP/IP packets.</p>
+
+      <div class="callout callout-important">
+        <div class="callout-label">⚡ Challenge Yourself</div>
+        <p>Can you think of ways that the above overt channels could be used to communicate covertly? Consider code words, preset conversation systems, puzzles, number ciphers, or steganographic embedding. The more mundane the channel, the harder it is to detect the hidden message.</p>
+      </div>
+
+      <p>Because typical covert channels allow communication between entities that are <em>supposed</em> to be able to talk to each other — as permitted by some access control policy — they tend to be:</p>
+
+      <ul class="props">
+        <li>Hidden</li>
+        <li>Hard to detect</li>
+        <li>Require admin access to set up</li>
+        <li>Low bandwidth</li>
+        <li>Resource-intensive</li>
+      </ul>
+
+      <p>That last point — <strong>low bandwidth</strong> — is important. A covert channel typically requires a great deal of time or computation relative to the amount of information it can secretly transmit. Sending a single ASCII character may require many overt messages or significant timing overhead.</p>
+
+      <div class="vs-box">
+        <div>
+          <div class="term">Steganography</div>
+          <div class="desc">Hides data <em>within</em> existing data (e.g. an image). Requires a pre-existing communication channel.</div>
+        </div>
+        <div class="vs-divider">vs.</div>
+        <div>
+          <div class="term">Covert Channel</div>
+          <div class="desc"><em>Creates</em> a channel using unintended side effects of a system's normal operation. No pre-existing channel needed.</div>
+        </div>
+      </div>
+
+      <div class="callout callout-note">
+        <div class="callout-label">📌 Note</div>
+        <p><strong>Steganography</strong> (hiding data within data) is not the same as a covert channel. The key distinction is that steganography requires a prior communication channel — you must already be able to send a file or message — while covert channels create a channel from scratch using the side effects of system behavior. Both are clandestine; they achieve it differently.</p>
+      </div>
+
+      <p>Covert channels fall into two main categories, each with a distinct mechanism:</p>
+      <div class="category-grid">
+        <div class="category-card">
+          <h3>Storage Channels</h3>
+          <p>Communication via modification of a shared storage resource. Sender writes; receiver reads.</p>
+        </div>
+        <div class="category-card">
+          <h3>Timing Channels</h3>
+          <p>Communication via measurable changes in system timing or resource availability.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 1. Storage -->
+    <section id="storage">
+      <h2><span class="sec-num">1</span> Storage Covert Channels</h2>
+
+      <p>In a storage covert channel, the sender (or sending process) modifies a <strong>shared resource</strong> that everyone has legitimate access to. The receiver then reads from that same resource to extract the hidden message. No direct communication between sender and receiver is needed.</p>
+
+      <p>Here are three concrete examples of how a storage covert channel might be constructed:</p>
+
+      <ul class="example-list">
+        <li>
+          <div class="example-num">1</div>
+          <div>
+            <p><strong>Abusing the print queue.</strong> Everyone with access to a system can observe the printer job queue. A sender process can submit jobs to the queue to signal a <code>1</code>, or deliberately skip submissions to signal a <code>0</code>. A receiver polling the queue at regular intervals can reconstruct the bitstream and decode the message over time.</p>
+          </div>
+        </li>
+        <li>
+          <div class="example-num">2</div>
+          <div>
+            <p><strong>Abusing web server log files.</strong> Web servers record every page request. A sender could access a designated page to transmit a <code>0</code>, and a different page to transmit a <code>1</code>. A receiver with read access to the log file can then parse the access pattern and reconstruct the hidden message — with no suspicious direct communication between parties.</p>
+          </div>
+        </li>
+        <li>
+          <div class="example-num">3</div>
+          <div>
+            <p><strong>FTP file permissions.</strong> FTP servers are easy to deploy and loosely supervised. A sender can embed a message in the permission bits of files on the server. Casual users see only a file listing; a receiver who knows the encoding scheme can read the hidden message from the permission bits. Each file's 10-character permission string can carry up to 10 bits of information.</p>
+<pre>drwxrwxrwx 1 prof prof 0 Mar 26 17:52 'Some random file name'</pre>
+            <p>With the simple scheme <em>"letter present = 1, dash = 0,"</em> each file contributes up to 10 bits to the covert message.</p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="callout callout-note">
+        <div class="callout-label">🔬 Lab Connection</div>
+        <p>FTP file permissions are the basis of the <strong>Storage Covert Channel Lab</strong> that accompanies these notes. By the end of that lab, you will be able to embed and decode a text message using only the permission bits of files on an FTP server.</p>
+      </div>
+    </section>
+
+    <!-- 2. Timing -->
+    <section id="timing">
+      <h2><span class="sec-num">2</span> Timing Covert Channels</h2>
+
+      <p>Timing covert channels rely on <strong>measurable variations in system behavior over time</strong> rather than any observable data stored somewhere. The receiver must watch the system and measure intervals — it never reads a file or accesses a log directly.</p>
+
+      <ul class="example-list">
+        <li>
+          <div class="example-num">1</div>
+          <div>
+            <p><strong>File access duration.</strong> A sender opens and closes a file for varying durations: a short hold signals <code>0</code>, a long hold signals <code>1</code>. The receiver, watching the file lock or access time, accumulates bits and decodes the message. This can work entirely within a single machine.</p>
+          </div>
+        </li>
+        <li>
+          <div class="example-num">2</div>
+          <div>
+            <p><strong>Port knocking patterns.</strong> Port knocking (covered later in the course) is a technique for keeping network ports hidden until a secret knock sequence is recognized. However, a sender can deliberately use an <em>incorrect</em> knock pattern to encode bits. A receiver inside the network observes the pattern and decodes the message — even though the ports remain closed and traffic appears normal from the outside.</p>
+          </div>
+        </li>
+        <li>
+          <div class="example-num">3</div>
+          <div>
+            <p><strong>Hard drive acoustic side channel.</strong> Mechanical hard drives produce distinct sounds depending on head movement direction and speed. Researchers demonstrated that these sounds can be deliberately controlled by a process to transmit data from an <em>air-gapped</em> computer — one completely disconnected from the internet. A nearby device with a microphone records and decodes the audio, exfiltrating data without any network connection.<sup>1</sup></p>
+          </div>
+        </li>
+      </ul>
+
+      <div class="footnote">
+        <sup>1</sup> Guri et al., "DiskFiltration: Data Exfiltration from Speakerless Air-Gapped Computers via Covert Hard Drive Noise." arXiv:1608.03431. <a href="https://arxiv.org/abs/1608.03431" target="_blank">arxiv.org/abs/1608.03431</a>
+      </div>
+
+      <div class="callout callout-note">
+        <div class="callout-label">🔬 Lab Connection</div>
+        <p>The <strong>Timing Covert Channel Lab</strong> will have you build a TCP server that transmits an overt text message character-by-character, with the delay between each character encoding a hidden binary message. Short delay = <code>0</code>; long delay = <code>1</code>.</p>
+      </div>
+    </section>
+
+    <!-- 3. Network -->
+    <section id="network">
+      <h2><span class="sec-num">3</span> Network Covert Channels</h2>
+
+      <p>Network covert channels are not a separate fundamental category — any example here could be classified as either storage or timing — but they share a common feature: exploitation of <strong>network infrastructure</strong> as the carrier.</p>
+
+      <p>A classic example is embedding a covert message in the <strong>header fields of network packets</strong>. The overt payload (the body of the packet) carries legitimate-looking data; security systems typically inspect the payload for suspicious content. However, certain header fields — IP identification numbers, TCP sequence numbers, TTL values, reserved bits — receive far less scrutiny. A sender places bits of the covert message in these fields; a receiver who knows where to look can reconstruct the hidden message, packet by packet, as the traffic flows through the network.</p>
+
+      <p>Because normal traffic is the cover story, these channels are extremely difficult to distinguish from legitimate network activity without deep packet inspection policies specifically designed to detect covert encoding.</p>
+    </section>
+
+    <!-- What's next -->
+    <section id="next">
+      <h2><span class="sec-num">→</span> What's Next</h2>
+
+      <p>This discussion is meant to <em>expose</em> you to specific, real-world covert channel techniques — not to catalogue every possible variant. Once you see how one works, you will start to recognise opportunities everywhere: any shared resource, any observable timing difference, any underspecified header field is a potential channel.</p>
+
+      <p>You will now work through <strong>two labs</strong>:</p>
+      <ul class="example-list">
+        <li>
+          <div class="example-num">A</div>
+          <div><p><strong>Storage Covert Channel Lab</strong> — encoding a hidden message in FTP file permissions.</p></div>
+        </li>
+        <li>
+          <div class="example-num">B</div>
+          <div><p><strong>Timing Covert Channel Lab</strong> — encoding a hidden message in the inter-character delays of a TCP server's overt transmission.</p></div>
+        </li>
+      </ul>
+
+      <div class="callout callout-note">
+        <div class="callout-label">📚 Go Deeper</div>
+        <p>For a rigorous treatment of this topic — including formal models, detection, and access control theory — enroll in <strong>CSC 446 / CYEN 402: Access Control Logic and Covert Channels</strong>, offered every other year (last offered Winter 2024–25).</p>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer>
+  Cybersecurity Lecture Notes &nbsp;·&nbsp; Covert Channels &nbsp;·&nbsp; March 26, 2025
+</footer>
+
+</body>
+</html>
