@@ -1,5 +1,5 @@
 ---
-title: "Storage Covert Channel Lab"
+title: "Covert Channels: Storage Lab"
 subtitle: "Hiding Messages in File Permissions"
 date: "March 27, 2026"
 title-block-banner: "#002f8b"
@@ -9,6 +9,7 @@ number-sections: true
 format:
   pdf:
     code-copy: false
+    output-file: "Covert Channel Lab-Storage.pdf"
     code-fold: true
     geometry: margin=1in
     fontsize: 11pt
