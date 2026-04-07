@@ -1,11 +1,11 @@
 ---
-title: "Lab 1 - Firewalls"
+title: "Computer Network Defense: Firewall Lab"
 format:
     pdf:
         toc: true
         number-sections: true
         colorlinks: true
-        output-file: "Lab 1 - Firewalls.pdf"
+        output-file: "Computer Network Defense: Firewall Lab.pdf"
 ---
 
 # Introduction

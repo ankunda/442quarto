@@ -1,0 +1,49 @@
+---
+title: "Computer Network Defense: Assignment"
+format:
+    pdf:
+        toc: true
+        number-sections: true
+        colorlinks: true
+        output-file: "Computer Network Defense: Assignment.pdf"
+---
+
+# Instructions
+
+Discuss each of the following questions with your group with respect to the tools used within each lab. Submit a single pdf on Canvas that answers each question in a succinct, but complete, manner. 
+
+
+# Firewall Lab
+
+Discuss the following with your group and provide a brief response to each.
+
+1. What is the difference between **denying** traffic from a specific IP and **deleting** a rule that allows a service?
+
+2. In a real organization, who would be responsible for managing firewall rules? What process might they follow?
+
+3. The Linux port-based approach and the Windows application-based approach each have trade-offs. Which do you think is easier to maintain? Which do you think is more secure?
+
+
+
+# Docker Lab
+
+Discuss the following with your group and provide a brief response to each.
+
+1. You SSH'd into the container as a non-root user. What risks would need to be considered if you had SSH'd into the container as root?
+
+2. A "container escape" is when a process inside a container gains access to the host. Based on what you observed in this lab, what features or configurations do you think would make a container escape more likely?
+
+3. When you removed the container, everything inside it was gone except for files in the shared volume. How could this property be useful for security testing or incident response?
+
+
+
+# Wireshark Lab
+
+Discuss the following with your group and provide a brief response to each.
+
+1. Wireshark can only capture traffic that reaches your network interface. On a modern switched network, you typically only see your own traffic. What technique would an attacker need to use to capture traffic meant for someone else on the same network?
+
+2. You set up a firewall in a previous lab. Does a firewall prevent someone on the same network from sniffing your traffic? Why or why not?
+
+3. You used Wireshark in a defensive context here by observing your own machine. What would it look like to use this tool offensively, and what authorization would you need to do so legally?
+

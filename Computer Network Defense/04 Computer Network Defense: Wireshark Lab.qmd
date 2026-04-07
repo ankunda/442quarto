@@ -1,11 +1,11 @@
 ---
-title: "Lab 3 - Wireshark"
+title: "Computer Network Defense: Wireshark Lab"
 format:
     pdf:
         toc: true
         number-sections: true
         colorlinks: true
-        output-file: "Lab 3 - Wireshark.pdf"
+        output-file: "Computer Network Defense: Wireshark Lab.pdf"
 ---
 
 # Introduction
@@ -70,11 +70,13 @@ Before capturing traffic you need to know which network interface to listen on.
 
 # Capturing Traffic with Wireshark
 
-The remainder of this lab uses `tshark` so that it works on headless VMs and keeps the focus on understanding the output. You are encouraged to explore the Wireshark GUI as it can be easier to use.
+The remainder of this lab uses both `tshark` and the Wireshark GUI. Feel free to use either. 
 
-## A Basic Capture
+## A Basic Capture with tshark
 
-1. Start a capture on your network interface. Replace `<interface>` with the interface name you found above (e.g. `enp0s8`). This will capture 20 packets and then stop.
+1. Open two terminals.
+
+2. In one of the terminals, start a capture on your network interface. Replace `<interface>` with the interface name you found above (e.g. `enp0s8`). This will capture 20 packets and then stop.
 
     ```sh
     tshark -i <interface> -c 20 
@@ -82,13 +84,13 @@ The remainder of this lab uses `tshark` so that it works on headless VMs and kee
     
     Note the flag `-i` is for interface and the flag `-c` is for count, that is, the number of packets to capture.
 
-    While it is running, generate some traffic by pinging a server from another terminal window.
+    While it is running, generate some traffic by pinging a server from the other terminal window.
 
     ```sh
     ping -c 5 google.com
     ```
 
-2. Look at the output. Each line is one packet and should include the following:
+2. Familiarize yourself with the output. Each line is one packet and should include the following:
     - A packet number and timestamp
     - Source IP address
     - Destination IP address
@@ -102,36 +104,51 @@ Look at the captured packets with your group.
 
 2. Are there any packets you did not expect? Where are they coming from or going to?
 
-3. What does it tell you that traffic you did not intentionally generate is still appearing in the capture?
-
 :::
 
 ## Saving a Capture to a File
 
-Rather than reading packets as they scroll past, you can save a capture to a file and analyze it afterward.
+Rather than reading packets as they scroll past, you can save a capture to a file and analyze it afterward. 
 
-1. Start a 30-second capture and save it to a file.
+1. Create a folder to store your captures in.
 
-    ```sh
-    tshark -i <interface> -a duration:30 -w capture.pcap
+    ```sh 
+    cd ~/Documents
+    mkdir "packet captures"
+    cd "packet captures"
     ```
 
-    Note the `-a` flag is used to set an **autostop** condition. Our autostop condition is a duration of 30 seconds passing. 
+2. Start a 45-second capture and save it to a file.
 
-    The `-w` flag is used to indicate the file you want to **write** the capture to.
+    ```sh
+    tshark -i <interface> -a duration:45 -w capture.pcap
+    ```
 
-    While it is running, generate traffic from another terminal:
+    **Flags:**
+
+    - `-a` is used to set an **autostop** condition. Our autostop condition is a duration of 45 seconds passing. 
+
+    - `-w` flag is used to indicate the file you want to **write** the capture to.
+
+3. While it is running, generate traffic from the other terminal:
 
     ```sh
     ping -c 10 google.com
     curl http://httpforever.com
     ```
 
-2. Once the capture completes, read the file back, or for a nicer view, double click the .pcap file to open it in the Wireshark GUI.
+4. Once the capture completes, read the file back with the following command. 
 
     ```sh
     tshark -r capture.pcap
     ```
+
+5. For a nicer view, open the .pcap file with wireshark by double clicking it or using the following command.
+
+    ```sh
+    wireshark capture.pcap
+    ```
+
 
 # Filtering Traffic
 
@@ -147,9 +164,11 @@ Capture filters are applied during the capture itself. Only matching packets are
     tshark -i <interface> -a duration:15 -f "icmp" -w icmp_capture.pcap
     ```
 
-    The `-f` flag allows us to apply a filter.
+    **Flags**
 
-    In another terminal, generate some pings and some non-ping traffic:
+    - `-f` flag allows us to apply a filter.
+
+2. While the previous command is running, in another terminal, generate some pings and some non-ping traffic:
 
     ```sh
     ping -c 5 google.com
@@ -162,9 +181,13 @@ Capture filters are applied during the capture itself. Only matching packets are
     tshark -r icmp_capture.pcap
     ```
 
+    ```sh
+    wireshark icmp_capture.pcap
+    ```
+
 ## Display Filters
 
-Display filters are applied when reading a capture — all packets are recorded but only matching ones are shown.
+Display filters are applied when reading a capture. All packets are recorded but only matching ones are shown.
 
 1. Read your earlier `capture.pcap` and filter to show only DNS traffic.
 
@@ -172,10 +195,10 @@ Display filters are applied when reading a capture — all packets are recorded 
     tshark -r capture.pcap -Y "dns"
     ```
 
-2. Filter to show only traffic to or from a specific IP address. Replace `<ip>` with one of the addresses you saw in your capture.
+    Or, with the wireshark GUI
 
     ```sh
-    tshark -r capture.pcap -Y "ip.addr == <ip>"
+    wireshark -r capture.pcap -Y "dns"
     ```
 
 3. Filter to show only HTTP traffic.
@@ -184,10 +207,15 @@ Display filters are applied when reading a capture — all packets are recorded 
     tshark -r capture.pcap -Y "http"
     ```
 
+    ```sh
+    wireshark -r capture.pcap -Y "dns"
+    ```
+
+
 :::{.callout-important title="Group Activity"}
 Work through the following with your group.
 
-1. Have one group member run the following command on their VM to start a capture:
+1. Have one group member run the following command on their VM to start a capture. If 30 seconds isn't enough time as indicated, give yourself enough time to have the remining parts completed. 
 
     ```sh
     tshark -i <interface> -a duration:30 -w group_capture.pcap
@@ -234,24 +262,18 @@ You can use `tshark` to print more detail about each packet, including its conte
 
 :::{.callout-important title="Group Discussion"}
 1. Run `curl http://httpforever.com` in another terminal while capturing traffic, then look at the HTTP packets in the capture. Can you read the content of the webpage in the packet data? What does this tell you about unencrypted HTTP traffic?
-2. Now try `curl https://example.com` and capture that traffic. Can you read the content now? Why not?
+2. Now try `curl https://google.com` and capture that traffic. Can you read the content now? Why not?
 3. What kinds of sensitive information could an attacker recover by sniffing unencrypted traffic on a network?
 :::
 
-# Cleanup
 
-1. Remove the capture files created during this lab.
-
-    ```sh
-    rm -f capture.pcap icmp_capture.pcap group_capture.pcap
-    ```
 
 # Wrap-Up Discussion
 
-:::{.callout-important title="Group Discussion"}
+:::{.callout-important title="Group Assignment: Canvas Submission"}
 Before finishing, discuss the following with your group:
 
 1. Wireshark can only capture traffic that reaches your network interface. On a modern switched network, you typically only see your own traffic. What technique would an attacker need to use to capture traffic meant for someone else on the same network?
 2. You set up a firewall in a previous lab. Does a firewall prevent someone on the same network from sniffing your traffic? Why or why not?
-3. You used Wireshark in a defensive context here — observing your own machine. What would it look like to use this tool offensively, and what authorization would you need to do so legally?
+3. You used Wireshark in a defensive context here by observing your own machine. What would it look like to use this tool offensively, and what authorization would you need to do so legally?
 :::

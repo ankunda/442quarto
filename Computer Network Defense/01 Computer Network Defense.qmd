@@ -5,8 +5,11 @@ title-block-banner: "#002f8b"
 toc: true
 number-sections: true
 format:
-  pdf:
-    code-fold: true
+    pdf:
+        toc: true
+        number-sections: true
+        colorlinks: true
+        output-file: "Computer Network Defense.pdf"
 ---
 
 
@@ -149,24 +152,6 @@ delivered by email. Other ways include manual exploitation of security
 vulnerabilities, drive-by downloads, social engineering (phishing,
 vishing, smishing, etc.)
 
-## Group activity
-
-:::{.callout-important title="group discussion"}
-Email use demo: cf ./emailspam/*
-
-In groups of 3-4, read over the provided emails and identify answers to
-the following questions:
-
-1. What kind of attack is this?
-
-2. Are there signs that you can see to identify that this is in fact an
-   attack? or that it is legitimate?
-
-3. What kind of vulnerabilities (in the cyber and physical realms) does
-   this kind of attack need to be successful?
-
-4. How can you defend against this kind of attack?
-:::
 
 ## Protecting against malware
 
@@ -275,7 +260,7 @@ virtualization and is quicker but the jail will have the same OS as the
 host and a subset of the tools installed on the host.
 
 
-## Docker containers
+## Docker Containers
 
 Docker containers are a more recent entry into the isolation game. They
 allow users to set up environments with operating systems, and software

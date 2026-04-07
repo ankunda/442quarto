@@ -1,11 +1,11 @@
 ---
-title: "Lab 2 - Docker Containers"
+title: "Computer Network Defense: Docker Lab"
 format:
     pdf:
         toc: true
         number-sections: true
         colorlinks: true
-        output-file: "Lab 2 - Docker Containers.pdf"
+        output-file: "Computer Network Defense: Docker Lab.pdf"
 ---
 
 # Introduction
@@ -232,7 +232,7 @@ Work with your group to SSH directly into a running Docker container.
     docker run -d --name sshbox -p 2222:22 ubuntu sleep infinity
     ```
 
-    **Some notes about the previous command**
+    **Arguments**
 
     * `-d` is for **detached mode**. This allows the container to run in the background so your terminal stays free to use for other commands for now.
 
