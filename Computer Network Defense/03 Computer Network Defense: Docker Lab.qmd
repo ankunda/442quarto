@@ -1,0 +1,355 @@
+---
+title: "Computer Network Defense: Docker Lab"
+format:
+    pdf:
+        toc: true
+        number-sections: true
+        colorlinks: true
+        output-file: "Computer Network Defense: Docker Lab.pdf"
+---
+
+# Introduction
+
+A **Docker container** is an isolated environment that packages an application along with everything it needs to run. For example, it has its own OS layer, libraries, and configuration. Containers are portable, meaning the same container can run identically on any machine that has Docker installed. This makes them popular both for software development and for security purposes, since a compromised container does not affect the host machine.
+
+Compared to a virtual machine, containers are lightweight since they share the host OS kernel rather than running a full separate OS. Compared to a chroot jail, containers provide stronger isolation and come with a rich ecosystem of pre-built environments.
+
+In this lab you will install Docker, pull a pre-built container image, run and interact with containers, and explore how isolation works in practice.
+
+:::{.callout-note}
+All commands in this lab should be run on your **virtual machine**, not your host machine.
+:::
+
+# Installing Docker
+
+1. Update your package list.
+
+    ```sh
+    sudo apt update
+    ```
+
+2. Install Docker.
+
+    ```sh
+    sudo apt install docker.io
+    ```
+
+3. Start and enable the Docker service so it runs on boot.
+
+    ```sh
+    sudo systemctl start docker
+    sudo systemctl enable docker
+    ```
+
+4. Verify Docker is installed and running.
+
+    ```sh
+    sudo docker --version
+    sudo systemctl status docker
+    ```
+
+    You should see a version number and a status showing the service is `active (running)`. To exit, press `q`.
+
+5. Add your user to the `docker` group so you can run Docker commands without `sudo`.
+
+    ```sh
+    sudo usermod -aG docker $USER
+    ```
+
+:::{.callout-warning}
+You will need to **log out and back in** for this group change to take effect. Do that now before continuing.
+:::
+
+# Pulling and Running Your First Container
+
+Docker uses **images** as blueprints for containers. Images are downloaded from a registry (Docker Hub by default). A **container** is a running instance of an image.
+
+1. Pull the official Ubuntu image from Docker Hub.
+
+    ```sh
+    docker pull ubuntu
+    ```
+
+    You should see Docker downloading the image layers. Once complete, the image is stored locally.
+
+2. Verify the image was downloaded.
+
+    ```sh
+    docker images
+    ```
+
+    You should see `ubuntu` listed with its tag, size, and image ID.
+
+3. Run the Ubuntu container interactively.
+
+    ```sh
+    docker run -it ubuntu bash
+    ```
+
+    - `-i` keeps standard input open (interactive)
+    - `-t` allocates a terminal
+    - `bash` is the command to run inside the container (optional in this case)
+
+    Your prompt will change to something like `root@<container_id>:/#`, indicating you are now inside the container.
+
+:::{.callout-important title="Group Discussion"}
+You are now inside an isolated Ubuntu environment running on top of your Linux VM. Discuss with your group:
+
+1. Run `whoami`. What user are you inside the container? Is this concerning? Why or why not?
+2. Run `ls /`. How does the filesystem inside the container compare to what you'd expect on a normal Linux system?
+3. Run `cat /etc/os-release`. What OS is the container running?
+:::
+
+# Exploring Container Isolation
+
+While still inside the container, work through the following to understand how isolated it is from your host VM.
+
+1. Try to install a package inside the container.
+
+    ```sh
+    apt update
+    apt install tree
+    ```
+
+    This works. You have a full package manager available inside the container.
+
+2. Create a file inside the container.
+
+    ```sh
+    echo "hello from inside the container" > /tmp/containerfile.txt
+    cat /tmp/containerfile.txt
+    ```
+
+3. Exit the container.
+
+    ```sh
+    exit
+    ```
+
+4. Back on your VM, check whether the file you created exists on the host.
+
+    ```sh
+    cat /tmp/containerfile.txt
+    ```
+
+    It should not exist. The container's filesystem is isolated from the host.
+
+:::{.callout-important title="Group Discussion"}
+1. You installed `tree` inside the container. Is it installed on your host VM now? Test it: run `which tree` on your host.
+2. What does this tell you about the usefulness of containers for safely running untrusted software?
+3. What would happen to all of your changes inside the container if you ran `docker run -it ubuntu bash` again? Would the file still be there?
+:::
+
+# Container Lifecycle
+
+5. List all running containers.
+
+    ```sh
+    docker ps
+    ```
+
+    Since you exited the container, nothing should be running.
+
+6. List all containers, including stopped ones.
+
+    ```sh
+    docker ps -a
+    ```
+
+    You should see your previous container listed with a status of `Exited`.
+
+7. Run a container in the background (detached mode) using the `-d` flag. This container will just sleep for 60 seconds.
+
+    ```sh
+    docker run -d ubuntu sleep 60
+    ```
+
+8. Check that it is running.
+
+    ```sh
+    docker ps
+    ```
+
+    You should see it listed with a status of `Up`.
+
+9. Stop the container using its container ID (the first column from `docker ps`).
+
+    ```sh
+    docker stop <container_id>
+    ```
+
+# Sharing Files Between Host and Container
+
+Containers are isolated, but you can deliberately share a folder between the host and a container using a **volume mount**.
+
+1. Create a directory on your VM to share.
+
+    ```sh
+    mkdir ~/shared
+    echo "this file is from the host" > ~/shared/hostfile.txt
+    ```
+
+2. Run a container with the shared folder mounted. The `-v` flag maps a host path to a container path.
+
+    ```sh
+    docker run -it -v ~/shared:/data ubuntu bash
+    ```
+
+3. Inside the container, navigate to the mounted folder and view its contents.
+
+    ```sh
+    cd /data
+    ls
+    cat hostfile.txt
+    ```
+
+    You should see the file you created on the host.
+
+4. Create a new file from inside the container.
+
+    ```sh
+    echo "this file is from the container" > /data/containerfile.txt
+    exit
+    ```
+
+5. Back on your host, check the shared folder.
+
+    ```sh
+    ls ~/shared
+    cat ~/shared/containerfile.txt
+    ```
+
+    The file created inside the container should now exist on the host.
+
+:::{.callout-important title="Group Activity"}
+Work with your group to SSH directly into a running Docker container.
+
+**On the host VM (one group member):**
+
+1. Start a container with port 22 exposed and keep it running.
+
+    ```sh
+    docker run -d --name sshbox -p 2222:22 ubuntu sleep infinity
+    ```
+
+    **Arguments**
+
+    * `-d` is for **detached mode**. This allows the container to run in the background so your terminal stays free to use for other commands for now.
+
+    * `--name sshbox` is used to give the container a name so you can reference it by name instead of ID.
+
+    * `-p 2222:22` forwards port 2222 on the host to port 22 inside the container (22 for ssh).
+
+    * `sleep infinity` is used to keep the container alive with no workload.
+
+2. Install and configure SSH inside the container by running each of the following.
+
+    a. First access the container.
+
+    ```sh
+    docker exec -it sshbox bash
+    ```
+
+    b. Now install openssh-server. Follow any prompts while installing. 
+
+    ```sh
+    apt update
+    apt install -y openssh-server
+    ```
+
+    c. Create a new user and set a password for them. We will use `-m` to ensure the user gets a home directory and `-s` to explicitly set the default shell for the user as bash.
+
+    ```sh
+    useradd -m -s /bin/bash student
+    passwd student
+    ```
+
+    You will be prompted to enter and confirm a password for the user named `student`. Remember that you wont be able to see what you are typing when you're typing a password to protect against shoulder surfing.
+
+    d. Start the SSH service and exit the container.
+
+    ```sh
+    service ssh start
+    exit
+    ```
+
+3. Find your VM's IP address.
+
+    ```sh
+    hostname -I
+    ```
+
+**On another VM (second group member):**
+
+4. SSH into the container by using the user name in the container, the VM's IP address, and specify port 2222 which is being forwarded to the container's port 22.
+
+    ```sh
+    ssh student@<vm-ip> -p 2222
+    ```
+
+5. Once inside, verify you are in the container, not the VM, although the bash prompt should already be displaying this information.
+
+    ```sh
+    cat /etc/hostname
+    hostname
+    ```
+
+    Compare this to the host's hostname.
+
+:::
+
+# Cleaning Up
+
+Stopped containers and downloaded images take up disk space. Clean up when you are done.
+
+1. Remove all stopped containers.
+
+    ```sh
+    docker container prune
+    ```
+
+    You will be prompted to confirm. Type `y` and press Enter.
+
+2. Verify no containers remain.
+
+    ```sh
+    docker ps -a
+    ```
+
+    If containers still remain, you can stop those specific containers using their name or id. 
+
+    ```sh
+    docker stop <container_id>
+    ```
+
+3. Remove the Ubuntu image.
+
+    ```sh
+    docker rmi ubuntu
+    ```
+
+4. Verify the image was removed.
+
+    ```sh
+    docker images
+    ```
+
+5. Remove the shared folder created during this lab.
+
+    ```sh
+    rm -rf ~/shared
+    ```
+
+# Wrap-Up Discussion
+
+:::{.callout-important title="Group Assignment: Canvas Submission"}
+Discuss the following with your group and submit your answers as a group on Canvas.
+
+
+1. You SSH'd into the container as a non-root user. What risks would need to be considered if you had SSH'd into the container as root?
+
+2. A "container escape" is when a process inside a container gains access to the host. Based on what you observed in this lab, what features or configurations do you think would make a container escape more likely?
+
+3. When you removed the container, everything inside it was gone except for files in the shared volume. How could this property be useful for security testing or incident response?
+
+:::

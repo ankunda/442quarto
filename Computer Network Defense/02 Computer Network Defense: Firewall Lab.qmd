@@ -1,0 +1,199 @@
+---
+title: "Computer Network Defense: Firewall Lab"
+format:
+    pdf:
+        toc: true
+        number-sections: true
+        colorlinks: true
+        output-file: "Computer Network Defense: Firewall Lab.pdf"
+---
+
+# Introduction
+
+A **firewall** is a security system that monitors and controls incoming and outgoing network traffic based on a set of rules. Firewalls act as a barrier between a trusted internal network and untrusted external networks, stopping unauthorized access from outside while also preventing malware from communicating out.
+
+In this lab you will configure a Linux firewall on your virtual machine using **UFW** (Uncomplicated FireWall). UFW is a command-line tool that simplifies the management of firewall rules on Linux systems. By the end of this lab your group will have set up a working firewall, allowed and denied specific types of traffic, and tested those rules across your VMs.
+
+:::{.callout-note}
+All commands in this lab should be run on your **virtual machine**, not your host machine.
+:::
+
+# Installing UFW
+
+First, make sure your system is up to date, then install UFW.
+
+```sh
+sudo apt update
+sudo apt install ufw
+```
+
+Optionally, if you prefer a graphical interface, you can also install GUFW. These instructions only use the command-line version above.
+
+```sh
+sudo apt install gufw
+```
+
+# Setting Up Default Rules
+
+We will start by enabling the firewall and blocking all incoming traffic by default.
+
+1. Enable the firewall.
+
+    ```sh
+    sudo ufw enable
+    ```
+
+2. Check the firewall status. 
+
+    ```sh
+    sudo ufw status verbose
+    ```
+
+    **Expected Result**
+
+    ```txt 
+    Status: active
+    Logging: on (low)
+    Default: deny (incoming), allow (outgoing), disable (routed)
+    New Profiles: skip
+    ```
+
+
+3. If incoming traffic isn't already denied, run the following command to deny all incoming connections.
+
+    ```sh
+    sudo ufw default deny incoming
+    ```
+
+4. Run `sudo ufw status verbose` again to confirm incoming traffic is being denied.
+
+
+:::{.callout-important title="Testing SSH Across the Group"}
+Confirm that SSH isn't allowed by having someone in your group try to ssh into your machine. You will need to share your ip address with them, so be sure to run the following command to get it.
+
+```sh
+ip a
+```
+
+Then have them try to connect to your machine from their machine
+
+```sh
+ssh <your_username>@<your_ip_address>
+```
+
+Confirm that they should be blocked.
+:::
+
+:::{.callout-important title="Group Discussion"}
+With your firewall now blocking all incoming traffic, discuss the following with your group:
+
+1. What does it mean practically for a machine to deny all incoming traffic? What can it still do?
+
+2. Can your VM still access the internet (outgoing traffic)? Try it by opening a browser or run `ping google.com`.
+
+3. What is a scenario where blocking all incoming traffic by default would cause a problem?
+:::
+
+
+
+# Allowing a Specific Service
+
+Blocking everything is not practical. Let's allow SSH connections so that other machines can connect to yours.
+
+1. Allow SSH traffic through your firewall.
+
+    ```sh
+    sudo ufw allow ssh
+    ```
+
+2. Check your updated firewall status.
+
+    ```sh
+    sudo ufw status verbose
+    ```
+
+
+
+:::{.callout-important title="Testing SSH Again"}
+Now that SSH is allowed, test it again with another group memeber. Share your ip address with a group member. 
+
+```sh
+ip a
+```
+
+Then have them connect to your machine with the following command
+
+```sh
+ssh <your_username>@<your_ip_address>
+```
+
+They should be prompted for your password. Perhaps just type it in on their computer instead of telling them what it is. Once you've typed it in, they should be connected!
+
+To disconnect, type `exit`.
+:::
+
+
+
+# Removing a Firewall Rule
+
+Firewalls need to be maintained. You may need to remove rules that are no longer needed.
+
+**Option 1**: Remove a rule by service name.
+
+```sh
+sudo ufw delete allow ssh
+```
+
+**Option 2**: List all rules by number, then delete by number.
+
+```sh
+sudo ufw status numbered
+sudo ufw delete <rule_number>
+```
+
+:::{.callout-tip}
+Use Option 2 when you are unsure of the exact rule name, or when you have multiple rules and want to be precise about which one to remove.
+:::
+
+# Denying Traffic from a Specific Source
+
+You can also block traffic from a specific IP address or subnet. This is useful for blocking a known bad actor.
+
+```sh
+sudo ufw deny from <ip_address>          # deny from a single IP
+sudo ufw deny from <ip_address>/24       # deny from an entire subnet
+```
+
+:::{.callout-important title="Group Activity"}
+Work with another group member to try the following:
+
+1. Find your partner's IP address (`ip a`).
+2. On your machine, remove the general SSH allow rule and replace it with one that only allows SSH from your partner's IP address.
+3. Have them attempt to SSH into your machine. Does it work?
+4. Have a *different* group member (one not in your rule) attempt to SSH in. What is the result?
+:::
+
+# Cleanup and Turning off the Firewall
+
+If you need to temporarily disable your firewall and suspend all active rules, run the following. Also, just to clean up any changes we made in this lab as to not affect future labs in this course, run the following command.
+
+```sh
+sudo ufw disable
+```
+
+
+# Wrap-Up Discussion
+
+:::{.callout-important title="Group Assignment: Submit on Canvas"}
+As a group, you'll submit a document for this lab that answers the following three questions. Discuss the answers together, compile the document, and then upload it to Canvas.
+
+1. What is the difference between **denying** traffic from a specific IP and **deleting** a rule that allows a service?
+
+2. In a real organization, who would be responsible for managing firewall rules? What process might they follow?
+
+3. The Linux port-based approach and the Windows application-based approach each have trade-offs. Which do you think is easier to maintain? Which do you think is more secure?
+:::
+
+# Additional Resources
+
+For more UFW commands and examples, see [Digital Ocean's UFW Essentials article](https://www.digitalocean.com/community/tutorials/ufw-essentials-common-firewall-rules-and-commands).
