@@ -233,6 +233,7 @@ After installing it, confirm it is running with the `ss` command shown previousl
     ```
 
 
+
 # Server Setup
 
 1. On the client, copy the keys you generated to the server using the `scp` command (secure copy). Note that we are copying the keys to a file called `access.conf` at `/home/username` on the server. Additionally, be sure to replace the word `username` with the name of the user of the server.
@@ -245,7 +246,7 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
 2. On the server, open the file at /etc/fwknop/access.conf and find the section that has the following information:
 
-    ``` 
+    ```
     SOURCE              ANY
     KEY_BASE64          __CHANGE_ME__
     HMAC_KEY_BASE64     __CHANGE_ME__
