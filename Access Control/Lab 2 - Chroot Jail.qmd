@@ -36,7 +36,7 @@ First we setup a simple jail that allows the user to execute specific bash comma
     cd /var/jail 
     ```
 
-3. Everything we want the user to access must be in the jail. We will want them to have access to the bash interpreter. Let's check the dependencies of the bash interpreter with the `ldd` command so that we can determine what to add to the jail.
+4. Everything we want the user to access must be in the jail. We will want them to have access to the bash interpreter. Let's check the dependencies of the bash interpreter with the `ldd` command so that we can determine what to add to the jail.
 
     ```sh
     ldd /bin/bash
@@ -60,7 +60,7 @@ First we setup a simple jail that allows the user to execute specific bash comma
     /lib64/ld-linux-x86-64.so.2 
     ```
 
-4. While in the /var/jail, create directories that mimic the outputs above. Only create the appropriate directories for your machine. 
+5. While in the /var/jail, create directories that mimic the outputs above. Only create the appropriate directories for your machine. 
 
     ```sh
     # ARM Machines:
@@ -72,7 +72,7 @@ First we setup a simple jail that allows the user to execute specific bash comma
     mkdir bin lib lib64
     ```
 
-5. Copy the bash dependencies and bash into the appropriate directories
+6. Copy the bash dependencies and bash into the appropriate directories
 
     ```sh
     # ARM Machines:
@@ -90,7 +90,7 @@ First we setup a simple jail that allows the user to execute specific bash comma
     cp /bin/bash bin
     ```
 
-6. Add the ls command to the jail.
+7. Add the ls command to the jail.
 
     i. Determine the dependencies
 
@@ -114,17 +114,17 @@ First we setup a simple jail that allows the user to execute specific bash comma
     cp /bin/ls bin
     ```
 
-6. Now go to jail
+8. Now go to jail
 
     ```sh 
     chroot /var/jail 
     ``` 
 
-7. See if you can use `ls` to view the contents.
+9. See if you can use `ls` to view the contents.
 
-8. Bash built-ins such as `pwd` and `cd` should work. Test each out.
+10. Bash built-ins such as `pwd` and `cd` should work. Test each out.
 
-9. Try to run commands that aren't any of the built-in bash commands. They should not work.
+11. Try to run commands that aren't any of the built-in bash commands. They should not work.
 
     ```sh 
     touch some-file 
@@ -136,7 +136,7 @@ First we setup a simple jail that allows the user to execute specific bash comma
 
     You should get error messages on each of those.
 
-10. Exit the jail with `ctrl + d` or `exit`.
+12. Exit the jail with `ctrl + d` or `exit`.
 
 
 # A Robust Jail 
@@ -155,13 +155,13 @@ Adding everything we want to the jail manually can be time consuming. In this se
     cd ~ 
     ```
 
-2. Remove the simple jail, since the script will recreate it.
+3. Remove the simple jail, since the script will recreate it.
 
     ```sh 
     rm -rf /var/jail 
     ```
 
-3. Create a file named `jailsetup.sh` and place the following bash script in it. Note that this script works regardless of your machine's architecture. The script can also be found on Canvas.
+4. Create a file named `jailsetup.sh` and place the following bash script in it. Note that this script works regardless of your machine's architecture. The script can also be found on Canvas.
 
     ```bash 
     #!/bin/bash
@@ -213,19 +213,19 @@ Adding everything we want to the jail manually can be time consuming. In this se
     echo "Ready. Enter the jail with: chroot $CHROOT"
     ```
 
-4. Give jailsetup.sh executable permissions.
+5. Give jailsetup.sh executable permissions.
 
     ```sh 
     chmod +x jailsetup.sh 
     ```
 
-4. Run jailsetup.sh with the following provided input to setup the jail. Modifying the inputs will allow for more or less capability.
+6. Run jailsetup.sh with the following provided input to setup the jail. Modifying the inputs will allow for more or less capability.
 
     ```sh
     ./jailsetup.sh  /bin/{ls,cat,rm,mkdir,bash} /usr/bin/{vim,nano,whoami,scp} /etc/hosts
     ```
 
-4. Add some useful special files.
+7. Add some useful special files.
 
     i. Create the device folder for our special nodes.
 
@@ -251,7 +251,7 @@ Adding everything we want to the jail manually can be time consuming. In this se
     mknod -m 0444 /var/jail/dev/urandom c 1 9
     ```
 
-5. Now we add a new user to the system to test everything out.
+8. Now we add a new user to the system to test everything out.
 
     i. Create a new user group called `chrootjail` 
 
@@ -271,16 +271,16 @@ Adding everything we want to the jail manually can be time consuming. In this se
     adduser newuser chrootjail
     ```
 
-6. Confirm the user was added by listing out the files and folders at `/home`. You should see a folder for the newuser.
+9. Confirm the user was added by listing out the files and folders at `/home`. You should see a folder for the newuser.
 
 
-7. Add the new user's home directory to the jail.
+10. Add the new user's home directory to the jail.
 
     ```sh 
     mkdir -p /var/jail/home/newuser
     ``` 
 
-8. Copy default shell configuration files to the user's home directory.
+11. Copy default shell configuration files to the user's home directory.
 
     ```sh 
     cp -r /etc/skel/  /var/jail/home/newuser
@@ -288,19 +288,19 @@ Adding everything we want to the jail manually can be time consuming. In this se
     rm -rf /var/jail/home/newuser/skel/
     ```
 
-9.  Make the new user the owner of the new user's home directory.
+12.  Make the new user the owner of the new user's home directory.
 
     ```sh 
     chown -R newuser:newuser /var/jail/home/newuser
     ```
 
-10. Copy the passwords and group files to the jail.
+13. Copy the passwords and group files to the jail.
 
     ```sh 
     cp /etc/passwd /etc/group /var/jail/etc
     ``` 
 
-11. Complete the following to remove users and groups that we don't need in the jail.
+14. Complete the following to remove users and groups that we don't need in the jail.
 
     i. Open `/var/jail/etc/passwd` with vim or nano.
 
@@ -314,13 +314,13 @@ Adding everything we want to the jail manually can be time consuming. In this se
 
     vi. Save and close the file.
 
-12. If it isn't already installed, install `openssh-server`.
+15. If it isn't already installed, install `openssh-server`.
 
     ```sh 
     sudo apt install openssh-server
     ``` 
 
-13. Alter the ssh configuration to jail users in the chroot jail group.
+16. Alter the ssh configuration to jail users in the chroot jail group.
 
     i. Open `/etc/ssh/sshd_config` with vim or nano.
 
@@ -341,7 +341,7 @@ Adding everything we want to the jail manually can be time consuming. In this se
     service ssh restart
     ```
 
-14. Login via ssh with `newuser`.
+17. Login via ssh with `newuser`.
 
     ```sh 
     ssh newuser@localhost
@@ -416,19 +416,19 @@ To reset everything back to how it was prior, complete the following steps. Be s
 
     iii. Save and close the file.
 
-2. Remove the jail.
+3. Remove the jail.
 
     ```sh 
     rm -rf /var/jail 
     ``` 
 
-3. Remove the new user.
+4. Remove the new user.
 
     ```sh 
     deluser --remove-home newuser
     ```
 
-4. Remove the chrootjail group.
+5. Remove the chrootjail group.
 
     ```sh 
     delgroup --only-if-empty chrootjail 
