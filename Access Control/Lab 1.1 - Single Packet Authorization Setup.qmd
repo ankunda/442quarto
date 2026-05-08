@@ -14,9 +14,15 @@ format:
 
 This lab contains the setup for a brief tutorial for implementing Single Packet Authorization (SPA) with Firewall Knock Operator (or fwknop for short, pronounced eff - double u - nop). 
 
-In this activity, it is recommended that you partner up, or have multiple machines available for use. You will need to designate one machine as the "client" in the following steps and another machine will as the "server". It is recommened that you step through it twice where one machine is the client and the other machine is the server and then reverse roles for the second run through.
+In this activity, it is recommended that you partner up, or have multiple machines available for use. You will need to designate one machine as the "client" in the following steps and another machine as the "server". It is recommended that you step through it twice where one machine is the client and the other machine is the server and then reverse roles for the second run through.
 
 Note that this lab only includes the setup. Lab 1.2 includes the execution of SPA.
+
+:::{.callout-tip}
+# Note On Timing
+
+If **Lab: Single Packet Authorization Setup** (this document) is completed within 15 minutes until the end of class, do not begin **Lab: Single Packet Authorization Execution** (part 2). Instead, wait until the next class period to complete part 2.
+:::
 
 # Overview of Commands and Relevant Bash Tips
 
@@ -33,12 +39,12 @@ The `iptables` command is used to manage the rules that determine what to do wit
 Common flags used with `iptables` are as follows:
 
 ```
--L      lists all the rules int he current tables
+-L      lists all the rules in the current tables
 -v      displays additional details about each rule (verbose)
 -n      displays numeric values where applicable 
         ex: for the http port, show 80 instead of http
 -A      appends a rule to a specified chain
--p      used to specify a protocol such as tcp for tcp traffice like HTTP and SSH
+-p      used to specify a protocol such as tcp for tcp traffic like HTTP and SSH
 -j      used to specify an action to take if a packet matches (j for jump)
 ```
 
@@ -191,21 +197,21 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
 2. On the server, get the ip address and note it somewhere (a text file or a piece of paper).
 
-2. On the client, set some variables to represent the `SERVER_IP` and `CLIENT_IP`. Replace the x's in the command shown below with the appropriate values. Recall that bash does not accept spaces before and after the `=` symbol.
+3. On the client, set some variables to represent the `SERVER_IP` and `CLIENT_IP`. Replace the x's in the command shown below with the appropriate values. Recall that bash does not accept spaces before and after the `=` symbol.
 
     ```sh
     CLIENT_IP=138.47.x.x
     SERVER_IP=138.47.x.x
     ```
 
-3. On the client, set another variable to represent the server's ssh port.
+4. On the client, set another variable to represent the server's ssh port.
 
     ```sh
     SSH_PORT=22
     ```
 
 
-4. On the client, generate a key for the ssh port using the client's ip and the server's ip. Note that this should all be typed on one single line.
+5. On the client, generate a key for the ssh port using the client's ip and the server's ip. Note that this should all be typed on one single line.
 
     ```sh 
     # write the following on 1 single line
@@ -219,7 +225,7 @@ After installing it, confirm it is running with the `ss` command shown previousl
     [+] Wrote Rijndael and HMAC keys to rc file: /home/josh/.fwknoprc
     ```
 
-5. On the client, To confirm the keys were generated, view the contents of the `.fwknoprc` file
+6. On the client, to confirm the keys were generated, view the contents of the `.fwknoprc` file
 
     ```sh
     cat ~/.fwknoprc
@@ -235,15 +241,15 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
 # Server Setup
 
-1. On the client, copy the keys you generated to the server using the `scp` command (secure copy). Note that we are copying the keys to a file called `access.conf` at `/home/username` on the server. Additionally, be sure to replace the word `username` with the name of the user of the server.
+1. On the client, copy the keys you generated to the server using the `scp` command (secure copy). Note that we are copying the keys to a file called `copied-file.conf` at `/home/username` on the server. This is just to migrate the contents from one machine to another. You'll then take some of the contents of this file and move them elsewhere on the server. Additionally, be sure to replace the word `username` with the name of the user of the server.
 
     ```sh 
-    scp -P $SSH_PORT ~/.fwknoprc username$SERVER_IP:~/copiedfile.conf
+    scp -P $SSH_PORT ~/.fwknoprc username@$SERVER_IP:~/copied-file.conf
     ```
 
     When running the above command, you will be prompted for the password of the server.
 
-2. On the server, open the file at /etc/fwknop/access.conf and find the section that has the following information:
+2. On the server, open the file at `/etc/fwknop/access.conf` and find the section that has the following information:
 
     ``` 
     SOURCE              ANY
@@ -253,11 +259,11 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
     i. Remove `ANY` and replace it with the ip address for the client machine.
 
-    ii. Replace both instances of `__CHANGE_ME__` by copying and pasting the keys from the ~/access.conf file you moved onto the server. 
+    ii. Replace both instances of `__CHANGE_ME__` by copying and pasting the keys from the ~/copied-file.conf file you moved onto the server. 
 
     iii. Add a line after SOURCE that is labeled OPEN_PORTS with a value of tcp/22. 
 
-    iv. Confirm the file looks similar to the following. The values for SOURCE, KEY_BASE64, and HMAC_KEY_BASE64 will be different that those shown.
+    iv. Confirm the file looks similar to the following. The values for SOURCE, KEY_BASE64, and HMAC_KEY_BASE64 will be different from those shown.
 
     ``` 
     SOURCE              138.47.163.65
@@ -268,10 +274,10 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
     v. Save and close the file.
 
-3. On the server, remove the file you put at the home directory ~/access.conf.
+3. On the server, remove the file you placed at the home directory. That is, remove `~/copied-file.conf`.
 
     ```sh
-    rm ~/copiedfile.conf
+    rm ~/copied-file.conf
     ```
 
 4. Complete the following on the server to enable fwknop 
@@ -282,9 +288,9 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
     iii. Save and close the file.
 
-    iv. Open the file `/etc/fwknopd/fwknopd.conf` with nano or vim.
+    iv. Open the file `/etc/fwknop/fwknopd.conf` with nano or vim. This is the fwknop daemon config.
 
-    v. Find the line with PCAP_INTF and uncomment it. By default it shows eth0. It can stay as that for linux machines.
+    v. Find the line with `PCAP_INTF`. If it exists, uncomment it. By default it shows `eth0`, which can stay as that for Linux machines. On newer distributions (Ubuntu 24.04+ and recent Mint releases), this line has been removed from the default config and fwknopd uses NFQ (NetFilter Queue) instead. If you do not see a `PCAP_INTF` line in the file, you can skip ahead — the default NFQ configuration will work without any edits.
 
     vi. Save and close the file.
 

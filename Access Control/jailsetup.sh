@@ -8,9 +8,9 @@ for file in "$@";
 do 
     if [ -x "$file" ] && file "$file" | grep -q 'ELF'
     then
-	# For executable files:
+    # For executable files:
         ldd "$file" |      # get the shared libraries for the file
-	awk '{print $3}' |     # extract 3rd column (the library filepath)
+    awk '{print $3}' |     # extract 3rd column (the library filepath)
         grep -E '^/' |     # keep absolute paths (lines starting with /)
         sort -u |          # remove duplicates 
         while read lib;
@@ -21,8 +21,8 @@ do
         # copy the file and preserve its directory structure
         cp --parents "$file" "$CHROOT"
     else
-	# for non-executable files
-	# just copy the file and preserve its directory structure
+    # for non-executable files
+    # just copy the file and preserve its directory structure
         cp --parents "$file" "$CHROOT"
     fi 
 done 
