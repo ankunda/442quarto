@@ -1,0 +1,684 @@
+---
+title: "Offline Attacks Lab"
+subtitle: "Hash Extraction, hashcat, and john"
+date: "April 29, 2026"
+title-block-banner: "#002f8b"
+toc: true
+toc-depth: 2
+number-sections: true
+format:
+  pdf:
+    code-copy: false
+    code-fold: true
+    geometry: margin=1in
+    fontsize: 11pt
+    colorlinks: true
+    linkcolor: "NavyBlue"
+---
+
+In Lab 1 you used hydra to crack `labuser`'s password by hammering the SSH
+service directly over the network. This is an **online** attack -- it requires
+the target to be reachable and generates a lot of noisy, detectable traffic.
+
+Real attackers often cannot, or prefer not to, work this way. A more powerful
+approach is to obtain the **password hash** -- the stored, encrypted form of
+the password -- and crack it locally on your own machine with no further
+contact with the target. This is an **offline** attack. It is silent, limited
+only by your hardware, and can be run at leisure.
+
+This lab covers how to locate and extract the hash, understand its structure,
+and crack it using two different tools: **hashcat** and **john**.
+
+# Gaining Access and Finding the Shadow File {#sec-access}
+
+At the end of Lab 1 you had a shell on the Pi as `labuser`. To read the
+password hashes we need **root** access. If your session has timed out,
+reconnect and escalate:
+
+```sh
+ssh labuser@10.7.7.200    # password from Lab 1
+sudo -i                 # escalate to root (labuser has sudo rights on this Pi)
+```
+
+You should now have a root shell:
+
+```default
+root@raspberrypi:~#
+```
+
+## Locating the Shadow File with find
+
+On Linux, password hashes are stored in `/etc/shadow`. You could navigate
+there directly -- but let's use this as an opportunity to practise `find`,
+a tool that becomes indispensable once you have access to an unfamiliar
+system and need to locate specific files.
+
+`find` searches the filesystem recursively from a starting point. The basic
+syntax is:
+
+```sh
+find <where to search> <what to look for>
+```
+
+Search the entire filesystem for any file named `shadow`:
+
+```sh
+find / -name "shadow" 2>/dev/null
+```
+
+The `2>/dev/null` suppresses permission error messages for directories root
+cannot read. You should see `/etc/shadow` in the results, confirming its
+location.
+
+You can narrow the search in many ways. Some useful flags:
+
+| Flag | Example | Meaning |
+|---|---|---|
+| `-name` | `-name "shadow"` | Match exact filename |
+| `-name` | `-name "*.conf"` | Match by wildcard |
+| `-type f` | `-type f` | Files only (not directories) |
+| `-type d` | `-type d` | Directories only |
+| `-user` | `-user labuser` | Files owned by a specific user |
+| `-perm` | `-perm /4000` | Files with the SUID bit set |
+
+For example, to find all configuration files under `/etc`:
+
+```sh
+find /etc -name "*.conf" -type f 2>/dev/null
+```
+
+Or to find files owned by `labuser`:
+
+```sh
+find / -user labuser -type f 2>/dev/null
+```
+
+:::{.callout-tip}
+`find / -perm /4000` is a classic post-exploitation command -- it locates
+every SUID binary on the system. SUID files run with the file owner's
+privileges regardless of who executes them, and misconfigured SUID
+binaries are a common privilege escalation path.
+:::
+
+## Extracting the Hash with grep
+
+Once you know the shadow file is at `/etc/shadow`, read the entire file:
+
+```sh
+cat /etc/shadow
+```
+
+The output will have one line per user. Most will be system accounts with
+a `*` or `!` in the password field (meaning no valid password is set).
+Find `labuser`'s entry with `grep`:
+
+```sh
+grep "labuser" /etc/shadow
+```
+
+You will see something like:
+
+```default
+labuser:$6$rT5Kv1oZ$Xe8...long hash.../:19900:0:99999:7:::
+```
+
+Save just the hash line to a file on your **own machine** (not the Pi) for
+cracking. The easiest way is to copy and paste it, or use `scp` from your
+machine:
+
+```sh
+# Run this on YOUR machine, not the Pi
+scp labuser@10.7.7.200:/etc/shadow ./shadow_copy.txt
+# Or just copy-paste the labuser line into a new file:
+echo 'labuser:$6$rT5Kv1oZ$Xe8...' > shadow_copy.txt
+```
+
+# Understanding the Shadow File Format {#sec-format}
+
+Before cracking anything it is worth understanding exactly what you are
+looking at. A shadow file entry has nine colon-separated fields:
+
+```default
+labuser : $6$rT5Kv1oZ$Xe8... : 19900 : 0 : 99999 : 7 : : : :
+   1           2                  3     4     5     6   7  8  9
+```
+
+| Field | Content | Meaning |
+|:---:|---|---|
+| 1 | `labuser` | Username |
+| 2 | `$6$rT5Kv1oZ$Xe8...` | Password hash (see below) |
+| 3 | `19900` | Days since epoch when password was last changed |
+| 4 | `0` | Minimum days before password can be changed |
+| 5 | `99999` | Maximum days before password must be changed |
+| 6 | `7` | Days of warning before expiry |
+| 7 | | Days after expiry before account is disabled (empty = never) |
+| 8 | | Account expiry date (empty = never) |
+| 9 | | Reserved |
+
+## Anatomy of the Hash Field
+
+The password hash field (field 2) is itself structured:
+
+```default
+$6 $ rT5Kv1oZ $ Xe8vQ2...long string...
+ |       |              |
+ |       |              +-- the actual hash
+ |       +----------------- the salt
+ +------------------------- the algorithm ID
+```
+
+| Algorithm ID | Algorithm | hashcat Mode |
+|:---:|---|:---:|
+| `$1$` | MD5-crypt | 500 |
+| `$5$` | SHA-256-crypt | 7400 |
+| `$6$` | SHA-512-crypt | 1800 |
+| `$y$` | yescrypt | 400 |
+| `$2y$` or `$2b$` | bcrypt | 3200 |
+
+The **salt** is a random string added to the password before hashing. Two
+users with the same password will have completely different hashes because
+their salts differ. This prevents an attacker from pre-computing a table of
+all possible hashes (a **rainbow table**) and looking up the result directly.
+
+:::{.callout-note}
+The `$6$` prefix tells you immediately which hashcat mode to use. This is
+the single most important thing to identify before running any cracking tool.
+When you encounter an unknown hash, look at the prefix -- or use a tool
+like `hashid` or `hash-identifier` to help determine the type.
+:::
+
+# Cracking with hashcat {#sec-hashcat}
+
+**hashcat** is the fastest widely-available password cracker. It can use
+your GPU for massively parallel cracking -- modern graphics cards can test
+billions of password candidates per second against weaker hash types.
+
+## Installation
+
+```sh
+sudo apt install hashcat -y
+```
+
+## Preparing the Hash File
+
+hashcat expects the raw hash, not the full shadow line. Extract just the
+hash field (the second colon-separated field) and save it:
+
+```sh
+# The hash is everything between the first and second colon after the username
+# Copy just the $6$salt$hash portion:
+echo '$6$rT5Kv1oZ$Xe8...' > hash.txt
+```
+
+Verify the file contains only the hash and nothing else:
+
+```sh
+cat hash.txt
+```
+
+## hashcat Attack Modes
+
+Before running a crack, it helps to understand hashcat's attack modes:
+
+| Mode (`-a`) | Name | Description |
+|:---:|---|---|
+| `0` | Dictionary | Try every word in a wordlist |
+| `1` | Combination | Combine words from two wordlists |
+| `3` | Brute-force | Try every combination of characters up to a length |
+| `6` | Hybrid wordlist + mask | Wordlist words with appended patterns |
+| `7` | Hybrid mask + wordlist | Patterns with appended wordlist words |
+
+For cracking Linux shadow hashes with a wordlist, mode `0` is the right
+starting point.
+
+## Common hashcat Hash Modes
+
+The `-m` flag tells hashcat what type of hash it is dealing with. Here are
+the most commonly encountered types:
+
+| Mode (`-m`) | Hash Type | Where you find it |
+|:---:|---|---|
+| `0` | MD5 (raw) | Old web apps, legacy databases |
+| `100` | SHA-1 (raw) | Git commits, older web apps |
+| `1000` | NTLM | Windows password hashes |
+| `1800` | sha512crypt `$6$` | Modern Linux `/etc/shadow` |
+| `400` | yescrypt `$y$` | Newer Linux `/etc/shadow` |
+| `500` | md5crypt `$1$` | Older Linux `/etc/shadow` |
+| `3200` | bcrypt `$2*$` | Modern web app password storage |
+| `5600` | NetNTLMv2 | Windows network authentication |
+| `7400` | sha256crypt `$5$` | Some Linux systems |
+
+:::{.callout-tip}
+**How to identify a hash type you don't recognise:**
+
+1. Look at the prefix -- `$6$`, `$2b$`, etc. are reliable identifiers.
+2. Check the length -- raw MD5 is always 32 hex characters, SHA-1 is 40,
+   SHA-256 is 64.
+3. Use `hashid` or `hash-identifier`:
+```sh
+sudo apt install hashid -y
+hashid '$6$rT5Kv1oZ$Xe8...'
+```
+:::
+
+## Running a Dictionary Attack
+
+```sh
+sudo hashcat -a 0 -m 1800 hash.txt /usr/share/wordlists/rockyou.txt
+```
+
+Flag breakdown:
+
+| Flag | Meaning |
+|---|---|
+| `-a 0` | Dictionary attack mode |
+| `-m 1800` | Hash type: sha512crypt (Linux `$6$`) |
+| `hash.txt` | File containing the hash to crack |
+| `rockyou.txt` | The password wordlist |
+
+Watch the status output. hashcat will report its speed (hashes per second)
+and its progress through the wordlist. When it finds a match:
+
+```default
+$6$rT5Kv1oZ$Xe8...:sunshine1
+```
+
+The cracked password appears after the colon.
+
+## Going Further: Rule-Based Attacks
+
+A pure dictionary attack only tries words exactly as they appear in the
+wordlist. Many users slightly modify a dictionary word -- capitalising the
+first letter, appending a number, substituting `@` for `a`. **Rules** apply
+these transformations automatically to every word in the wordlist, greatly
+expanding coverage without needing a larger wordlist.
+
+hashcat ships with several pre-built rule files:
+
+```sh
+ls /usr/share/hashcat/rules/
+```
+
+The `best64.rule` file applies 64 of the most common real-world password
+mutations:
+
+```sh
+sudo hashcat -a 0 -m 1800 -r /usr/share/hashcat/rules/best64.rule \
+    hash.txt /usr/share/wordlists/rockyou.txt
+```
+
+:::{.callout-note}
+hashcat caches cracked passwords in a **potfile** (`~/.hashcat/hashcat.potfile`).
+If you try to crack a hash you have already cracked, hashcat will say
+`All hashes found in potfile` and skip it. Use `--show` to display cached
+results:
+
+```sh
+hashcat -m 1800 hash.txt --show
+```
+
+Or clear the potfile if you want to crack from scratch:
+
+```sh
+hashcat --potfile-disable -a 0 -m 1800 hash.txt rockyou.txt
+```
+:::
+
+# Cracking with john {#sec-john}
+
+**John the Ripper** (usually just called `john`) is the other major
+password-cracking tool. Where hashcat is optimised for raw speed using GPU
+acceleration, john is more beginner-friendly, has automatic hash type
+detection, and handles the full shadow file format directly via a companion
+tool called `unshadow`.
+
+## Installation
+
+```sh
+sudo apt install john -y
+```
+
+## Preparing the File with unshadow
+
+john is designed to work with the `/etc/passwd` and `/etc/shadow` files
+together. The `unshadow` utility merges them into a single file in the
+format john expects:
+
+```sh
+unshadow /etc/passwd /etc/shadow > unshadowed.txt
+```
+
+If you are working from a copy rather than directly on the Pi, pass the
+copies instead:
+
+```sh
+unshadow passwd_copy.txt shadow_copy.txt > unshadowed.txt
+```
+
+Have a look at the result:
+
+```sh
+cat unshadowed.txt
+```
+
+You will see lines like:
+
+```default
+labuser:$6$rT5Kv1oZ$Xe8...:1001:1001:,,,:/home/labuser:/bin/bash
+```
+
+The hash is now embedded in a format john understands directly.
+
+## Running a Dictionary Attack
+
+```sh
+john --wordlist=/usr/share/wordlists/rockyou.txt unshadowed.txt
+```
+
+john will auto-detect the hash type from the `$6$` prefix and begin
+cracking. Its output looks like:
+
+```default
+Loaded 1 password hash (sha512crypt, crypt(3) $6$ [SHA512 256/256 AVX2 4x])
+sunshine1        (labuser)
+```
+
+## Displaying Cracked Passwords
+
+Once john has cracked a password it stores it in its own session file.
+Retrieve cracked passwords at any time with:
+
+```sh
+john --show unshadowed.txt
+```
+
+Output:
+
+```default
+labuser:sunshine1:1001:1001:,,,:/home/labuser:/bin/bash
+
+1 password hash cracked, 0 left
+```
+
+## hashcat vs john
+
+Having used both tools, here is a practical comparison:
+
+| | hashcat | john |
+|---|---|---|
+| **Speed** | Faster (GPU-accelerated) | Slower (CPU by default) |
+| **Hash detection** | Manual (`-m` flag required) | Automatic from hash prefix |
+| **Shadow file** | Needs hash extracted manually | Works via `unshadow` directly |
+| **Rules** | Extensive built-in rule sets | Good built-in rules (`--rules`) |
+| **Best for** | Raw cracking speed, GPU rigs | Ease of use, quick testing |
+
+For the hashes you will encounter in challenges, either tool will work.
+hashcat is the industry standard for speed; john is often faster to get
+started with when you do not know the hash type.
+
+# Cracking All Users {#sec-allusers}
+
+So far you have cracked `labuser`'s hash -- but the shadow file contains
+entries for three other accounts: `alice`, `bob`, and `carol`. Each one
+requires a slightly different approach, giving you a chance to apply
+everything covered in this lab.
+
+## Extract All Four Hashes
+
+First, pull all four relevant entries from the shadow file and save them
+to a single file. On the Pi as root:
+
+```sh
+grep -E "^labuser:|^alice:|^bob:|^carol:" /etc/shadow > all_hashes.txt
+```
+
+Copy this file back to your own machine:
+
+```sh
+# Run on YOUR machine
+scp labuser@10.7.7.200:/root/all_hashes.txt .
+```
+
+Inspect what you have:
+
+```sh
+cat all_hashes.txt
+```
+
+You should see four lines, one per user, each with a `$6$` hash.
+
+## Prepare for hashcat
+
+hashcat works on raw hashes rather than full shadow lines. Extract just
+the hash fields into a second file:
+
+```sh
+cut -d: -f2 all_hashes.txt > hashes_only.txt
+cat hashes_only.txt   # should show four $6$... strings, one per line
+```
+
+## Round 1 -- Dictionary Attack on All Hashes
+
+Run a single dictionary attack against all four hashes at once. hashcat
+handles multiple hashes in one file automatically:
+
+```sh
+sudo hashcat -a 0 -m 1800 hashes_only.txt /usr/share/wordlists/rockyou.txt
+```
+
+Watch the output. You should see `alice`, `labuser`, and `carol` crack
+relatively quickly. `bob`'s hash will likely remain uncracked -- the
+password `Passw0rd` does not appear in rockyou verbatim.
+
+Check what has been cracked so far:
+
+```sh
+sudo hashcat -m 1800 hashes_only.txt --show
+```
+
+:::{.callout-note}
+hashcat prints the cracked result as `hash:password`. To identify *which
+user* a hash belongs to, compare the hash string against the entries in
+`all_hashes.txt`. The Go script at the end of this lab automates exactly
+this matching step.
+:::
+
+## Round 2 -- Rule-Based Attack for bob
+
+`bob`'s password is a common word with character substitutions and
+capitalisation -- exactly what `best64.rule` is designed to handle.
+Run the rule-based attack against only the remaining uncracked hash:
+
+```sh
+sudo hashcat -a 0 -m 1800 -r /usr/share/wordlists/rockyou.txt \
+    /usr/share/hashcat/rules/best64.rule hashes_only.txt
+```
+
+:::{.callout-tip}
+If you want to target only `bob`'s hash rather than re-running across all
+four, extract just his line first:
+
+```sh
+grep "^bob:" all_hashes.txt | cut -d: -f2 > bob_hash.txt
+sudo hashcat -a 0 -m 1800 -r /usr/share/hashcat/rules/best64.rule \
+    bob_hash.txt /usr/share/wordlists/rockyou.txt
+```
+:::
+
+Once cracked, run `--show` again to confirm all four passwords are now
+recovered:
+
+```sh
+sudo hashcat -m 1800 hashes_only.txt --show
+```
+
+## Repeat with john
+
+Prepare the unshadowed file for all four users and run john against it:
+
+```sh
+# On the Pi as root -- grab both passwd and shadow entries for our users
+grep -E "^labuser:|^alice:|^bob:|^carol:" /etc/passwd > lab_passwd.txt
+grep -E "^labuser:|^alice:|^bob:|^carol:" /etc/shadow > lab_shadow.txt
+
+# Copy both files back to your machine, then:
+unshadow lab_passwd.txt lab_shadow.txt > unshadowed_all.txt
+```
+
+Dictionary attack first:
+
+```sh
+john --wordlist=/usr/share/wordlists/rockyou.txt unshadowed_all.txt
+```
+
+Then apply rules to catch `bob`:
+
+```sh
+john --wordlist=/usr/share/wordlists/rockyou.txt --rules=best64 \
+    unshadowed_all.txt
+```
+
+Display all cracked passwords:
+
+```sh
+john --show unshadowed_all.txt
+```
+
+You should see all four users listed with their recovered passwords.
+
+:::{.callout-note title="Something to think about"}
+`bob` used a password that felt strong -- mixed case, letter-to-number
+substitution, no obvious dictionary word. Yet it fell to a rule-based
+attack in seconds. This is why security guidelines have moved away from
+"complexity rules" (must contain uppercase, number, symbol) toward
+**length and randomness**. A short complex password is far weaker than a
+long random passphrase against a rule-aware offline attack.
+:::
+
+# Legal and Ethical Considerations {#sec-legal}
+
+You have now used tools that can discover networked systems, attack live
+services, and crack stored credentials. Before these labs, these were
+abstract concepts. They are no longer. This section is about where the
+legal and ethical lines sit -- and, more importantly, where they are
+genuinely unclear.
+
+## Clearly Legal
+
+**Using these tools on infrastructure you own and control.** Everything
+done in these two labs falls here. The LAN is isolated, the Pi was set up
+for this purpose, and you had explicit authorisation. This is the correct
+model for any legitimate security testing.
+
+**Defensive use on your own systems.** Running nmap against your own
+servers to find what an attacker would see, or running hashcat against
+your own shadow file to identify weak passwords before an attacker does,
+is entirely legal and professionally encouraged.
+
+**Authorised penetration testing.** A signed contract or written statement
+of work from a system owner transforms these same actions from crimes into
+legitimate professional work. The document is everything -- it defines the
+scope, the timeframe, and the methods permitted. Without it, there is no
+protection.
+
+**CTF competitions.** Capture the Flag events are explicitly scoped
+sandboxes. Everything within the declared scope is fair game by design.
+
+## Clearly Illegal
+
+**Running any of these tools against systems you do not own and have not
+been explicitly authorised to test.** This is the Computer Fraud and Abuse
+Act (CFAA) in the US, the Computer Misuse Act (CMA) in the UK, and
+equivalent legislation in virtually every other jurisdiction. The dividing
+line is authorisation -- not whether you cause damage, not whether you
+succeed, not whether anyone notices.
+
+**Cracking hashes obtained without authorisation.** Possessing and
+cracking a shadow file you did not have permission to access is a separate
+offence from the original breach. The offline nature of the attack does
+not make it victimless.
+
+**Using these tools on university infrastructure without written approval.**
+Being a student on a network does not grant you the right to scan or probe
+it. Most universities' acceptable use policies explicitly prohibit
+unauthorised scanning. The right move is always to ask IT in writing first.
+
+## The Grey Areas
+
+These are the cases where professionals genuinely disagree, and where
+well-intentioned people have faced prosecution. They are worth taking
+seriously.
+
+**"I own the device but not the network."**
+Running nmap from your laptop on a university or coffee shop WiFi scans
+infrastructure you do not own. The fact that you own the scanning machine
+is irrelevant. The traffic touches routers, switches, and other devices
+you have no authority over.
+
+**"The system was publicly accessible."**
+A web server being publicly reachable does not authorise you to probe it
+for vulnerabilities or attempt to log in. Leaving a door unlocked is not
+an invitation to enter -- this defence has been tested in court and has
+not held up.
+
+**"I found a vulnerability and reported it responsibly."**
+Bug bounty programmes and responsible disclosure frameworks exist to
+create a legal space for exactly this. Without a published programme or
+prior written permission, finding and reporting a vulnerability in someone
+else's system is legally risky even if morally praiseworthy. Some
+researchers have faced prosecution despite acting in good faith. Check for
+a programme before touching anything.
+
+**"It was just a scan -- I didn't do anything."**
+An nmap scan is not passive observation. It sends packets to systems you
+do not own. Courts in multiple jurisdictions have found that unauthorised
+scanning alone, without any further exploitation, can constitute an
+offence under computer misuse laws.
+
+**"I cracked the hash -- I never actually logged in."**
+The act of cracking a hash obtained without permission is itself an
+offence, separate from and in addition to whatever access was used to
+obtain it.
+
+## The Professional Standard
+
+The security industry operates on one principle above all others:
+**get it in writing**. A penetration tester with a signed statement of
+work authorising them to test `10.7.7.0/24` between specific dates is
+completely protected doing things that would otherwise carry a prison
+sentence. The same person running the same tools one subnet over, or one
+day later, is not.
+
+This is also why this lab used an isolated LAN with a dedicated victim
+machine -- not just for technical cleanliness, but to model the correct
+professional behaviour: define your scope, stay inside it, document what
+you did, and clean up afterwards.
+
+## Discussion
+
+Take a few minutes to discuss the following questions with your group.
+There are no clean answers to most of them -- that is the point.
+
+:::{.callout-note title="Group Discussion"}
+1. You are browsing a website you use regularly and notice that changing
+   a number in the URL exposes another user's personal data. You did not
+   go looking for this -- you stumbled across it. What are your
+   obligations? What are your legal risks if you investigate further?
+
+2. A company publishes a bug bounty programme covering "all web
+   applications." While testing their login page you discover a
+   vulnerability in their VPN concentrator -- a different system entirely.
+   Are you covered by the programme? What should you do?
+
+3. Your employer asks you to test a client's network. The client gave
+   verbal approval in a meeting but nothing is in writing yet. Your
+   manager says to go ahead. Do you? What are the risks to you personally
+   if something goes wrong?
+
+4. You are a penetration tester on an authorised engagement. While
+   working inside the target network you find evidence that a third party
+   has already compromised the system and is actively exfiltrating data.
+   What are your legal and ethical obligations? Who do you tell, and in
+   what order?
+:::
+

@@ -1,0 +1,367 @@
+---
+title: "Victim Machine Setup Guide"
+subtitle: "Raspberry Pi Configuration for Recon & Password Cracking Labs"
+date: "April 29, 2026"
+title-block-banner: "#002f8b"
+toc: true
+toc-depth: 2
+number-sections: true
+format:
+  pdf:
+    code-copy: false
+    code-fold: true
+    geometry: margin=1in
+    fontsize: 11pt
+    colorlinks: true
+    linkcolor: "NavyBlue"
+---
+
+This document is for the **instructor only**. It covers everything needed to
+configure the Raspberry Pi as the victim machine before the lab sessions begin.
+Students should not see this document.
+
+The Pi will expose two services -- SSH and FTP -- and host a target user account
+with a deliberately weak password. Students will discover the machine via nmap,
+attack it online with hydra, and later extract and crack its password hash
+offline.
+
+:::{.callout-important}
+Complete all steps in this guide **before** students arrive. The two most
+time-sensitive steps are connecting the Pi to the LAN and noting its IP address,
+which students will need at the start of Lab 1.
+:::
+
+# System Preparation
+
+## Update the Pi
+
+Start with a clean, up-to-date system:
+
+```sh
+sudo apt update && sudo apt upgrade -y
+```
+
+## Assign a Static IP Address
+
+The lab is designed around the Pi being reachable at a known address in the
+`10.7.7.0/24` subnet. A static IP prevents the Pi from disappearing between
+lab sessions if the DHCP lease changes.
+
+Edit the DHCP client configuration:
+
+```sh
+sudo nano /etc/dhcpcd.conf
+```
+
+Add the following block at the end of the file, adjusting the address if
+needed:
+
+```default
+interface eth0
+static ip_address=10.7.7.200/24
+static routers=10.7.7.7
+static domain_name_servers=10.7.7.7
+```
+
+Restart the networking service to apply the change:
+
+```sh
+sudo systemctl restart dhcpcd
+ip addr show eth0   # confirm the address is now 10.7.7.200
+```
+
+:::{.callout-note}
+`10.7.7.200` is used throughout both student lab documents as the Pi's address.
+If you use a different address, do a find-and-replace in both QMD files before
+printing.
+:::
+
+# Setting Up User Accounts
+
+The Pi hosts four user accounts in total. **`labuser`** is the primary target
+for the online attack in Lab 1 and is also a sudoer, allowing students to
+escalate to root at the start of Lab 2. The remaining three accounts --
+**`alice`**, **`bob`**, and **`carol`** -- exist only to populate the shadow
+file with hashes of varying difficulty for the offline cracking exercises.
+
+The table below summarises all four accounts. Keep this page secure -- do not
+share it with students.
+
+| User | Password | Cracking method | Notes |
+|---|---|---|---|
+| `labuser` | `sunshine1` | Hydra (Lab 1), then confirms setup in Lab 2 | Must be in rockyou; used for SSH/FTP |
+| `alice` | `dragon` | Dictionary (rockyou, no rules) | Near the top of rockyou -- cracks in seconds |
+| `bob` | `Dr@gon99` | Rule-based (`best64`) | Not in rockyou as-is; rules capitalise and substitute |
+| `carol` | `abc123` | Dictionary (rockyou, no rules) | Mid-list rockyou entry -- takes a moment |
+
+## Create labuser and Grant Sudo Access
+
+```sh
+sudo adduser labuser
+# enter 'sunshine1' (or your chosen rockyou password) when prompted
+```
+
+Add `labuser` to the `sudo` group so students can escalate to root in Lab 2:
+
+```sh
+sudo usermod -aG sudo labuser
+```
+
+Verify the group membership:
+
+```sh
+groups labuser
+# should include 'sudo' in the output
+```
+
+Test that escalation works:
+
+```sh
+su - labuser
+sudo -i
+# should drop into a root shell
+exit
+exit
+```
+
+:::{.callout-note}
+`labuser` having sudo rights is what allows the `sudo -i` command in the
+offline lab to succeed. Without this step, students will be denied when they
+try to read `/etc/shadow`.
+:::
+
+## Create the Practice Accounts
+
+These accounts do not need sudo access -- they exist only to add entries to
+the shadow file.
+
+```sh
+# alice -- plain dictionary password
+sudo adduser --disabled-login alice
+echo "alice:dragon" | sudo chpasswd
+
+# bob -- requires rule-based attack to crack
+sudo adduser --disabled-login bob
+echo "bob:Dr@gon99" | sudo chpasswd
+
+# carol -- plain dictionary password
+sudo adduser --disabled-login carol
+echo "carol:abc123" | sudo chpasswd
+```
+
+The `--disabled-login` flag prevents these accounts from being used to log
+in interactively via SSH, so students cannot simply try to connect as alice,
+bob, or carol -- they must crack the hashes offline.
+
+## Verify All Shadow Entries
+
+```sh
+sudo grep -E "labuser|alice|bob|carol" /etc/shadow
+```
+
+You should see four lines, each with a hash beginning with `$6$` (or `$y$`
+on newer Pi OS images -- see note below). Confirm no entry has `*` or `!`
+in the hash field, which would indicate no password is set.
+
+:::{.callout-note}
+If any hash begins with `$y$` rather than `$6$`, the system is using
+yescrypt (hashcat mode `400`) instead of sha512crypt (mode `1800`). Either
+update both student lab documents to use `-m 400`, or force SHA-512 by
+setting the password hashing algorithm explicitly:
+
+```sh
+sudo sed -i 's/^ENCRYPT_METHOD.*/ENCRYPT_METHOD SHA512/' /etc/login.defs
+```
+
+Then recreate the affected passwords with `chpasswd` as above.
+:::
+
+## Verify labuser's Password is in rockyou
+
+```sh
+grep -n "^sunshine1$" /usr/share/wordlists/rockyou.txt
+```
+
+This should return a line number. If it returns nothing, choose a different
+password from the suggestions below and update `labuser` accordingly:
+
+```default
+sunshine1   dragon99   password1   princess   monkey123
+```
+
+The practice account passwords (`dragon`, `Passw0rd`, `abc123`) are all
+confirmed entries in rockyou and do not need checking.
+
+# Installing and Configuring SSH
+
+SSH is almost certainly already installed and running on a Raspberry Pi OS
+image. Verify it:
+
+```sh
+sudo systemctl status ssh
+```
+
+If it is not running, install and enable it:
+
+```sh
+sudo apt install openssh-server -y
+sudo systemctl enable ssh
+sudo systemctl start ssh
+```
+
+Confirm it is listening:
+
+```sh
+sudo netstat -tlnp | grep :22
+```
+
+:::{.callout-tip}
+If `netstat` is not available: `sudo apt install net-tools -y`
+:::
+
+## Allow Password Authentication
+
+Some Pi OS images disable password authentication by default in favour of
+key-based login. Hydra needs password authentication to be enabled.
+
+```sh
+sudo nano /etc/ssh/sshd_config
+```
+
+Ensure the following lines are present and uncommented:
+
+```default
+PasswordAuthentication yes
+PermitRootLogin yes
+```
+
+Setting `PermitRootLogin yes` is necessary for students to SSH in as root
+at the start of Lab 2 after cracking `labuser`'s password and escalating.
+Restart SSH to apply:
+
+```sh
+sudo systemctl restart ssh
+```
+
+:::{.callout-important}
+`PermitRootLogin yes` is a significant security risk on any real system.
+This is acceptable here because the Pi is on an isolated LAN. Revert this
+setting when the lab is over.
+:::
+
+# Installing and Configuring FTP
+
+Students already know vsftpd from the covert channels lab. Having a second
+service on the Pi makes the nmap output more interesting and gives hydra
+two protocols to attack.
+
+## Install vsftpd
+
+```sh
+sudo apt install vsftpd -y
+```
+
+## Configure vsftpd
+
+```sh
+sudo nano /etc/vsftpd.conf
+```
+
+Find and set the following options:
+
+```default
+anonymous_enable=NO
+local_enable=YES
+write_enable=NO
+local_umask=022
+chroot_local_user=YES
+allow_writeable_chroot=YES
+```
+
+Setting `local_enable=YES` allows system users (including `labuser`) to
+log in with their system credentials. This is what hydra will attack.
+
+Restart vsftpd:
+
+```sh
+sudo systemctl enable vsftpd
+sudo systemctl restart vsftpd
+```
+
+Verify it is listening on port 21:
+
+```sh
+sudo netstat -tlnp | grep :21
+```
+
+# Final Verification
+
+Before students arrive, run through this checklist:
+
+1. Pi is connected to the LAN and reachable at `10.7.7.200`:
+```sh
+ping 10.7.7.200   # from another machine on the LAN
+```
+
+2. SSH is open on port 22 and accepts password login:
+```sh
+ssh labuser@10.7.7.200   # should prompt for password
+```
+
+3. FTP is open on port 21 and accepts `labuser` credentials:
+```sh
+ftp 10.7.7.200   # login as labuser
+```
+
+4. `labuser` can escalate to root:
+```sh
+ssh labuser@10.7.7.200
+sudo -i           # should drop to a root shell without errors
+exit
+exit
+```
+
+5. All four shadow entries are present and hashed (not `*` or `!`):
+```sh
+sudo grep -E "labuser|alice|bob|carol" /etc/shadow
+```
+All four lines should have a `$6$` (or `$y$`) hash in the second field.
+
+6. The `labuser` password appears in rockyou.txt:
+```sh
+grep -n "^sunshine1$" /usr/share/wordlists/rockyou.txt
+```
+This should return a line number. If it returns nothing, the password will
+not be crackable -- choose a different one from the suggestions in the
+user accounts section above.
+
+7. The practice account passwords are confirmed crackable:
+```sh
+grep -n "^dragon$"   /usr/share/wordlists/rockyou.txt   # alice
+grep -n "^abc123$"   /usr/share/wordlists/rockyou.txt   # carol
+```
+`bob`'s password (`Dr@gon99`) is intentionally absent from rockyou -- it
+should return nothing, confirming that a rule-based attack is required.
+
+Once all seven checks pass, the Pi is ready.
+
+# Teardown After the Lab
+
+When the lab sessions are over, revert the security-sensitive changes:
+
+```sh
+# Disable root SSH login
+sudo nano /etc/ssh/sshd_config
+# Set: PermitRootLogin no
+sudo systemctl restart ssh
+
+# Remove all lab user accounts
+sudo deluser --remove-home labuser
+sudo deluser --remove-home alice
+sudo deluser --remove-home bob
+sudo deluser --remove-home carol
+
+# Optionally stop vsftpd if not needed outside the lab
+sudo systemctl disable vsftpd
+sudo systemctl stop vsftpd
+```
