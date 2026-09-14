@@ -55,6 +55,14 @@ brew install --cask virtualbox
 ```
 :::
 
+:::{.callout-warning}
+# Apple Silicon (M-series) Macs
+
+VirtualBox's support for Apple Silicon (M1/M2/M3/M4/M5 Macs) has historically been unreliable compared to its support for Intel-based machines, so you may run into crashes, stability issues, or missing features. If you run into problems, [UTM](https://mac.getutm.app/) is a free alternative that is generally better supported on Apple Silicon and may be worth trying instead.
+
+**However**, the rest of this course's instructions (including later labs, such as Network Setup) are written and tested against VirtualBox specifically. We have not tested those instructions against UTM, so menu names, settings locations, and even some underlying behavior (e.g. bridged networking) may not match what's described. If you choose UTM, expect to do some translation on your own, and flag any issues you run into so we can improve these instructions.
+:::
+
 
 :::{.callout-tip}
 # Linux Host Tip
@@ -83,7 +91,7 @@ Ubuntu server is being used for users with Mac hosts as it currently (year of 20
     - If you have an **x86-64/amd64** based machine (most Windows machines and Intel based macs):
         - [Linux Mint](https://www.linuxmint.com/download.php)
             - note that the `xfce` edition is recommended for virtual machines
-        - [Ubuntu Desktop](https://ubuntu.com/download/server)
+        - [Ubuntu Desktop](https://ubuntu.com/download/desktop)
 
     - If you have an **arm64** based machine (m-series Macs and very few Windows machines):
         - [Ubuntu Server](https://ubuntu.com/download/server/arm)
@@ -107,14 +115,15 @@ This section of the instructions apply regardless of the flavor of Linux you cho
 
 6. Skip the unattended install by checking the box to skip it.
 
-7. When prompted for `base memory`, it is recommended that you allow the machine to use up to 25% of your host machine's resources.
+7. When prompted for `base memory`, it is recommended that you allocate enough for the VM to run a full desktop environment comfortably while leaving enough for your host OS and other applications.
 
-    - If you have at least 8 GB of ram, consider allowing 2 GB for the virtual machine. 
-    - If you have 16 GB of ram, consider allowing 4 GB for the virtual machine.
-    
-   This is only setting the max it can use on your machine, so feel free to give it more than 25%, but you may start slowing down the host.
+    - If you have 8 GB of RAM, consider allowing 2-3 GB for the virtual machine.
+    - If you have 16 GB of RAM, consider allowing 4-6 GB for the virtual machine.
+    - If you have 32 GB of RAM or more, consider allowing 8 GB for the virtual machine.
 
-8. When prompted about the `processors`, it is recommended you give it at least 2. For a 2021 mac with 10 cores, we chose 4 and have had no performance issues.
+   This is only setting the max it can use on your machine, so feel free to adjust up or down, but allocating too much may start slowing down the host.
+
+8. When prompted about the `processors`, it is recommended you give it at least 2, and 4 if your machine's CPU has enough cores to spare (most machines sold in the last several years do).
 
 9. When prompted about the `Hard Disk`, make it sufficient in size, say 100 GB for storage. **Do not** pre-allocate the storage.
 
@@ -152,9 +161,19 @@ Now that the machine exists inside virtual box, it is recommended you complete t
 
 # Installing and Booting the VM
 
-Boot the VM by selecting it in the left navigation and clicking "Start". 
+Boot the VM by selecting it in the left navigation and clicking "Start".
 
 For this step, the instructions will be different depending on the flavor of Linux you chose, be sure to scroll to the appropriate section for your VM's operating system.
+
+:::{.callout-note}
+# What About Partitioning?
+
+During installation you may notice a manual partitioning option (e.g. `Something Else` in Mint) instead of the recommended guided option. Partitioning lets you reserve specific amounts of disk space for different parts of the filesystem, such as a separate `/home` partition, which historically made it easier to reinstall or upgrade the OS without losing personal files.
+
+Partitioning is less critical today thanks to cheap storage and modern backup/snapshot tools, but it's still a useful concept to understand as a computer science student since you won't always be working with the latest hardware or tooling. If you want to experiment, choose the manual partitioning option and create separate partitions for `/boot`, swap, `/` (root), and `/home` — just be sure you're partitioning the virtual disk you created for this VM, not your host machine's drive.
+
+For this course, using the guided/automatic option is perfectly fine and recommended.
+:::
 
 ## For Mint
 
@@ -166,21 +185,21 @@ For Mint, you will be presented with a GUI that should be simple to step through
 
 3. Now you'll be presented with the options to `Erase Disk and Install Linux Mint` or `Something Else`. 
 
-    Choosing `Erase Disk and Install Linux Mint` is the simplest option. This will not erase anything on your host machine since we are doing this inside of virtualization software. 
-    
-    If you wanted to be a bit more specific about the partitions that get created, you can choose `Something Else`. Scroll down to the `Partition Details` section of this document for more about this.
+    Choosing `Erase Disk and Install Linux Mint` is the simplest option and is recommended for this course. This will not erase anything on your host machine since we are doing this inside of virtualization software.
+
+    If you wanted to be a bit more specific about the partitions that get created, you can choose `Something Else` instead. See the "What About Partitioning?" callout above for guidance.
 
     Once you've made your selection, click "Install Now"
 
 4. Time zone: Chicago
 
-5. If you chose `Something Else` for the Erase Disk and Install Linux Mint option, you'll need to jump to the Partition Details section of this document and then come back here when you're done. If you chose `Yes`, move to step 6.
+5. If you chose `Something Else`, use Mint's on-screen partition editor to create your partitions, then continue to step 6. If you chose `Erase Disk and Install Linux Mint`, move straight to step 6.
 
 6. Now you'll be asked for some information such as username, computer name, and password. Make a username and password that you'll remember. You do not need to encrypt your home folder, but could if you wanted to.
 
 ## For Ubuntu Desktop
 
-Ubutun desktop will present you with a step by step installation process. Follow this process. If you are interested in a custom partition, skip to the `Partition Details` section of this document for more, otherwise, use the default partitioning.
+Ubuntu desktop will present you with a step by step installation process. Follow this process. If you are interested in a custom partition, see the "What About Partitioning?" callout above, otherwise use the default partitioning.
 
 ## For Ubuntu Server ARM
 This could take some time, so it is not recommended that you update when prompted during the install if you are short on time.
@@ -208,52 +227,6 @@ This could take some time, so it is not recommended that you update when prompte
     b. Once it is done, turn the machine off by closing the window and selecting the option to turn the machine off. 
     
     c. Start the machine and log back in. There should be a GUI at this point.
-
-
-## Partition Details
-
-If you chose to do a custom partition, here are some tips. Partitioning gives the user the opportunity to specify how much space is reserved for certain functions of the computer. This in turn allows us to easily update or overwrite our operating system later on without losing the files we were using.
-
-Partitioning is arguably not as used these days with how cheap computers and memory are and the prevalence of all sorts of backup tools. However, it is still a good experience to have as a computer science student because you won’t always be using the latest and greatest computers.
-
-Your hard drive will probably have a name like `/dev/sda` that is the size of all the space you have available for your VM. For each new partition that we create, select the unused space and click the `+` sign to add a partition to it.
-
-1. 1st partition: 
-
-    - 1024 MB
-    - type = primary
-    - location = beginning
-    - use as = ext 2
-    - mount point = /boot
-
-2. 2nd partition: 
-
-    - 4096 MB3
-    - type = primary
-    - location = end
-    - use as = swap area
-
-3. 3rd partition: 
-
-    - 35% of space left
-    - type = primary
-    - location = beginning
-    - use as ext 4
-    - mount point = /
-
-4. 4th partition
-
-    - all that is left
-    - type = primary
-    - location = beginning
-    - use as = ext 4
-    - mount point = /home.
-
-Click install now.
-
-If you get some error messages with suggested partitions, feel free to delete the 4th partition, create the suggested partitions with the suggested sizes and uses, and then recreate the 4th partition with whatever space is left over.
-
-Return to the install instructions that brought you to the Partition Details
 
 
 

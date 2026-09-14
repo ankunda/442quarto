@@ -1,5 +1,6 @@
 ---
-title: "Service Setup"
+title: "Lab 3 — Service Setup"
+subtitle: "HTTP · FTP · SSH · MySQL"
 format:
     pdf:
         toc: true
@@ -10,460 +11,674 @@ format:
 
 # Introduction
 
-In this tutorial you are shown how to setup an HTTP server, an FTP server, an SSH server, and a MySQL server.
+In this lab you will install and configure four of the most common network services
+found in real-world Linux environments:
+
+| Service | Default Port | Protocol | Purpose |
+|---------|-------------|----------|---------|
+| HTTP (Apache) | 80 | TCP | Serve web pages |
+| FTP (vsftpd) | 21 | TCP | Transfer files |
+| SSH (OpenSSH) | 22 | TCP | Secure remote shell |
+| MySQL | 3306 | TCP | Relational database |
+
+Knowing how these services work—and how they can be misconfigured—is a core skill
+in cybersecurity. Attackers routinely scan for exactly these ports; by setting them up
+yourself you will understand both the attacker's perspective and what a defender needs
+to protect.
+
+::: {.callout-tip}
+## Checking Open Ports
+
+Throughout this lab you will use the following command to verify that a service is
+listening on the expected port. Run it after each installation step.
+
+```sh
+sudo ss -tlnp
+```
+:::
+
+::: {.callout-note}
+## A Note on `netstat`
+
+You may see `netstat` used in older tutorials and documentation to check listening
+ports. It comes from the legacy `net-tools` package, which is increasingly not
+installed by default. The modern replacement is `ss` (from `iproute2`, the same
+package that provides `ip`), which is installed by default on current systems.
+
+If you need `netstat` on an older or unfamiliar system:
+
+```sh
+sudo apt-get install net-tools
+sudo netstat -alpn | grep ' LISTEN '
+```
+:::
+
+::: {.callout-note}
+## A Note on `service`
+
+This lab uses `systemctl restart <name>`, the native systemd command, to restart
+services. You may also see `sudo service <name> restart` in older tutorials — on
+Ubuntu and Mint this still works today as a compatibility wrapper around `systemctl`,
+so either will work, but `systemctl` is the current standard.
+:::
+
+---
 
 # HTTP Server
 
 ::: {.callout-note}
-## Hypertext Transfer Protocol (HTTP)
+## Background: Hypertext Transfer Protocol (HTTP)
 
-**HTTP (Hypertext Transfer Protocol)** is the foundational communication protocol of the web, used to transfer data between clients (typically web browsers) and servers. It was developed in the early 1990s by :contentReference[oaicite:0]{index=0} as part of the creation of the World Wide Web at :contentReference[oaicite:1]{index=1}. The original version of HTTP was extremely simple, supporting only basic text retrieval, but it quickly evolved into more sophisticated versions such as HTTP/1.1, HTTP/2, and HTTP/3. These newer versions improve efficiency, reduce latency, and support modern web features like persistent connections and multiplexing. HTTP operates as a stateless protocol, meaning each request from a client to a server is independent, which simplifies design but often requires additional mechanisms (like cookies or sessions) to maintain state.
+**HTTP (Hypertext Transfer Protocol)** is the foundational communication protocol of
+the web, used to transfer data between clients (typically web browsers) and servers.
+It was developed in the early 1990s by Tim Berners-Lee as part of the creation of the
+World Wide Web at CERN. The original version supported only simple text retrieval, but
+it quickly evolved into HTTP/1.1, HTTP/2, and HTTP/3, which add features like
+persistent connections, header compression, and multiplexed streams for better
+performance.
 
-HTTP is used virtually everywhere on the internet, forming the backbone of web browsing, APIs, and many cloud-based services. When you visit a website, your browser sends an HTTP request to a server, which responds with resources such as HTML, images, or JSON data. In cybersecurity, HTTP is especially important because it is both a critical service and a common attack surface. Many vulnerabilities—such as cross-site scripting (XSS), SQL injection, and man-in-the-middle attacks—exploit weaknesses in how HTTP is implemented or secured. To mitigate these risks, HTTP is often paired with encryption through HTTPS (HTTP Secure), which uses TLS to protect data in transit. Understanding HTTP is essential for analyzing web traffic, configuring secure servers, and detecting malicious activity in network communications.
+HTTP is a **stateless** protocol — each request is independent. Websites that need to
+remember who you are (shopping carts, logged-in accounts) use add-ons like cookies or
+server-side sessions to work around this.
+
+**Why it matters in cybersecurity:** HTTP is one of the most common attack surfaces on
+the internet. Vulnerabilities like cross-site scripting (XSS), SQL injection, and
+directory traversal all exploit weaknesses in how HTTP is handled. For this reason,
+HTTP is almost always paired with **HTTPS** (HTTP + TLS encryption) in production so
+that traffic cannot be read or tampered with in transit.
 :::
 
-Our HTTP server will be hosted on port 80 (the default http port). For the HTTP server, we will use Apache. 
+::: {.callout-important}
+## Security Note: HTTP vs. HTTPS
 
-Complete the following steps to set up the server:
+Plain HTTP traffic is unencrypted — anyone on the same network can read it with a
+tool like Wireshark. In this lab we use plain HTTP for simplicity, but in any
+real deployment you would configure a TLS certificate (e.g., via Let's Encrypt) and
+redirect all traffic to port 443 (HTTPS).
+:::
 
-1. Install Apache
+Our HTTP server will be hosted on **port 80** (the default HTTP port).
+We will use **Apache2**, one of the most widely deployed web servers in the world.
+
+## Setup Steps
+
+1. **Install Apache.**
 
     ```sh
     sudo apt-get install apache2
     ```
 
-2. Check that it is running
+2. **Confirm that Apache is listening on port 80.**
 
     ```sh
-    sudo netstat -alpn | grep ' LISTEN '
+    sudo ss -tlnp
     ```
 
-    The output from running the command above should include the following, or something similar to the following. Specifically, you will see a reference to Apache on the right hand side and port 80 in the middle.
+    Look for a line like the following, with port `80` and `apache2` in the process
+    column:
 
     ```
-    ...
-    tcp6    0   0 :::80     :::*        LISTEN      29022/apache2
-    ...
-
+    LISTEN   0   511          *:80          *:*     users:(("apache2",pid=29022,fd=4))
     ```
 
-3. Visit the website that is being hosted by visiting [http://localhost](http://localhost).
+3. **Visit the default website** by opening a browser and navigating to
+   [http://localhost](http://localhost).  
+   You should see the Apache2 Ubuntu default page. This page is served from a file on
+   disk — which you will inspect in the next step.
 
-4. Confirm that the code for the website is located at /var/www/html/index.html by viewing it with the following command.
+4. **Locate the web root.** The HTML file powering that page is at
+   `/var/www/html/index.html`. View it with:
 
     ```sh
     sudo more /var/www/html/index.html
-
     ```
+
+    Any file you place in `/var/www/html/` will be publicly served by Apache. Try
+    creating a simple `hello.html` file there and visiting
+    [http://localhost/hello.html](http://localhost/hello.html) to see it live.
+
+---
 
 # FTP Server
 
 ::: {.callout-note}
-## File Transfer Protocol (FTP)
+## Background: File Transfer Protocol (FTP)
 
-**FTP (File Transfer Protocol)** is one of the oldest standard network protocols used to transfer files between a client and a server over a TCP/IP network. It was first standardized in the early 1970s and later formalized in RFC 959, making it older than even HTTP. FTP was designed in an era when networks were largely trusted, so its original implementation does not include encryption or strong authentication mechanisms. It operates using a client-server model and typically uses two separate channels: a control connection (for commands) and a data connection (for transferring files). FTP can function in either active or passive mode, which affects how these connections are established—an important detail when dealing with firewalls and network configurations.
+**FTP (File Transfer Protocol)** is one of the oldest network protocols, first
+standardized in the early 1970s and later formalized in
+[RFC 959](https://datatracker.ietf.org/doc/html/rfc959). It was designed in an era
+when networks were largely trusted, so it has **no built-in encryption** — usernames,
+passwords, and file contents are all sent in plaintext.
 
-FTP has historically been widely used for tasks such as uploading website files to web servers, transferring large datasets, and managing files on remote systems. However, from a cybersecurity perspective, FTP presents significant risks because it transmits data—including usernames and passwords—in plaintext. This makes it highly vulnerable to packet sniffing, credential theft, and man-in-the-middle attacks. As a result, FTP has largely been replaced in secure environments by SFTP (SSH File Transfer Protocol) and FTPS (FTP Secure over TLS/SSL), both of which provide encryption for data in transit. Despite its decline in secure systems, understanding FTP remains important in cybersecurity for legacy system analysis, penetration testing, and recognizing insecure configurations that may expose sensitive data.
+FTP uses **two separate TCP connections**:
+
+- A **control channel** (port 21) for commands like `LIST`, `RETR`, and `STOR`.
+- A **data channel** (port 20 in active mode, or a negotiated port in passive mode)
+  for the actual file transfer.
+
+**Active vs. Passive mode** is a common source of confusion with firewalls.
+In *active* mode the server initiates the data connection back to the client, which
+firewalls often block. In *passive* mode the client initiates both connections, which
+is friendlier to NAT and firewalls.
+
+**Why it matters in cybersecurity:** FTP is a classic example of a protocol that
+became a security liability over time. Because credentials travel in plaintext, a
+simple packet capture with Wireshark can reveal passwords. Secure alternatives are
+**SFTP** (FTP-like commands tunneled over SSH) and **FTPS** (FTP with TLS). Despite
+being legacy, FTP still appears frequently in penetration testing engagements and CTF
+challenges, often with anonymous login enabled — exactly what you will configure
+below.
 :::
 
-Our FTP server will be hosted on port 21 (the default port). We will use Very Secure FTP Daemon, or vsftpd for short. 
+::: {.callout-important}
+## Security Note: Anonymous FTP
 
-To setup the FTP server, complete the following:
+Enabling anonymous FTP (as you will do below) intentionally allows **anyone** to
+connect without a password. This is useful for public file distribution, but it is
+dangerous if misconfigured — for example, if write access is accidentally granted.
+Always make the anonymous root directory and its contents **read-only**.
+:::
 
-1. Install vsftpd.
+Our FTP server will be hosted on **port 21** (the default FTP port).
+We will use **vsftpd** (Very Secure FTP Daemon), the default FTP server on Ubuntu.
+
+## Setup Steps
+
+1. **Install vsftpd.**
 
     ```sh
     sudo apt-get install vsftpd
     ```
 
-2. Comfirm that it is running.
+2. **Confirm that vsftpd is listening on port 21.**
 
     ```sh
-    sudo netstat -alpn | grep ' LISTEN '
+    sudo ss -tlnp
     ```
 
-    The output should contain a line similar to the following. Specifically, note that vsftpd is running on port 21. 
+    Look for:
 
     ```
-    ...
-    tcp     0   0 0.0.0.0:21     0.0.0.0:*        LISTEN      3309/vsftpd
-    ...
-
+    LISTEN   0   32          0.0.0.0:21          0.0.0.0:*     users:(("vsftpd",pid=3309,fd=3))
     ```
 
-3. Confirm you can login using the user credentials for your VM. After typing the following command, you'll be prompted for your username and password.
+3. **Log in with your VM user credentials** to confirm basic FTP works.
 
     ```sh
     ftp localhost
     ```
 
-    If your provide a valid username and password, it will respond with something that looks similar to the following:
+    Enter your username and password when prompted. A successful login looks like:
 
     ```
     Login successful.
     Remote system type is UNIX.
     Using binary mode to transfer files.
     ftp>
-
     ```
 
-4. Confirm you are in the home directory for your user by typing `ls -lh` to see the files.
+4. **List files** in your home directory with:
 
-5. Disconnect the ftp connection by typing `control+d`
+    ```
+    ftp> ls -lh
+    ```
 
-6. Open the ftp server configuration file.
+5. **Disconnect** from the FTP session with `Ctrl+D`.
+
+6. **Open the vsftpd configuration file.**
 
     ```sh
     sudo nano /etc/vsftpd.conf
     ```
 
-:::{.callout-warning}
-# Troubleshooting Tip
+::: {.callout-warning}
+## Troubleshooting Tip
 
-If the file is blank, you may have mistyped the previous command.
+If the file appears blank, close it and check that you typed the path exactly as
+shown. A blank file usually means the path was mistyped and nano created an empty
+new file instead.
 :::
 
-7. Change the configuration file by finding and modifying the variables named `anonymous_enable`, `local_enable`, and `ftpd_banner` and then adding a variable named `anon_root` at the bottom of the file. Note that you can search for each variable in nano using ctrl+w.
+7. **Edit the configuration** to enable anonymous access. Find and modify the
+   variables below (use `Ctrl+W` in nano to search). If a line is commented out with
+   `#`, remove the `#` to uncomment it.
 
-    Note that if any of the variables are commented out, you will need to uncomment them.
-
-    ```
+    ```ini
     anonymous_enable=YES
-    local_enable=NO 
+    local_enable=NO
 
-    # ftpd_banner probably needs to be uncommented
-    ftpd_banner=Whatever you want       
+    # Uncomment this line and set your own banner message
+    ftpd_banner=Welcome to the Lab FTP Server
 
-    # add anon_root var at bottom of the file if it does not exist
-    # note that the folder /home/anonymous/ftp doesn't exist yet
-    anon_root=/home/anonymous/ftp       
-    
+    # Add this line at the bottom if it does not already exist
+    # (the directory /home/anonymous/ftp does not exist yet 
+    # — you will create it next)
+    anon_root=/home/anonymous/ftp
     ```
 
-8. Save and close the config file.
+    | Variable | Purpose |
+    |---|---|
+    | `anonymous_enable=YES` | Allows login without a password |
+    | `local_enable=NO` | Prevents local system users from logging in |
+    | `ftpd_banner` | Custom welcome message shown on connect |
+    | `anon_root` | Directory shown to anonymous users |
 
-9. Restart the FTP server.
+8. **Save and close** the config file (`Ctrl+X`, then `Y`, then `Enter`).
+
+9. **Restart vsftpd** to apply the changes.
 
     ```sh
-    sudo service vsftpd restart 
+    sudo systemctl restart vsftpd
     ```
 
-10. Create the `anon_root` directory and add a test file.
-
-    a. Navigate to /home.
-
-        ```sh
-        cd /home
-        ```
-
-    b. Create a folder named `anonymous`.
-
-        ```sh
-        sudo mkdir anonymous 
-        ```
-
-    c. Navigate into the newly created folder and create a folder named `ftp`
-
-        ```sh
-        cd anonymous 
-        sudo mkdir ftp
-        ```
-
-    d. Navigate into the `ftp` directory and add a file to this folder named `ftp-test`.
-
-        ```sh
-        cd ftp
-        sudo touch ftp-test
-        ```
-
-11. Test the ftp server again.
-
-    a. Login to the FTP server. 
-
-    When prompted for the username, provide `anonymous`. 
-    
-    When prompted for the password, leave it blank and just hit ENTER.
+10. **Create the anonymous root directory** and add a test file.
 
     ```sh
-    ftp localhost 
-    ``` 
+    cd /home
+    sudo mkdir anonymous
+    cd anonymous
+    sudo mkdir ftp
+    cd ftp
+    sudo touch ftp-test
+    ```
 
-    b. Once you are into the ftp server, type `ls -lh` again to confirm that you can see the file named `ftp-test` that you created in a previous step.
+11. **Test anonymous FTP login.**
 
-12. Test the connection from your host machine. 
+    ```sh
+    ftp localhost
+    ```
 
-    a. Find the ip address for you virtual machine with the `ifconfig` command.
+    - **Username:** `anonymous`
+    - **Password:** *(leave blank, just press Enter)*
 
-    b. From a terminal on your host machine (see tips below), type `ftp X.X.X.X` to access the ftp server. Replace X.X.X.X with the appropriate ip address for your virtual machine.
+    Once logged in, run `ls -lh` and confirm that `ftp-test` is visible.
 
-    c. Type `ls` to make sure you can see the file named `ftp-test`
+12. **Test the connection from your host machine.**
 
+    a. Find your VM's IP address:
 
-:::{.callout-tip}
-# Tip: Using Windows on your host machine?
+        ```sh
+        ip addr show
+        ```
 
-If you have a windows host, the ftp command should work by default in powershell.
+    b. From a terminal on your **host machine**, connect using the VM's IP:
 
+        ```sh
+        ftp <VM-IP-ADDRESS>
+        ```
+
+    c. Run `ls` to verify you can see `ftp-test`.
+
+::: {.callout-tip}
+## Windows Host
+
+The `ftp` command works by default in PowerShell and Command Prompt.
 :::
 
+::: {.callout-tip}
+## macOS Host
 
-:::{.callout-tip}
-# Tip: Using macOS on your host machine?
+You may need to install the FTP client first:
 
-You may need to install ftp with `brew install inetutils`. If you do not have homebrew, it is recommended that you install it from [https://brew.sh](https://brew.sh)
+```sh
+brew install inetutils
+```
+
+If you do not have Homebrew, install it from [https://brew.sh](https://brew.sh).
 :::
 
-
+---
 
 # SSH Server
 
 ::: {.callout-note}
-## Secure Shell (SSH)
+## Background: Secure Shell (SSH)
 
-**SSH (Secure Shell)** is a cryptographic network protocol used to securely access and manage remote systems over an unsecured network. It was developed in the mid-1990s by :contentReference[oaicite:0]{index=0} in response to the widespread use of insecure remote login protocols like Telnet, which transmitted data in plaintext. SSH provides a secure channel over a potentially hostile network by using encryption, ensuring confidentiality and integrity of data in transit. It also supports multiple authentication methods, including password-based login and public key authentication, making it both flexible and significantly more secure than its predecessors.
+**SSH (Secure Shell)** is a cryptographic network protocol for securely accessing and
+managing remote systems. It was created in 1995 by Tatu Ylönen in response to a
+password-sniffing attack at his university — at the time, most remote login was done
+with **Telnet**, which sends everything in plaintext. SSH encrypts the entire session,
+protecting both commands and data from eavesdropping.
 
-SSH is widely used in system administration, cloud infrastructure, and cybersecurity for tasks such as remote server management, secure file transfers, and tunneling network traffic. It operates primarily over port 22 and is a critical service in most Linux environments. From a cybersecurity perspective, SSH is essential but must be properly configured to remain secure. Common risks include brute-force login attempts, weak passwords, and misconfigured key permissions. Best practices include disabling root login, enforcing key-based authentication, and using tools like fail2ban to limit repeated login attempts. SSH also underpins related secure protocols such as SFTP (SSH File Transfer Protocol), further extending its importance in protecting data and maintaining secure communications across networks.
+SSH supports two main authentication methods:
+
+- **Password authentication** — familiar but susceptible to brute-force attacks.
+- **Public-key authentication** — the client holds a private key; the server holds
+  the matching public key. This is far more secure and is the recommended method for
+  any production system.
+
+**Why it matters in cybersecurity:** SSH is the most common way administrators manage
+Linux servers, and attackers know it. Port 22 is among the most heavily scanned ports
+on the internet. Common attack techniques include brute-force credential stuffing and
+exploiting misconfigured key permissions. Best practices include: disabling root login
+(`PermitRootLogin no`), enforcing key-based auth only (`PasswordAuthentication no`),
+and using a tool like **fail2ban** to automatically block IPs after repeated failed
+logins.
 :::
 
-Our ssh server will be hosted on port 22 (the default port for ssh). We will use OpenSSH. 
+::: {.callout-important}
+## Security Note: Disable Root SSH Login
 
-To setup the ssh server, complete the following:
+Allowing `root` to log in directly over SSH is a significant risk. If an attacker
+guesses or steals the root password, they have full control of the system. Always
+set `PermitRootLogin no` in `/etc/ssh/sshd_config` on any machine exposed to the
+internet.
+:::
 
-1. Install OpenSSH Server 
+Our SSH server will run on **port 22** (the default SSH port).
+We will use **OpenSSH**, the standard SSH implementation on Linux.
 
-    ```sh 
-    sudo apt-get install openssh-server 
-    ``` 
+## Setup Steps
 
-2. Confirm that it is running by running the following command. Specifically, confirm `sshd` is running on port `22`.
+1. **Install OpenSSH Server.**
 
     ```sh
-    sudo netstat -alpn | grep ' LISTEN '
+    sudo apt-get install openssh-server
     ```
 
-    The output should contain something similar one of the following text blocks. Specifically, confirm `sshd` is running on port `22`. It is possible it may show `init` is running on port `22`, which is also fine.
+2. **Confirm that `sshd` is listening on port 22.**
 
-    ```
-    ...
-    tcp     0   0 0.0.0.0:22     0.0.0.0:*        LISTEN      1091/sshd
-    ...
-    
+    ```sh
+    sudo ss -tlnp
     ```
 
-    Or it may have this:
+    Look for a line like the following:
 
     ```
-    ...
-    tcp     0   0 0.0.0.0:22     0.0.0.0:*        LISTEN      1091/init
-    ...
-    
+    LISTEN   0   128         0.0.0.0:22          0.0.0.0:*     users:(("sshd",pid=1091,fd=3))
     ```
 
-3. Navigate to a directory that isn't your home directory, let's say the desktop. We will be looking for a change in the prompt after completing the next instruction.
+3. **Navigate away from your home directory** so you can see the prompt change when
+   SSH brings you back. For example:
 
-3. Log in with your credentials by running the following command. The first time you connect, it will ask if you want to trust the server and prompt if you want to continue. Next, it will prompt you for a password. If successful, a welcome message may or may not appear, however if you were not at the home directory, the prompt should change back to the home directory.
+    ```sh
+    cd /tmp
+    ```
+
+4. **Log in to the local SSH server.** The first time you connect, SSH will ask you
+   to verify the server's fingerprint — type `yes` to accept and continue. Then enter
+   your password.
 
     ```sh
     ssh localhost
     ```
 
-4. Test that you are now in your home directory by typing `pwd`.
+    Notice that your prompt has changed back to your home directory — SSH always
+    starts a session in the user's home directory regardless of where you called it
+    from.
 
-5. Disconnect from ssh using `ctrl + d`. You will receive a message that the connection has been closed. If you were not conntected in the first place, then the terminal will close instead of disconnecting you.
+5. **Verify your location.**
 
-6. Try logging in from your host machine. 
+    ```sh
+    pwd
+    ```
 
-    a. First, find your vm's ip address using `ifconfig` on your vm.
+6. **Disconnect** with `Ctrl+D`. You will see a message like `Connection to localhost
+   closed.`
 
-    b. On your host machine, open the Terminal application and use the following command to connect. Replace the word `user` with the name of the user on your vm, and `x.x.x.x` with your vm's ip_address.
+7. **Log in from your host machine.**
 
-        ```sh 
-        ssh user@x.x.x.x
+    a. Find your VM's IP address:
+
+        ```sh
+        ip addr show
         ```
-    
-    c. Once you are in, run a command like `pwd` to test it out.
 
-    d. Disconnect from the vm.
+    b. On your **host machine**, open a terminal and run:
 
-7. For Cyber Storm, labs, and challenges you will need to do the following. 
+        ```sh
+        ssh <username>@<VM-IP-ADDRESS>
+        ```
 
-    a. Open the ssh config file.
+        Replace `<username>` with your VM username and `<VM-IP-ADDRESS>` with the
+        address from the previous step.
+
+    c. Run `pwd` to confirm you are connected, then disconnect with `Ctrl+D`.
+
+8. **Configure SSH for lab/competition use.**
+
+    a. Open the SSH daemon configuration file:
 
         ```sh
         sudo nano /etc/ssh/sshd_config
-        ``` 
+        ```
 
-    b. Find the line with `UseDNS` and be sure it is set to `UseDNS no`
+    b. Find the `UseDNS` line and ensure it reads:
 
+        ```
+        UseDNS no
+        ```
+
+
+    c. Save, close the file, and restart SSH:
+
+	```sh
+	sudo systemctl restart ssh
+	```
+
+::: {.callout-note}
+## Why `UseDNS no`?
+
+When `UseDNS yes` (the default), the SSH server performs a reverse DNS lookup
+on each connecting client. In a lab or competition environment with no
+DNS server configured, this lookup times out and causes a noticeable delay
+(often 5–30 seconds) before the login prompt appears. Setting it to `no`
+eliminates that delay.
+:::
+
+---
 
 # MySQL Server
 
 ::: {.callout-note}
-## MySQL
+## Background: MySQL
 
-**MySQL** is an open-source relational database management system (RDBMS) that uses Structured Query Language (SQL) to store, retrieve, and manage data. It was originally developed in the mid-1990s and remains one of the most widely used database systems in the world. MySQL is a core component of the popular LAMP stack (Linux, Apache, MySQL, PHP/Python/Perl) and is commonly used to power dynamic websites, web applications, and data-driven services. It follows a client-server model, where clients send SQL queries to a MySQL server, which processes them and returns the requested data.
+**MySQL** is an open-source relational database management system (RDBMS) that stores
+and retrieves data using **SQL (Structured Query Language)**. It was originally
+developed in the mid-1990s — the "My" in its name comes from the daughter of
+co-founder Michael Widenius, and "SQL" is the query language it uses. MySQL is a
+cornerstone of the **LAMP stack** (Linux, Apache, MySQL, PHP/Python/Perl) that powers
+a large portion of the internet.
 
-MySQL is used extensively in web development, enterprise applications, and cloud environments due to its performance, reliability, and ease of use. From a cybersecurity perspective, MySQL is a high-value target because it often stores sensitive data such as user credentials, personal information, and financial records. Common vulnerabilities include weak authentication, improper access controls, and SQL injection attacks, where malicious input is used to manipulate database queries. To secure MySQL deployments, administrators should enforce strong authentication, limit user privileges, regularly patch the system, and use prepared statements or parameterized queries to prevent injection attacks. Proper configuration and monitoring are essential to protect the integrity and confidentiality of stored data.
+MySQL follows a client-server model: applications send SQL queries to the MySQL
+server, which processes them and returns results. Data is organized into **databases**
+containing **tables**, each with rows and columns.
+
+**Why it matters in cybersecurity:** Databases are prime targets because they store
+the most sensitive data — passwords, personal information, financial records. Key
+attack techniques include:
+
+- **SQL Injection** — crafting malicious input to manipulate queries and dump data.
+- **Privilege escalation** — abusing overly permissive user grants.
+- **Weak credentials** — default or blank passwords on the root account.
+
+Defenses include prepared statements (to prevent injection), the principle of least
+privilege (users get only the access they need), regular patching, and binding MySQL
+to localhost unless remote access is genuinely required.
 :::
 
-MySQL is an open-source relational database management system. MySQL is a combination of My, the name of the daughter of MySQL's cofounder, and SQL, the acronym for Structured Query Language. Your MySQL server will be hosted on port 3306 (the default port).
+::: {.callout-important}
+## Security Note: Binding MySQL to 0.0.0.0
 
-Complete the following to setup the MySQL server.
+In step 6 below you will change `bind-address` from `127.0.0.1` to `0.0.0.0`,
+allowing remote connections. On a real server, this should be paired with strict
+firewall rules (e.g., `ufw allow from <trusted-IP> to any port 3306`) so that
+the database is not exposed to the entire internet.
+:::
 
-1. Install MySQL server. 
+Your MySQL server will run on **port 3306** (the default MySQL port).
 
-    ```sh 
-    sudo apt-get install mysql-server
-    ``` 
+## Setup Steps
 
-2. Begin securing the MySQL server with the command that follows.
-
-    ```sh 
-    sudo mysql_secure_installation 
-    ``` 
-
-    During the install, you will be asked about the following: 
-
-        - Would you like to setup VALIDATE PASSWORD component? 
-
-            Answering `y` will then prompt you to select a validation level. 
-            This will ensure users have strong passwords. 
-            The three validation levels are 0, 1, and 2 with 2 being the strongest. 
-            Choose what you feel is appropriate.
-
-        - Remove anonymous users?
-
-            Choose y for yes.
-
-        - Disallow root login remotely?
-
-            Choose y for yes.
-
-        - Remove test database and access to it?
-
-            Choose y for yes.
-
-        - Reload privilege tables now?
-
-            Choose y for yes.
-
-
-3. Check that the server is running. Note that it should be running on port 3306.
-
-    ```sh 
-    sudo netstat -alpn | grep ' LISTEN '
-    ```
-
-    The output should be similar to the following:
-
-    ```
-    ...
-    tcp     0   0 127.0.0.1:3306     0.0.0.0:*        LISTEN      1389/mysqld
-    ...
-
-    ```
-
-    Notice that it shows 127.0.0.1 as the ip address. This means it is only going to accept local (not remote) connections. 
-
-4. Try to login using root credentials. Note that it may prompt you for a password. Leave it blank and just press ENTER.
+1. **Install MySQL Server.**
 
     ```sh
-    sudo mysql -uroot -p 
-    ``` 
+    sudo apt-get install mysql-server
+    ```
 
-5. Setup the server to allow a remote user to access it.
+2. **Run the security hardening script.**
 
-    a. Add a new user to MySQL (not your vm). Replace 'new-user-name' with something of your choosing and 'password' with something of your choosing.
+    ```sh
+    sudo mysql_secure_installation
+    ```
+
+    The script will ask several questions. Recommended answers:
+
+    | Prompt | Recommended Answer |
+    |---|---|
+    | Set up VALIDATE PASSWORD component? | `y` — then choose level `1` or `2` |
+    | Remove anonymous users? | `y` |
+    | Disallow root login remotely? | `y` |
+    | Remove test database? | `y` |
+    | Reload privilege tables now? | `y` |
+
+3. **Confirm MySQL is listening on port 3306.**
+
+    ```sh
+    sudo ss -tlnp
+    ```
+
+    You should see:
+
+    ```
+    LISTEN   0   151       127.0.0.1:3306         0.0.0.0:*     users:(("mysqld",pid=1389,fd=26))
+    ```
+
+    Notice the address is `127.0.0.1` — MySQL is currently accepting **local
+    connections only**. You will change this in step 6.
+
+4. **Log in as root.** When prompted for a password, press `Enter` (no password set
+   yet).
+
+    ```sh
+    sudo mysql -uroot -p
+    ```
+
+5. **Create a remote-capable user and database.**
+
+    a. Create a new MySQL user. Replace the placeholders with your own values:
 
         ```sql
-        CREATE user 'new-user-name'@'%' IDENTIFIED BY 'password';
+        CREATE USER 'new-user-name'@'%' IDENTIFIED BY 'password';
         ```
 
-       The `%` symbol above means the user can connect from anywhere (including remotely)
-    
-    b. Create a new database
+        The `'%'` wildcard means this user may connect from **any** IP address.
+
+    b. Create a test database:
 
         ```sql
         CREATE DATABASE test;
         ```
 
-    c. Grant the new user all privileges on the new database.
+    c. Grant the new user full access to the test database, then flush the privileges
+       cache:
 
         ```sql
         GRANT ALL PRIVILEGES ON test.* TO 'new-user-name'@'%';
         FLUSH PRIVILEGES;
         ```
 
-    d. Disconnect from MySQL with `ctrl + d`
+    d. Disconnect from MySQL:
 
-    e. Login as the new user.
-
-        ```sh 
-        mysql -unew-user-name -p 
         ```
-    
-    f. Test that you can see the database named `test` that you just created.
+        Ctrl+D
+        ```
 
-        ```SQL 
-        SHOW DATABASES; 
-        ``` 
+    e. Log in as the new user to verify:
 
-        You should be able to see the database named `test`.
+        ```sh
+        mysql -unew-user-name -p
+        ```
 
-    g. Disconnect with `ctrl+d`
+    f. Check that the `test` database is visible:
 
+        ```sql
+        SHOW DATABASES;
+        ```
 
-6. Setup the server to allow for remote access.
+    g. Disconnect again with `Ctrl+D`.
 
-    a. Open the mysql config file.
+6. **Enable remote connections** by changing the bind address.
+
+    a. Open the MySQL configuration file:
 
         ```sh
         sudo nano /etc/mysql/mysql.conf.d/mysqld.cnf
         ```
-    
-    b. Find the `bind-address` option and set it to 0.0.0.0.
 
-        ```sh 
-        bind-address = 0.0.0.0 
-        ```
-    
-    c. Restart the MySQL server.
+    b. Find the `bind-address` line and change it to:
 
-        ```sh 
-        sudo service mysql restart 
-        ``` 
-    
-    d. Confirm that it is listening for remote connections.
-
-        ```sh 
-        sudo netstat -alpn | grep ' LISTEN ' 
+        ```ini
+        bind-address = 0.0.0.0
         ```
 
-        The output should contain something similar to the following. Specificially note 0.0.0.0:3306 for the ip address and port for mysqld.
-    
-        ```
-        ...
-        tcp     0   0 127.0.0.1:3306     0.0.0.0:*        LISTEN      1389/mysqld
-        ...
+    c. Restart MySQL to apply the change:
 
+        ```sh
+        sudo systemctl restart mysql
         ```
 
-7. Test a remote login. 
+    d. Confirm MySQL is now listening on all interfaces:
 
-    a. (Optional) For this, it is recommended that you test with a classmate's virtual machine so that you do not need to install mysql on your host machine. However, if you wanted to install mysql on your host, you can do so by using one of the following options. Feel free to skip this step and move to step b.
+        ```sh
+        sudo ss -tlnp
+        ```
 
-    - For windows users, visit [https://dev.mysql.com/downloads/installer/](https://dev.mysql.com/downloads/installer/) and download either installer. The smaller in size installer will ask which features you want to download once you open it, the other installer includes all of the features. 
+        The relevant line should now show `0.0.0.0:3306` instead of `127.0.0.1:3306`:
 
-    - For mac users, use `brew install mysql`.
+        ```
+        LISTEN   0   151         0.0.0.0:3306         0.0.0.0:*     users:(("mysqld",pid=1389,fd=26))
+        ```
 
-    - For linux users, use `sudo apt install mysql`.
+7. **Test a remote login.**
 
-    b. Connect with the following command. Replace `0.0.0.0` with the ip address of the vm you are trying to connect to, and `username` with the name of the user you created previously.
+    a. *(Optional)* If you do not have a MySQL client on your host machine, coordinate
+       with a classmate so you can use their VM as the client — or install a client
+       using one of the options below:
 
-    ```sh
-    mysql -h 0.0.0.0 -P 3306 -u username -p
-    ```
+       - **Windows:** Download from
+         [https://dev.mysql.com/downloads/installer/](https://dev.mysql.com/downloads/installer/).
+         The smaller installer will let you choose just the command-line client.
+       - **macOS:** `brew install mysql-client`
+       - **Linux:** `sudo apt install mysql-client`
 
+    b. Connect to your VM's MySQL server from the client machine:
 
-<!-- ## Changing Ports -->
+        ```sh
+        mysql -h <VM-IP-ADDRESS> -P 3306 -u new-user-name -p
+        ```
 
+        Replace `<VM-IP-ADDRESS>` with the IP from `ip addr show` on your VM and
+        `new-user-name` with the user you created in step 5.
+
+    c. Run `SHOW DATABASES;` to confirm the connection is working.
+
+---
+
+# Summary
+
+You have now installed and verified four core network services. Here is a quick
+reference for what you set up:
+
+| Service | Daemon | Default Port | Config File |
+|---------|--------|-------------|-------------|
+| HTTP | `apache2` | 80 | `/etc/apache2/` |
+| FTP | `vsftpd` | 21 | `/etc/vsftpd.conf` |
+| SSH | `sshd` | 22 | `/etc/ssh/sshd_config` |
+| MySQL | `mysqld` | 3306 | `/etc/mysql/mysql.conf.d/mysqld.cnf` |
+
+::: {.callout-tip}
+## Going Further
+
+Once you are comfortable with these services, try the following to deepen your
+understanding:
+
+- **Wireshark:** Capture FTP traffic and observe that your credentials appear in
+  plaintext. Then compare with an SSH session to see the difference encryption makes.
+- **Nmap:** From your host machine, run `nmap <VM-IP>` to see all four services
+  appear as open ports — exactly what an attacker's first scan would show.
+- **fail2ban:** Install and configure `fail2ban` to automatically block IPs that
+  repeatedly fail SSH login attempts.
+- **Let's Encrypt / Certbot:** Set up a free TLS certificate for Apache and redirect
+  port 80 to HTTPS on port 443.
+:::
