@@ -229,6 +229,92 @@ This could take some time, so it is not recommended that you update when prompte
     c. Start the machine and log back in. There should be a GUI at this point.
 
 
+# Shared Folders
+
+A **shared folder** lets you exchange files between your host machine and the VM directly through the filesystem, without needing FTP, SSH, or a USB drive. This is convenient for editing code in a host-side editor, copying over screenshots, or moving files you downloaded on the host into the VM.
+
+:::{.callout-warning}
+# VirtualBox-Specific Feature
+
+Shared folders rely on VirtualBox's own `vboxsf` filesystem, which is provided by VirtualBox Guest Additions. If you are using UTM instead of VirtualBox (see the Apple Silicon callout earlier in this lab), file sharing works differently (UTM uses `virtfs`/9p) and the steps below will not apply — consult UTM's own documentation instead.
+:::
+
+## Install Guest Additions
+
+Shared folders will not work until **Guest Additions** are installed inside the guest OS. Boot your VM (see "Installing and Booting the VM" above) and run the following from a terminal inside the guest:
+
+```sh
+sudo apt update
+sudo apt install virtualbox-guest-utils virtualbox-guest-x11
+```
+
+Reboot the VM once installation finishes.
+
+:::{.callout-note}
+# Already Have Guest Additions?
+
+Some ISOs (particularly Ubuntu Desktop) may already include a working set of Guest Additions. If the shared folder steps below don't work as expected, installing/reinstalling with the commands above is a safe first troubleshooting step.
+:::
+
+## Add the Shared Folder in VirtualBox
+
+1. **Create or choose a host folder.** On your host machine, create a folder (or pick an existing one) that you want the VM to be able to access.
+
+2. **Power off the VM**, then select it in the VirtualBox main window and click **Settings**.
+
+3. Go to the **Shared Folders** section.
+
+4. Click the **+** button to add a new shared folder.
+
+5. Configure the new folder:
+
+    | Field | What to Enter |
+    |---|---|
+    | **Folder Path** | Browse to (or type) the host folder from step 1 |
+    | **Folder Name** | The name the guest OS will see — this does not have to match the host folder's name |
+    | **Read-only** | Check this if the VM should not be able to modify files in the folder |
+    | **Auto-mount** | Check this so the folder mounts automatically every time the VM starts, instead of requiring a manual `mount` command each session |
+    | **Mount Point** | Leave blank if Auto-mount is checked; only needed on very old VirtualBox versions |
+
+6. Click **OK**, then start the VM.
+
+## Accessing the Shared Folder in the Guest
+
+:::{.callout-important}
+# Add Yourself to the `vboxsf` Group
+
+Even with Guest Additions installed, a regular user cannot access shared folders until added to the `vboxsf` group:
+
+```sh
+sudo usermod -aG vboxsf $USER
+```
+
+**Log out and back in** (or reboot the VM) for the new group membership to take effect. This is the single most common reason a shared folder appears to "not work."
+:::
+
+If you checked **Auto-mount**, the folder will appear automatically at:
+
+```
+/media/sf_<FolderName>
+```
+
+where `<FolderName>` is whatever you entered in the **Folder Name** field above.
+
+If you did not enable Auto-mount, mount it manually with:
+
+```sh
+sudo mount -t vboxsf FolderName /path/to/mount/point
+```
+
+replacing `FolderName` with the name from the VirtualBox settings, and `/path/to/mount/point` with an existing directory on the guest (e.g. `~/shared`).
+
+:::{.callout-tip}
+# Verifying It Worked
+
+Create a test file on the host side of the shared folder, then check that it appears on the guest at the mount point (and vice versa). If the folder is empty or missing, double check the group membership step above and confirm you rebooted or logged out/in afterward.
+:::
+
+
 
 
 
