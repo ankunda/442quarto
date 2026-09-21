@@ -1,6 +1,6 @@
 ---
 title: "Introduction to Computer Networks"
-date: "September 11, 2025"
+date: "September 18, 2026"
 title-block-banner: "#002f8b"
 toc: true
 toc-depth: 2
@@ -26,7 +26,12 @@ should have covered in *CSC 2203: Data Structures*
 
 In the context of the internet (or any computer network), the nodes are
 typically computers, and the links are the multiple ways that computers
-can be connected to each other e.g. wirelessly, ethernet cables, etc.
+can be connected to each other e.g. wirelessly, ethernet cables, etc. Each
+of these connections goes through a **network interface** — the operating
+system's name for a network adapter, physical or virtual. On modern Linux
+systems these are named predictably, e.g. `enp0s8` encodes *Ethernet*,
+*PCI bus 0*, *slot 8* — you will see this naming in **Lab 2 — Network
+Setup**.
 
 # Routing
 
@@ -91,12 +96,23 @@ with this restriction in a few notable ways.
    when communicating with the internet. You might notice that your home
    router does something like this i.e. you and your roommate might have
    the same public facing ip address, but different internal addresses
-   and the router knows who to send which data to.
+   and the router knows who to send which data to. Virtual machines run
+   into this too: a VM in **NAT** mode gets a private address that only
+   the host machine can see, so it can reach the internet but nothing else
+   on the real network can reach it back. A **Bridged Adapter** instead
+   puts the VM directly on the physical network with its own real address
+   — see **Lab 2 — Network Setup** for why this distinction matters for
+   the Cyber Storm competition.
 
-3. **Dynmaic IP Assignment (DHCP)** allows Internet Service Providers to
+3. **Dynamic IP Assignment (DHCP)** allows Internet Service Providers to
    reuse addresses i.e. a computer cannot easily just have the same
    permanent public IP address. If you turn off your computer, your IP
-   address could be assigned to someone else.
+   address could be assigned to someone else. Assignment happens through a
+   four-step handshake between your device and a DHCP server: *Discover*
+   ("is there a DHCP server here?"), *Offer* ("use this address"),
+   *Request*, and *Ack*. **Lab 2 — Network Setup** has you capture this
+   handshake live in Wireshark, and also has you assign a **static**
+   address by hand, bypassing DHCP entirely.
 
 4. **Carrier-Grade NAT (CGNAT)** is similar to NAT but at a much larger
    scale i.e. tens of thousands of subscribers could be assigned one
@@ -117,6 +133,17 @@ with this restriction in a few notable ways.
    now, Louisiana Tech's network portion is 23 bits. 
 
 ![Output of `ifconfig` on my system showing 23 bit netmask](3_2.png)
+
+::: {.callout-note}
+`ifconfig` is a legacy tool — modern Linux distributions ship the `ip`
+command (from `iproute2`) instead, and `net-tools` (which provides
+`ifconfig`) is often not installed by default. The `ip addr show` command
+below shows the same information, with the netmask expressed directly in
+CIDR notation instead of listed separately. See **Lab 2 — Network Setup**
+for a full walkthrough of `ip` and its `ifconfig` equivalents.
+:::
+
+![Output of `ip addr show` on the same network, showing a /23 netmask in CIDR notation](3_3.png)
 
 ## IPv6
 
@@ -234,9 +261,28 @@ broadcast_addr = ip_address | ~ netmask
 
 ![](15.png)
 
+## Worked Example
+
+As a concrete example, suppose a machine has the address `138.47.166.224`
+with a `/21` netmask (`255.255.248.0`). Applying the operations above:
+
+- **Network ID**: `138.47.160.0` — the first 21 bits of the address, with
+  the remaining bits zeroed out
+- **Host ID**: `0.0.6.224` — the last 11 bits of the address (the low 3
+  bits of the third octet, plus all of the fourth octet)
+- **Broadcast address**: `138.47.167.255` — the last 11 bits set to 1
+- **Valid host range**: `138.47.160.1` – `138.47.167.254`
+
+**Lab 2 — Network Setup** walks through this exact example on a live
+system with `ip addr show`, and has you manually assign a static address
+with `ip addr add`.
+
 # Conclusion
 
 This section should have presented you with a very basic introduction to
 some of the terminology and basics in Computer Networks. This and more
-will be covered in **CSC 4503: Computer Networks**
+will be covered in **CSC 4503: Computer Networks**. For hands-on practice
+with these concepts — reading interface configuration, calculating network
+IDs by hand, and manually assigning IP addresses — see **Lab 2 — Network
+Setup** in the *Intro to Linux* module.
 

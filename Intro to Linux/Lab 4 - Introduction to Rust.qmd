@@ -16,8 +16,8 @@ by Mozilla in 2010, designed around one central promise: memory safety without a
 garbage collector. It achieves this through its **ownership** and **borrowing**
 system, enforced entirely at compile time — a whole category of bugs (use-after-free,
 data races, null pointer dereferences) that plague languages like C and C++ simply
-will not compile in Rust. Like Go, Rust programs compile to a single self-contained
-binary with no runtime dependencies.
+will not compile in Rust. Rust programs compile to a single self-contained binary
+with no runtime dependencies.
 
 Rust has become increasingly prominent in security tooling precisely because of these
 guarantees — memory-safety vulnerabilities have historically been one of the largest
@@ -45,21 +45,25 @@ Three properties make Rust a natural fit for network security tools:
   bugs at *compile time*, not runtime — there's no garbage collector pausing your
   program, and no crashing in production from a bug a compiler could have caught.
 - **Speed:** Rust compiles to native machine code with performance comparable to C
-  and C++, and generally on par with or faster than Go for CPU-bound work.
+  and C++, making it a strong choice for CPU-bound work.
 - **Fearless concurrency:** The same ownership rules that prevent memory bugs also
   prevent data races between threads — the compiler literally refuses to compile
   code that shares mutable data unsafely between threads.
 :::
 
 ::: {.callout-tip}
-## Coming From the Go Lab?
+## Suggested Pacing
 
-This lab mirrors the structure of the Go lab — same general shape, same idea of
-building a small security tool from scratch — but the challenge itself is different
-by design: instead of a network port scanner, you'll build a log analyzer, which
-gives Rust's ownership and borrowing system real work to do in a way that a simple
-socket-connect loop doesn't. You do not need to have done the Go lab first, but if
-you have, watch for the callouts comparing the two directly.
+This lab is written to run across **one or two class periods**. Throughout, you'll
+hit short **🔧 Quick Check** call-outs — stop and actually do these before reading
+on. Each one takes 3-7 minutes and has you extend a single running file called
+`playground.rs`, adding one small piece at a time. By the time you reach **The
+Challenge**, most of the pieces you need will already exist in some form in
+`playground.rs` — the challenge is mainly about assembling and adapting them.
+
+If you're splitting this across two days, **"Working with Files and Text in Rust"**
+is the natural end of Day 1 — everything through there is warm-up. Day 2 starts at
+**The Challenge**.
 :::
 
 ---
@@ -134,8 +138,8 @@ rustc hello.rs
 ::: {.callout-note}
 ## `rustc` vs. `cargo`
 
-For this lab's small, single-file programs, calling `rustc` directly (like Go's
-`go build`) is simple and works fine. For any real project, Rust developers use
+For this lab's small, single-file programs, calling `rustc` directly is simple and
+works fine. For any real project, Rust developers use
 **Cargo**, Rust's build tool and package manager, instead:
 
 ```sh
@@ -155,7 +159,7 @@ standard library, so there are no external dependencies to manage).
 
 # Rust Language Basics
 
-If you already know Go, C, Python, or Java, a lot of Rust's syntax will feel
+If you already know C, Python, or Java, a lot of Rust's syntax will feel
 familiar. This section highlights the parts that are different or worth paying
 attention to before the challenge.
 
@@ -172,9 +176,9 @@ use std::collections::HashMap;    // key-value storage
 ::: {.callout-tip}
 ## Unused Imports: Warning, Not Error
 
-Unlike Go, an unused `use` statement in Rust produces a **warning**, not a compile
-error — your code will still build. It's good practice to clean these up, but it
-won't block you the way it does in Go.
+An unused `use` statement in Rust produces a **warning**, not a compile error —
+your code will still build. It's good practice to clean these up, but it won't
+block your build.
 :::
 
 ## Variables
@@ -203,6 +207,20 @@ compiler guarantees it never changes after being set. This eliminates an entire
 class of bugs where a value is modified somewhere you didn't expect.
 :::
 
+::: {.callout-caution}
+## 🔧 Quick Check — Start `playground.rs`
+
+Create `playground.rs`. You'll keep adding to this same file throughout the rest of
+the lab, so don't delete anything as you go.
+
+1. An immutable variable `target_ip` holding a string like `"192.168.1.10"`.
+2. A typed variable `port: u16` set to `22`.
+3. A mutable variable `attempts` starting at `0`. Increment it once.
+
+Print all three with `println!`, then `rustc playground.rs && ./playground` to
+confirm it compiles and runs before moving on.
+:::
+
 ## Functions
 
 ```rust
@@ -215,11 +233,25 @@ fn greet(name: &str, times: u32) -> String {
 }
 ```
 
+::: {.callout-caution}
+## 🔧 Quick Check — Add a Function
+
+In `playground.rs`, add a function:
+
+```rust
+fn is_privileged_port(port: u16) -> bool {
+    // true if port < 1024
+}
+```
+
+Call it from `main` on `port` (from the previous Quick Check) and on one or two
+other port numbers, printing the result each time.
+:::
+
 ## Error Handling
 
-Rust, like Go, has no exceptions. Instead of Go's `(value, error)` return pattern,
-Rust uses the `Result<T, E>` type — a single return value that is *either* a success
-(`Ok`) *or* a failure (`Err`).
+Rust has no exceptions. Instead, it uses the `Result<T, E>` type — a single return
+value that is *either* a success (`Ok`) *or* a failure (`Err`).
 
 ```rust
 fn divide(a: f64, b: f64) -> Result<f64, String> {
@@ -240,7 +272,19 @@ match divide(10.0, 0.0) {
 ```
 
 You will see this pattern constantly in Rust — especially around parsing and file
-I/O, where many things can go wrong (just like in Go).
+I/O, where many things can go wrong.
+
+::: {.callout-caution}
+## 🔧 Quick Check — `Result` in Practice
+
+Add a function `parse_port(input: &str) -> Result<u16, String>` that tries to
+convert a string into a `u16` using `input.parse::<u16>()`, turning any parse error
+into an `Err(String)` message (`.map_err(...)` is one way to do this — check the
+standard library docs, or just use a `match` on the `Result` from `.parse()`).
+
+Call it with `"443"` and with `"not_a_port"`, and use `match` to print either the
+successful value or the error message for each.
+:::
 
 ## `Option<T>` — Values That Might Be Missing
 
@@ -262,10 +306,21 @@ You'll use `Option` constantly once you start parsing text later in this lab —
 `.find()`, splitting strings, and looking things up all return `Option` rather than
 crashing or returning a sentinel value like `-1`.
 
+::: {.callout-caution}
+## 🔧 Quick Check — Returning `Option`
+
+Add a function `first_open_port(ports: &[u16]) -> Option<u16>` that returns the
+first port in the slice greater than `1024`, or `None` if there isn't one. (You can
+write this by hand with a loop, or look at how `.find()` was used above.)
+
+Test it against two different slices — one where a match exists, one where it
+doesn't — and `match` on the result to print something for both cases.
+:::
+
 ## Loops
 
-Rust has `loop`, `while`, and `for`. Unlike Go, these are three separate keywords
-rather than one `for` covering everything.
+Rust has three separate loop keywords — `loop`, `while`, and `for` — each suited to
+a different situation.
 
 ```rust
 // Range-based loop (most common — like Python's `for i in range(...)`)
@@ -299,7 +354,7 @@ if port == 22 {
 }
 ```
 
-Rust's `match` is the equivalent of Go's `switch`, and is used constantly:
+Rust's `match` expression is used constantly:
 
 ```rust
 match port {
@@ -311,10 +366,19 @@ match port {
 }
 ```
 
+::: {.callout-caution}
+## 🔧 Quick Check — Loops + `match` Together
+
+Build a `Vec<u16>` of six port numbers, including at least one that isn't a
+well-known service (e.g. `[21, 22, 25, 80, 443, 9999]`). Use a `for` loop to go
+through the vector and, for each port, use `match` (extend the example above with a
+couple more arms) to print which service it likely is.
+:::
+
 ## Command-Line Arguments
 
-`std::env::args()` returns an iterator over the command-line arguments. Like Go's
-`os.Args`, the first element is the program name itself.
+`std::env::args()` returns an iterator over the command-line arguments — the first
+element is the program name itself.
 
 ```rust
 use std::env;
@@ -335,10 +399,25 @@ rustc hello.rs && ./hello Alice
 # Output: Hello, Alice
 ```
 
+::: {.callout-caution}
+## 🔧 Quick Check — Reading Arguments
+
+Update `playground.rs` so it reads one command-line argument (a name) using
+`env::args()`, the same way as the example above. If no argument is given, print a
+usage message and call `std::process::exit(1)` instead of letting it panic.
+
+Run it two ways to confirm both paths work:
+
+```sh
+rustc playground.rs && ./playground YourName
+./playground
+```
+:::
+
 ## String Formatting
 
-The `format!` macro builds a formatted string (like Go's `fmt.Sprintf` or Python's
-f-strings). `println!` uses the same placeholder syntax.
+The `format!` macro builds a formatted string (similar to Python's f-strings).
+`println!` uses the same placeholder syntax.
 
 ```rust
 let host = "192.168.1.1";
@@ -356,14 +435,22 @@ Common placeholders:
 | `{:x}` | Hexadecimal |
 | `{:.2}` | Float, rounded to 2 decimal places |
 
+::: {.callout-caution}
+## 🔧 Quick Check — Formatting a String
+
+Using `target_ip` and `port` from `playground.rs`, build one combined string with
+`format!` (e.g. `"192.168.1.10:22"`). Print it once with `{}` and once with `{:?}`,
+and note in a comment what's different about the two outputs.
+:::
+
 ---
 
 # Working with Files and Text in Rust
 
 ## Strings vs. String Slices (`&str`)
 
-Before parsing anything, it's worth being explicit about a distinction Go doesn't
-have: Rust has two string types.
+Before parsing anything, it's worth being explicit about this: Rust has two string
+types.
 
 ```rust
 // `String` is an owned, growable, heap-allocated string.
@@ -380,6 +467,16 @@ never owns the data it points to, so the compiler must always be able to prove t
 data it borrows from is still alive. You'll see both types constantly — function
 parameters are usually `&str` (so callers can pass either kind in), while anything
 you build up or need to store for later is usually `String`.
+
+::: {.callout-caution}
+## 🔧 Quick Check — `&str` vs. `String`
+
+Add a function `shout(s: &str) -> String` that returns the input uppercased with a
+`!` appended (`.to_uppercase()` exists on `&str`). Call it once with a string
+literal (`shout("failed login")`) and once with a `&` reference to an owned
+`String` you build with `String::from(...)`. Confirm both compile and work — this
+is the `&str`/`String` distinction from above in action.
+:::
 
 ## Reading a File Line by Line
 
@@ -424,6 +521,15 @@ sudo journalctl -u ssh --no-pager > ~/auth.log
 ```
 :::
 
+::: {.callout-caution}
+## 🔧 Quick Check — Read Any File
+
+Add a small `main` (or a new file, `readfile.rs`, if you'd rather keep `main`s
+separate for now) that opens *any* small text file on your VM — it doesn't need to
+be a log file yet — and prints only the lines longer than 20 characters. This is
+just the read-a-file-line-by-line pattern above with one `if` added.
+:::
+
 ## Parsing a Line
 
 A failed SSH login looks like this in the log:
@@ -455,6 +561,23 @@ Notice `extract_ip` returns `Option<&str>` — a *slice* borrowed from the origi
 `line`, not a new `String`. No copying happens; we're just pointing at part of the
 data that's already there.
 
+::: {.callout-caution}
+## 🔧 Quick Check — This Is Milestone 1
+
+Copy `extract_ip` into `playground.rs`. Hardcode the sample log line from above as a
+`&str`, call `extract_ip` on it, and print the result.
+
+**Expected output:**
+
+```
+Some("203.0.113.42")
+```
+
+Also try it against a line that *doesn't* contain `"Failed password"` and confirm
+you get `None`. You've now done Milestone 1 of the challenge below before you even
+get there — when you reach it, you can copy this straight in.
+:::
+
 ## Counting with a `HashMap`
 
 ```rust
@@ -485,6 +608,19 @@ Note the `ip.to_string()` call: `extract_ip` gave us a borrowed `&str` pointing 
 the `HashMap` for later, we need our own owned copy — hence `.to_string()`. This is
 the ownership system in action: the compiler won't let you store a borrowed
 reference for longer than the data it points to is guaranteed to exist.
+
+::: {.callout-caution}
+## 🔧 Quick Check — A Toy Version of Milestone 2
+
+In `playground.rs`, hardcode a `Vec<&str>` of 4-5 fake log lines — mix some failed
+logins (reuse `extract_ip`'s expected format) with a couple of unrelated lines.
+Loop over the vector, call `extract_ip` on each line, and build a
+`HashMap<String, u32>` counting failed attempts per IP using the
+`.entry().or_insert()` pattern. Print the finished map.
+
+This is Milestone 2 minus the actual file I/O — when you get to the real milestone,
+you're mainly swapping the hardcoded `Vec` for `reader.lines()`.
+:::
 
 ## Threads — Processing Multiple Files Concurrently
 
@@ -539,6 +675,20 @@ its own data, merge the results afterward" design, which sidesteps locking entir
 This is a very common and very idiomatic Rust concurrency pattern.
 :::
 
+::: {.callout-caution}
+## 🔧 Quick Check — A Toy Version of Milestone 4
+
+Split your hardcoded log lines from the last Quick Check into two smaller `Vec`s
+(imagine they're two separate files). Spawn one thread per `Vec` that builds its own
+`HashMap<String, u32>` the same way as before, then `.join()` both threads in `main`
+and merge their maps into one combined `HashMap`, exactly as in the example above.
+
+**If you're stopping here for the day:** this is a good place to pause. You've now
+built toy versions of Milestones 1, 2, and 4 by hand in `playground.rs` — the
+Challenge below is mostly about wiring these same pieces together around real file
+I/O and command-line input instead of hardcoded data.
+:::
+
 ---
 
 # The Challenge — Build an SSH Brute-Force Log Analyzer
@@ -574,6 +724,9 @@ You will need:
 Some("203.0.113.42")
 ```
 
+*(If you did the "This Is Milestone 1" Quick Check earlier, you've already done
+this — copy `extract_ip` straight over from `playground.rs`.)*
+
 ## Milestone 2 — Parse a Whole File Sequentially
 
 Extend your program to open a real log file, read it line by line, and build a
@@ -585,6 +738,9 @@ You will need:
 - `File::open` and `BufReader`
 - `.lines()` to iterate over the file
 - The `.entry().or_insert()` pattern to count
+
+*(This is the same logic as your "toy version of Milestone 2" Quick Check, but
+reading from a real file with `reader.lines()` instead of a hardcoded `Vec`.)*
 
 ::: {.callout-tip}
 ## Test Against Lab 3
@@ -617,7 +773,8 @@ Possible brute-force sources:
 Update your program to accept **multiple** file paths (`env::args().skip(1)` gets
 you all of them at once), spawn one thread per file using the pattern from the
 "Threads — Processing Multiple Files Concurrently" section above, and merge the
-results into one combined report.
+results into one combined report. This is the same structure as your "toy version
+of Milestone 4" Quick Check — just swap the hardcoded `Vec`s for real file paths.
 
 ```sh
 ./analyzer auth1.log auth2.log auth3.log
@@ -654,8 +811,7 @@ The `<'a>` is a **lifetime parameter** — it tells the compiler "a `LoginAttemp
 cannot outlive the string data it borrows from." Try building a `Vec<LoginAttempt>`
 for one file's contents and see what the compiler says if you try to use that `Vec`
 after the `String` holding the file's contents has gone out of scope. This is Rust's
-ownership system at its most visible — and exactly the kind of compiler pushback
-that doesn't have an equivalent in Go.
+ownership system at its most visible.
 
 ## Milestone 6 — Swap Logs with a Classmate *(Stretch Goal)*
 
@@ -759,7 +915,4 @@ fn main() {
   brute-forcers — they act, typically by adding a firewall rule. Research how you
   might shell out to `iptables` or `ufw` from Rust to block an IP automatically (and
   think about the risk of a bug in your detection logic blocking innocent traffic).
-- **Compare with Go:** If you also did the Go lab, think about how you'd write this
-  same log analyzer in Go. Would `os.Args`, a `map[string]int`, and goroutines make
-  this easier or harder than it was in Rust?
 :::

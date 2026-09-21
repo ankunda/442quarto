@@ -7,6 +7,13 @@ format:
         number-sections: true
         colorlinks: true
         output-file: "Lab 2 - Network Setup.pdf"
+header-includes:
+  - \usepackage{fvextra}
+  - |
+    \AtBeginDocument{%
+      \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\{\}}
+      \RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere}
+    }
 ---
 
 # Introduction
@@ -56,7 +63,7 @@ the IP address into two parts:
 For example, with the address `138.47.166.224` and mask `255.255.248.0`:
 
 - Network: `138.47.160.0` (the first 21 bits are fixed)
-- Host: `.166.224` (the last 11 bits are yours)
+- Host: `0.0.6.224` (the last 11 bits are yours)
 - Valid host range on this subnet: `138.47.160.1` – `138.47.167.254`
 
 **3. Broadcast Address**
@@ -341,6 +348,37 @@ name**. Run `ip addr show` first and note the label of your Ethernet interface b
 proceeding.
 :::
 
+::: {.callout-caution}
+## Troubleshooting: Old Address Won't Go Away / Internet Still Works
+
+If you run the commands above and `ip addr show` still shows your original
+`138.47.X.Y` address sitting alongside the new `10.4.5.6`, or the internet still
+loads when it shouldn't, this almost always means **NetworkManager is still
+managing the interface**. `ip addr add` only *adds* an address — it does not
+remove the DHCP one — and NetworkManager will keep renewing/reasserting the
+original address in the background, so the two commands from earlier aren't
+enough on their own.
+
+Check whether NetworkManager owns the interface:
+
+```sh
+nmcli device status
+```
+
+If your interface shows as `connected` (not `unmanaged`), tell NetworkManager to
+let go of it, then flush and reassign:
+
+```sh
+sudo nmcli device set enp0s8 managed no
+sudo ip addr flush dev enp0s8
+sudo ip addr add 10.4.5.6/8 dev enp0s8
+sudo ip link set enp0s8 up
+```
+
+Run `ip addr show` again — you should now see **only** `10.4.5.6/8` on the
+interface.
+:::
+
 ---
 
 ## Switching Back to Louisiana Tech's Network
@@ -401,6 +439,31 @@ interface, use the `nmcli` command above. If `nmcli` is not installed, you're mo
 likely on a systemd-networkd-only system — use the `systemctl` command instead.
 :::
 
+::: {.callout-caution}
+## Troubleshooting: `nmcli device connect` Doesn't Bring Tech's Network Back
+
+If you followed the "Troubleshooting" callout earlier in this lab and ran
+`sudo nmcli device set enp0s8 managed no`, you must hand the interface back to
+NetworkManager **before** Step 3 will do anything:
+
+```sh
+sudo nmcli device set enp0s8 managed yes
+```
+
+Even after this, `nmcli device connect` sometimes will not force a fresh DHCP
+request — NetworkManager may still be holding onto stale connection state. If
+`ip addr show` still doesn't show a `138.47.X.Y` address after Step 3, force a
+clean disconnect/reconnect cycle instead:
+
+```sh
+sudo nmcli device disconnect enp0s8
+sudo nmcli device connect enp0s8
+```
+
+This is the CLI equivalent of clicking the wired connection icon in the system
+tray to disconnect and reconnect, which also works if you'd rather use the GUI.
+:::
+
 ::: {.callout-note}
 ## The `dhclient` Equivalent
 
@@ -417,6 +480,92 @@ sudo dhclient enp0s8
 After running these commands, verify your address has returned to the `138.47.X.Y`
 range (on campus) or `192.168.X.X` (at home) by running `ip addr show`, then confirm
 internet access by visiting a website.
+
+---
+
+# The Point-and-Click Way (Linux Mint)
+
+Everything above used the terminal. Linux Mint's Cinnamon desktop also ships a
+graphical tool for the same job — useful if you'd rather point-and-click, or if
+you're troubleshooting on a machine where the terminal approach isn't cooperating.
+
+::: {.callout-note}
+## When to Use This
+
+The GUI tool and the `ip`/`nmcli` commands used earlier in this lab all talk to
+the same NetworkManager service under the hood, so the same caveats apply. In
+particular, if you previously ran `sudo nmcli device set enp0s8 managed no` while
+troubleshooting, set it back to `managed yes` first — NetworkManager (and this
+GUI tool) can't control an unmanaged interface.
+:::
+
+**Step 1: Open Edit Connections**
+
+Right-click the network icon in the system tray (bottom-right of the panel) and
+select **Edit Connections...**. If that option isn't available, open the **Menu**
+and search for **Network Connections**, or launch the tool directly:
+
+```sh
+nm-connection-editor
+```
+
+**Step 2: Edit your wired connection**
+
+Select the connection for your interface (usually listed as **Wired connection
+1**, or named after `enp0s8`/`eth0`/etc.) and click the gear icon to edit it.
+
+**Step 3: Switch to Manual IPv4 configuration**
+
+Open the **IPv4 Settings** tab and change the **Method** dropdown from
+**Automatic (DHCP)** to **Manual**.
+
+**Step 4: Add the address**
+
+Click **Add** and fill in the fields, using the same values from the
+command-line example earlier in this lab:
+
+| Field | Value |
+|---|---|
+| Address | `10.4.5.6` |
+| Netmask | `255.0.0.0` (some versions of the editor instead want the CIDR prefix, `8`) |
+| Gateway | leave blank unless your subnet requires one |
+
+Click **Save**.
+
+::: {.callout-tip}
+## Netmask vs. Prefix Length
+
+If the Netmask field rejects `255.0.0.0`, try `8` instead (or vice versa) — this
+varies by Mint/Cinnamon version.
+:::
+
+**Step 5: Reconnect the connection**
+
+Saving the profile doesn't apply it to an already-active connection — you have to
+reconnect. Click the network icon in the system tray, turn the wired connection
+off, then back on. This is the GUI equivalent of the `nmcli device disconnect` /
+`nmcli device connect` cycle used earlier in this lab.
+
+**Step 6: Verify**
+
+Confirm the change from the terminal, the same way you did for the command-line
+method:
+
+```sh
+ip addr show enp0s8
+```
+
+You should see `10.4.5.6/8` listed for your interface, in place of the original
+`138.47.X.Y` address.
+
+::: {.callout-caution}
+## Switching Back
+
+To return to DHCP later, reopen **Edit Connections**, go back to **IPv4
+Settings**, and change **Method** back to **Automatic (DHCP)**. Save, then
+disconnect/reconnect the connection as in Step 5 to request a fresh
+`138.47.X.Y` address.
+:::
 
 ---
 

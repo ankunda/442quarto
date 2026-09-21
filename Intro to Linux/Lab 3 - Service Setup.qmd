@@ -7,6 +7,13 @@ format:
         number-sections: true
         colorlinks: true
         output-file: "Lab 3 - Service Setup.pdf"
+header-includes:
+  - \usepackage{fvextra}
+  - |
+    \AtBeginDocument{%
+      \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\{\}}
+      \RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere}
+    }
 ---
 
 # Introduction
@@ -262,6 +269,18 @@ new file instead.
     | `local_enable=NO` | Prevents local system users from logging in |
     | `ftpd_banner` | Custom welcome message shown on connect |
     | `anon_root` | Directory shown to anonymous users |
+
+::: {.callout-note}
+## `local_enable=NO` vs. `ftp localhost`
+
+Don't confuse these two: `local_enable=NO` disables logins by **local system user
+accounts** (e.g. your own VM username) — it has nothing to do with the hostname
+`localhost`. You can still run `ftp localhost` to connect to the FTP server on
+this same machine; you just can no longer log in with your regular VM
+credentials once this setting takes effect. That's why Step 11 below has you log
+in as `anonymous` instead — if you try your own username there, you'll get a
+`530 Login incorrect` error, which is expected.
+:::
 
 8. **Save and close** the config file (`Ctrl+X`, then `Y`, then `Enter`).
 
