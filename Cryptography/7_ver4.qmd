@@ -469,6 +469,7 @@ cancels out:
 $$C_1 \oplus C_2 = (P_1 \oplus K) \oplus (P_2 \oplus K) = P_1 \oplus P_2$$
 
 ```python
+# Python
 import os
 xor = lambda a, b: bytes(x ^ y for x, y in zip(a, b))
 
@@ -478,6 +479,27 @@ c1, c2 = xor(p1, key), xor(p2, key)   # same key used twice!
 
 # An attacker who guesses one message instantly gets the other
 print(xor(xor(c1, c2), p1))           # → b'RETREAT AT TEN'
+```
+
+```rust
+// Rust
+use std::fs::File;
+use std::io::Read;
+
+fn xor(a: &[u8], b: &[u8]) -> Vec<u8> {
+    a.iter().zip(b).map(|(x, y)| x ^ y).collect()
+}
+
+fn main() {
+    let (p1, p2) = (b"ATTACK AT DAWN", b"RETREAT AT TEN");
+    let mut key = vec![0u8; p1.len()];
+    File::open("/dev/urandom").unwrap().read_exact(&mut key).unwrap();
+    let (c1, c2) = (xor(p1, &key), xor(p2, &key)); // same key used twice!
+
+    // An attacker who guesses one message instantly gets the other
+    let p2_recovered = xor(&xor(&c1, &c2), p1);
+    println!("{}", String::from_utf8_lossy(&p2_recovered)); // → RETREAT AT TEN
+}
 ```
 
 This really happened: during the 1940s, the Soviet Union reused some of its one-time
