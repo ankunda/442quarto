@@ -10,6 +10,13 @@ format:
     number-sections: true
     colorlinks: true
     output-file: "7.pdf"
+header-includes:
+  - \usepackage{fvextra}
+  - |
+    \AtBeginDocument{%
+      \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\{\}}
+      \RecustomVerbatimEnvironment{verbatim}{Verbatim}{breaklines,breakanywhere}
+    }
 ---
 
 <!-- ============================ DAY 1 ============================ -->
@@ -1163,6 +1170,7 @@ Password hashing uses **deliberately slow, memory-hard** functions instead:
 They have a tunable cost that makes each guess expensive. Compare:
 
 ```python
+# Python
 import hashlib, os, time
 
 t = time.perf_counter()
@@ -1176,11 +1184,35 @@ hashlib.scrypt(b"hunter2", salt=salt, n=2**14, r=8, p=1)
 print("1 scrypt hash:         ", time.perf_counter() - t, "seconds")
 ```
 
-On a typical laptop, a single scrypt hash takes about as long as 100,000 SHA-256
-hashes. A real user logging in never notices the difference — but an attacker making
-billions of guesses definitely does. In practice, use your language's
-password-hashing library (e.g. `argon2-cffi` or `bcrypt` in Python) rather than
-calling hash functions directly.
+```rust
+// Rust  (Cargo.toml: sha2 = "0.11", scrypt = "0.12", rand = "0.10")
+// Run with `cargo run --release` — debug builds are much slower.
+use sha2::{Digest, Sha256};
+use std::time::Instant;
+
+fn main() {
+    let t = Instant::now();
+    for _ in 0..100_000 {
+        Sha256::digest(b"hunter2");
+    }
+    println!("100,000 SHA-256 hashes: {:?}", t.elapsed());
+
+    let salt: [u8; 16] = rand::random();
+    let params = scrypt::Params::new(14, 8, 1).unwrap(); // n = 2^14, r = 8, p = 1
+    let mut out = [0u8; 64];
+    let t = Instant::now();
+    scrypt::scrypt(b"hunter2", &salt, &params, &mut out).unwrap();
+    println!("1 scrypt hash:          {:?}", t.elapsed());
+}
+```
+
+On a typical laptop, a single scrypt hash takes as long as hundreds of thousands of
+SHA-256 hashes (in Python the gap looks smaller, around 100,000, because the Python
+loop itself adds overhead to every SHA-256 call). A real user logging in never notices
+the difference — but an attacker making billions of guesses definitely does. In
+practice, use your language's password-hashing library (e.g. `argon2-cffi` or `bcrypt`
+in Python, or the `argon2` or `bcrypt` crates in Rust) rather than calling hash
+functions directly.
 :::
 
 ### Message Authentication Codes (HMAC)
