@@ -1,7 +1,7 @@
 ---
 title: "Covert Channels: Storage Lab"
 subtitle: "Hiding Messages in File Permissions"
-date: "March 27, 2026"
+date: "September 30, 2026"
 title-block-banner: "#002f8b"
 toc: true
 toc-depth: 2
@@ -130,9 +130,9 @@ The convention for our covert channel is simple: **any letter present = 1; a das
 
 ## The 7-Bit Scheme
 
-Standard ASCII characters use 7 bits. We encode one character per file by using the **last 7 permission bits** (the group and other permission groups), and deliberately leaving the first 3 bits (the owner permissions) unset.
+Standard ASCII characters use 7 bits. We encode one character per file by writing the character's 7-bit value into the low 7 of the 9 permission bits and forcing the **top two bits — owner *read* and owner *write* — to zero**. (Prepending two zero bits to a 7-bit value is exactly what puts them there.) The owner *execute* bit is free and carries the high bit of the character, so a message file's owner column always reads `---` or `--x` — never `r` or `w`.
 
-Files carrying part of the message will have no owner permissions set. To avoid arousing suspicion, we intersperse **noise files** — files where at least one of the first 3 bits *is* set. The receiver skips any file whose first bit is set; all others are decoded.
+That cleared owner read/write pair is also our marker. To keep the listing from looking too uniform, we intersperse **noise files** — directories, or files that *do* set an owner read or write bit. The receiver keeps only the regular files whose owner read and write bits are both clear, and skips everything else.
 
 ### Worked Example: Encoding "Demigod"
 
@@ -193,12 +193,12 @@ SUCCESS — the covert channel is set up and the hidden message is embedded.
 
 ### Decoding
 
-To recover the message, a receiver scans each file, skips any with an owner permission bit set (noise), and reads the remaining 9 bits as an ASCII character:
+To recover the message, a receiver scans each file, skips directories and any file that sets an owner read or write bit (noise), and reads the 9 permission bits of each surviving file as an ASCII character:
 
 ```default
----x---r-- -> 0 001000100 -> bits 1–9 = 001000100 -> D
-d--xrw-r-- -> first char is 'd' (owner bit set) -> SKIP (noise)
----xr--r-x -> 0 001100101 -> e
+---x---r--  -> regular file, owner r/w clear -> 001000100 -> D
+d--xrw-r--  -> directory (type 'd')          -> SKIP (noise)
+---xr--r-x  -> regular file, owner r/w clear -> 001100101 -> e
 ...and so on
 ```
 
