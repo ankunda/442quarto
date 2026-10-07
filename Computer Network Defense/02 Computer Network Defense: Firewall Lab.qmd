@@ -12,7 +12,7 @@ format:
 
 A **firewall** is a security system that monitors and controls incoming and outgoing network traffic based on a set of rules. Firewalls act as a barrier between a trusted internal network and untrusted external networks, stopping unauthorized access from outside while also preventing malware from communicating out.
 
-In this lab you will configure a Linux firewall on your virtual machine using **UFW** (Uncomplicated FireWall). UFW is a command-line tool that simplifies the management of firewall rules on Linux systems. By the end of this lab your group will have set up a working firewall, allowed and denied specific types of traffic, and tested those rules across your VMs.
+In this lab you will configure a Linux firewall on your virtual machine using **UFW** (Uncomplicated Firewall). UFW is a command-line tool that simplifies the management of firewall rules on Linux systems. By the end of this lab your group will have set up a working firewall, allowed and denied specific types of traffic, and tested those rules across your VMs.
 
 :::{.callout-note}
 All commands in this lab should be run on your **virtual machine**, not your host machine.
@@ -31,6 +31,13 @@ Optionally, if you prefer a graphical interface, you can also install GUFW. Thes
 
 ```sh
 sudo apt install gufw
+```
+
+This lab tests the firewall using SSH, so your VM also needs to be running an SSH server. Ubuntu desktop does not include one by default, so install and start it now.
+
+```sh
+sudo apt install openssh-server
+sudo systemctl enable --now ssh
 ```
 
 # Setting Up Default Rules
@@ -81,7 +88,7 @@ Then have them try to connect to your machine from their machine
 ssh <your_username>@<your_ip_address>
 ```
 
-Confirm that they should be blocked.
+Confirm that they are blocked. Because UFW silently drops the blocked packets, the connection attempt should hang and eventually **time out**. If instead they immediately see `Connection refused`, the packets reached your machine but nothing was listening on port 22. Check that the SSH server from the installation step is running with `systemctl status ssh`.
 :::
 
 :::{.callout-important title="Group Discussion"}
@@ -115,7 +122,7 @@ Blocking everything is not practical. Let's allow SSH connections so that other 
 
 
 :::{.callout-important title="Testing SSH Again"}
-Now that SSH is allowed, test it again with another group memeber. Share your ip address with a group member. 
+Now that SSH is allowed, test it again with another group member. Share your ip address with a group member. 
 
 ```sh
 ip a
@@ -160,38 +167,48 @@ Use Option 2 when you are unsure of the exact rule name, or when you have multip
 You can also block traffic from a specific IP address or subnet. This is useful for blocking a known bad actor.
 
 ```sh
-sudo ufw deny from <ip_address>          # deny from a single IP
-sudo ufw deny from <ip_address>/24       # deny from an entire subnet
+sudo ufw insert 1 deny from <ip_address>        # deny from a single IP
+sudo ufw insert 1 deny from <network_address>/24 # deny from an entire subnet, e.g. 192.168.1.0/24
 ```
+
+:::{.callout-warning}
+UFW checks rules **in order** and stops at the first rule that matches. If you simply ran `sudo ufw deny from <ip_address>`, the new rule would be added to the end of the list, *after* the rule allowing SSH, so SSH traffic from that address would still be allowed. `insert 1` places the deny rule at the top of the list so that it is checked first. Use `sudo ufw status numbered` to see the order of your rules.
+:::
 
 :::{.callout-important title="Group Activity"}
 Work with another group member to try the following:
 
 1. Find your partner's IP address (`ip a`).
 2. On your machine, remove the general SSH allow rule and replace it with one that only allows SSH from your partner's IP address.
+
+    ```sh
+    sudo ufw delete allow ssh
+    sudo ufw allow from <partner_ip_address> to any port 22 proto tcp
+    ```
+
 3. Have them attempt to SSH into your machine. Does it work?
 4. Have a *different* group member (one not in your rule) attempt to SSH in. What is the result?
 :::
 
 # Cleanup and Turning off the Firewall
 
-If you need to temporarily disable your firewall and suspend all active rules, run the following. Also, just to clean up any changes we made in this lab as to not affect future labs in this course, run the following command.
+If you need to temporarily disable your firewall and suspend all active rules, run the following. Note that disabling the firewall keeps your rules, so they will come back the next time the firewall is enabled.
 
 ```sh
 sudo ufw disable
 ```
 
+To clean up the changes we made in this lab so they do not affect future labs in this course, reset UFW. This disables the firewall **and** deletes all of the rules you added. You will be asked to confirm.
+
+```sh
+sudo ufw reset
+```
+
 
 # Wrap-Up Discussion
 
-:::{.callout-important title="Group Assignment: Submit on Canvas"}
-As a group, you'll submit a document for this lab that answers the following three questions. Discuss the answers together, compile the document, and then upload it to Canvas.
-
-1. What is the difference between **denying** traffic from a specific IP and **deleting** a rule that allows a service?
-
-2. In a real organization, who would be responsible for managing firewall rules? What process might they follow?
-
-3. The Linux port-based approach and the Windows application-based approach each have trade-offs. Which do you think is easier to maintain? Which do you think is more secure?
+:::{.callout-important title="Group Assignment"}
+Before you leave, discuss the **Firewall Lab** questions in the *Computer Network Defense: Assignment* document with your group and write down your answers. Your group will submit the answers for all of the labs together, as a single PDF on Canvas, after the final lab.
 :::
 
 # Additional Resources

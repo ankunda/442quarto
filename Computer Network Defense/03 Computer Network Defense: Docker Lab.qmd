@@ -10,9 +10,9 @@ format:
 
 # Introduction
 
-A **Docker container** is an isolated environment that packages an application along with everything it needs to run. For example, it has its own OS layer, libraries, and configuration. Containers are portable, meaning the same container can run identically on any machine that has Docker installed. This makes them popular both for software development and for security purposes, since a compromised container does not affect the host machine.
+A **Docker container** is an isolated environment that packages an application along with everything it needs to run. For example, it has its own OS userland (files and programs), libraries, and configuration. Containers are portable, meaning the same container can run identically on any machine that has Docker installed. This makes them popular both for software development and for security purposes, since a problem inside a container is, by default, kept separate from the host machine.
 
-Compared to a virtual machine, containers are lightweight since they share the host OS kernel rather than running a full separate OS. Compared to a chroot jail, containers provide stronger isolation and come with a rich ecosystem of pre-built environments.
+Compared to a virtual machine, containers are lightweight since they share the host OS kernel rather than running a full separate OS. The trade-off is that their isolation is weaker than a virtual machine's: because every container shares the host's kernel, a vulnerability in the kernel or a poorly configured container can allow a process to escape to the host. Compared to a chroot jail, containers provide stronger isolation and come with a rich ecosystem of pre-built environments.
 
 In this lab you will install Docker, pull a pre-built container image, run and interact with containers, and explore how isolation works in practice.
 
@@ -58,6 +58,10 @@ All commands in this lab should be run on your **virtual machine**, not your hos
 
 :::{.callout-warning}
 You will need to **log out and back in** for this group change to take effect. Do that now before continuing.
+:::
+
+:::{.callout-important}
+Membership in the `docker` group is effectively equivalent to having **root access** on the host. Anyone in the group can start a container that mounts the host's entire filesystem (e.g. `docker run -v /:/host ...`) and modify any file on it. That is acceptable on a lab VM, but on a real system only trusted administrators should be added to this group.
 :::
 
 # Pulling and Running Your First Container
@@ -142,7 +146,7 @@ While still inside the container, work through the following to understand how i
 
 # Container Lifecycle
 
-5. List all running containers.
+1. List all running containers.
 
     ```sh
     docker ps
@@ -150,7 +154,7 @@ While still inside the container, work through the following to understand how i
 
     Since you exited the container, nothing should be running.
 
-6. List all containers, including stopped ones.
+2. List all containers, including stopped ones.
 
     ```sh
     docker ps -a
@@ -158,13 +162,13 @@ While still inside the container, work through the following to understand how i
 
     You should see your previous container listed with a status of `Exited`.
 
-7. Run a container in the background (detached mode) using the `-d` flag. This container will just sleep for 60 seconds.
+3. Run a container in the background (detached mode) using the `-d` flag. This container will just sleep for 60 seconds.
 
     ```sh
     docker run -d ubuntu sleep 60
     ```
 
-8. Check that it is running.
+4. Check that it is running.
 
     ```sh
     docker ps
@@ -172,7 +176,7 @@ While still inside the container, work through the following to understand how i
 
     You should see it listed with a status of `Up`.
 
-9. Stop the container using its container ID (the first column from `docker ps`).
+5. Stop the container using its container ID (the first column from `docker ps`).
 
     ```sh
     docker stop <container_id>
@@ -246,32 +250,32 @@ Work with your group to SSH directly into a running Docker container.
 
     a. First access the container.
 
-    ```sh
-    docker exec -it sshbox bash
-    ```
+        ```sh
+        docker exec -it sshbox bash
+        ```
 
     b. Now install openssh-server. Follow any prompts while installing. 
 
-    ```sh
-    apt update
-    apt install -y openssh-server
-    ```
+        ```sh
+        apt update
+        apt install -y openssh-server
+        ```
 
     c. Create a new user and set a password for them. We will use `-m` to ensure the user gets a home directory and `-s` to explicitly set the default shell for the user as bash.
 
-    ```sh
-    useradd -m -s /bin/bash student
-    passwd student
-    ```
+        ```sh
+        useradd -m -s /bin/bash student
+        passwd student
+        ```
 
-    You will be prompted to enter and confirm a password for the user named `student`. Remember that you wont be able to see what you are typing when you're typing a password to protect against shoulder surfing.
+        You will be prompted to enter and confirm a password for the user named `student`. Remember that you won't be able to see what you are typing when you're typing a password to protect against shoulder surfing.
 
     d. Start the SSH service and exit the container.
 
-    ```sh
-    service ssh start
-    exit
-    ```
+        ```sh
+        service ssh start
+        exit
+        ```
 
 3. Find your VM's IP address.
 
@@ -298,11 +302,62 @@ Work with your group to SSH directly into a running Docker container.
 
 :::
 
+:::{.callout-important title="Group Activity: Docker and Your Firewall"}
+In the Firewall Lab, you saw that UFW blocks all incoming connections by default. Let's see what happens to the container's SSH port when the firewall is on.
+
+**On the host VM (first group member):**
+
+1. Enable UFW. Do **not** add any rules.
+
+    ```sh
+    sudo ufw enable
+    sudo ufw status verbose
+    ```
+
+    Confirm that incoming traffic is denied by default and that there is no rule allowing port 2222.
+
+**On another VM (second group member):**
+
+2. Try to SSH into the host VM itself on port 22. This should hang and eventually time out, since the firewall is dropping incoming connections.
+
+    ```sh
+    ssh <host_username>@<vm-ip>
+    ```
+
+    Press `Ctrl+C` if you do not want to wait for the time out.
+
+3. Now try to SSH into the container on port 2222 again.
+
+    ```sh
+    ssh student@<vm-ip> -p 2222
+    ```
+
+    Did it work?
+
+**Why this happens:** when you publish a port with `-p`, Docker adds its own rules directly to the kernel's packet filter. Traffic to a published port is redirected to the container before it ever reaches the UFW rules that protect the host. In other words, **ports published by Docker bypass UFW**. This is a common real-world misconfiguration: an administrator believes the firewall is protecting a service that is actually exposed to the whole network.
+
+To limit exposure, publish ports only on the interface you need, e.g. `-p 127.0.0.1:2222:22` makes the port reachable only from the host itself.
+
+**On the host VM:**
+
+4. Disable UFW again so it does not affect the rest of this lab.
+
+    ```sh
+    sudo ufw disable
+    ```
+:::
+
 # Cleaning Up
 
 Stopped containers and downloaded images take up disk space. Clean up when you are done.
 
-1. Remove all stopped containers.
+1. Stop the `sshbox` container, which is still running in the background. A running container cannot be removed.
+
+    ```sh
+    docker stop sshbox
+    ```
+
+2. Remove all stopped containers.
 
     ```sh
     docker container prune
@@ -310,31 +365,31 @@ Stopped containers and downloaded images take up disk space. Clean up when you a
 
     You will be prompted to confirm. Type `y` and press Enter.
 
-2. Verify no containers remain.
+3. Verify no containers remain.
 
     ```sh
     docker ps -a
     ```
 
-    If containers still remain, you can stop those specific containers using their name or id. 
+    If containers still remain, stop them using their name or id and then run `docker container prune` again.
 
     ```sh
     docker stop <container_id>
     ```
 
-3. Remove the Ubuntu image.
+4. Remove the Ubuntu image.
 
     ```sh
     docker rmi ubuntu
     ```
 
-4. Verify the image was removed.
+5. Verify the image was removed.
 
     ```sh
     docker images
     ```
 
-5. Remove the shared folder created during this lab.
+6. Remove the shared folder created during this lab.
 
     ```sh
     rm -rf ~/shared
@@ -342,14 +397,6 @@ Stopped containers and downloaded images take up disk space. Clean up when you a
 
 # Wrap-Up Discussion
 
-:::{.callout-important title="Group Assignment: Canvas Submission"}
-Discuss the following with your group and submit your answers as a group on Canvas.
-
-
-1. You SSH'd into the container as a non-root user. What risks would need to be considered if you had SSH'd into the container as root?
-
-2. A "container escape" is when a process inside a container gains access to the host. Based on what you observed in this lab, what features or configurations do you think would make a container escape more likely?
-
-3. When you removed the container, everything inside it was gone except for files in the shared volume. How could this property be useful for security testing or incident response?
-
+:::{.callout-important title="Group Assignment"}
+Before you leave, discuss the **Docker Lab** questions in the *Computer Network Defense: Assignment* document with your group and write down your answers. Your group will submit the answers for all of the labs together, as a single PDF on Canvas, after the final lab.
 :::

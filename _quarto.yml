@@ -1,0 +1,8 @@
+# Project-wide settings, merged into every document's own front matter.
+project:
+  type: default
+
+format:
+  pdf:
+    # Wrap long lines in code blocks instead of letting them run off the page.
+    include-in-header: code-wrap.tex

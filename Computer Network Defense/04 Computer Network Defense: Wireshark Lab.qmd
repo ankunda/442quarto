@@ -90,7 +90,7 @@ The remainder of this lab uses both `tshark` and the Wireshark GUI. Feel free to
     ping -c 5 google.com
     ```
 
-2. Familiarize yourself with the output. Each line is one packet and should include the following:
+3. Familiarize yourself with the output. Each line is one packet and should include the following:
     - A packet number and timestamp
     - Source IP address
     - Destination IP address
@@ -175,7 +175,7 @@ Capture filters are applied during the capture itself. Only matching packets are
     curl http://httpforever.com
     ```
 
-2. Read back the capture and confirm only ICMP packets were recorded.
+3. Read back the capture and confirm only ICMP packets were recorded.
 
     ```sh
     tshark -r icmp_capture.pcap
@@ -201,21 +201,21 @@ Display filters are applied when reading a capture. All packets are recorded but
     wireshark -r capture.pcap -Y "dns"
     ```
 
-3. Filter to show only HTTP traffic.
+2. Filter to show only HTTP traffic.
 
     ```sh
     tshark -r capture.pcap -Y "http"
     ```
 
     ```sh
-    wireshark -r capture.pcap -Y "dns"
+    wireshark -r capture.pcap -Y "http"
     ```
 
 
 :::{.callout-important title="Group Activity"}
 Work through the following with your group.
 
-1. Have one group member run the following command on their VM to start a capture. If 30 seconds isn't enough time as indicated, give yourself enough time to have the remining parts completed. 
+1. Have one group member run the following command on their VM to start a capture. If 30 seconds isn't enough time as indicated, give yourself enough time to have the remaining parts completed. 
 
     ```sh
     tshark -i <interface> -a duration:30 -w group_capture.pcap
@@ -268,12 +268,53 @@ You can use `tshark` to print more detail about each packet, including its conte
 
 
 
+# Detecting a Port Scan
+
+A port scan is often one of the first things an attacker does on a network. It also leaves a very distinctive pattern in network traffic. In this section, one group member will scan another with `nmap` while the target captures the traffic.
+
+:::{.callout-warning}
+Only scan the VM of a group member who has agreed to it. Do not scan any other machines on the network.
+:::
+
+1. **Target:** start a 60-second capture.
+
+    ```sh
+    tshark -i <interface> -a duration:60 -w scan_capture.pcap
+    ```
+
+2. **Scanner:** install `nmap` and scan the target's VM.
+
+    ```sh
+    sudo apt install nmap
+    sudo nmap -sS <target_ip_address>
+    ```
+
+    The `-sS` flag performs a **SYN scan**. For each of the 1,000 most common ports, `nmap` sends the first packet of a TCP handshake (a `SYN`) and looks at the reply. An open port replies with a `SYN-ACK`, while a closed port replies with a `RST` (reset). `nmap` never completes the handshake.
+
+3. **Target:** once the capture completes, count the connection attempts (packets with the `SYN` flag set but not the `ACK` flag) that each IP address sent you.
+
+    ```sh
+    tshark -r scan_capture.pcap -Y "tcp.flags.syn == 1 && tcp.flags.ack == 0" -T fields -e ip.src | sort | uniq -c
+    ```
+
+4. **Target:** see which ports your machine answered as **open**.
+
+    ```sh
+    tshark -r scan_capture.pcap -Y "tcp.flags.syn == 1 && tcp.flags.ack == 1" -T fields -e ip.src -e tcp.srcport | sort -u
+    ```
+
+    Compare this with the open ports `nmap` reported on the scanner's screen.
+
+5. Optionally, open the capture in the Wireshark GUI and go to **Statistics > Conversations**, then select the **TCP** tab. Each row is a pair of addresses and ports that exchanged traffic.
+
+:::{.callout-important title="Group Discussion"}
+1. How many connection attempts came from the scanner, compared to any other address? What makes this pattern easy to tell apart from normal traffic?
+2. If you were writing a rule for an intrusion detection system, what would it look for to detect a port scan?
+3. `nmap` can be told to scan very slowly, e.g. one port every few minutes (`-T1`). Why would an attacker do this, and how does it make detection harder?
+:::
+
 # Wrap-Up Discussion
 
-:::{.callout-important title="Group Assignment: Canvas Submission"}
-Before finishing, discuss the following with your group:
-
-1. Wireshark can only capture traffic that reaches your network interface. On a modern switched network, you typically only see your own traffic. What technique would an attacker need to use to capture traffic meant for someone else on the same network?
-2. You set up a firewall in a previous lab. Does a firewall prevent someone on the same network from sniffing your traffic? Why or why not?
-3. You used Wireshark in a defensive context here by observing your own machine. What would it look like to use this tool offensively, and what authorization would you need to do so legally?
+:::{.callout-important title="Group Assignment"}
+Before you leave, discuss the **Wireshark Lab** questions in the *Computer Network Defense: Assignment* document with your group and write down your answers. Your group will submit the answers for all of the labs together, as a single PDF on Canvas, after the final lab.
 :::

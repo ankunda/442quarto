@@ -10,7 +10,7 @@ format:
 
 # Instructions
 
-Discuss each of the following questions with your group with respect to the tools used within each lab. Submit a single pdf on Canvas that answers each question in a succinct, but complete, manner. 
+Discuss each lab's questions with your group at the end of that lab, with respect to the tools used within the lab. After the final lab, submit a single PDF per group on Canvas that answers every question below, organized by lab, in a succinct, but complete, manner. 
 
 
 # Firewall Lab
@@ -47,3 +47,15 @@ Discuss the following with your group and provide a brief response to each.
 
 3. You used Wireshark in a defensive context here by observing your own machine. What would it look like to use this tool offensively, and what authorization would you need to do so legally?
 
+
+
+
+# Detection Lab
+
+Discuss the following with your group and provide a brief response to each.
+
+1. fail2ban both detects an attack and responds to it automatically. What are the advantages and risks of responding automatically instead of only alerting a person?
+
+2. An attacker guesses one password every hour from each of 1,000 different IP addresses. Would fail2ban stop this? What kind of system or approach would be needed to notice it?
+
+3. Your firewall, isolation, and monitoring are all layers of **defense in depth**. Describe a scenario where an attacker gets past one layer but is stopped or detected by another.
