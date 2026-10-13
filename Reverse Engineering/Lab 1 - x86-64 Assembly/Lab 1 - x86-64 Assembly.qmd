@@ -1,5 +1,6 @@
 ---
 title: "Reverse Engineering: x86-64 Assembly"
+date: "October 13, 2026"
 format:
     pdf:
         toc: true
@@ -31,7 +32,7 @@ nasm --version
 
 # Assemble and Run
 
-Throughout this lab you will assemble and run small programs. The process is always the same two commands. Given a source file named `program.asm`:
+Throughout this lab you will assemble and run small programs. The process is always the same: two commands to build the program and one to run it. Given a source file named `program.asm`:
 
 ```sh
 nasm -f elf64 program.asm -o program.o
@@ -91,7 +92,7 @@ _start:
     syscall
 ```
 
-Assemble and run it. You should see `Hello, World!` printed to the terminal. Use the following to assmeble and run it.
+Assemble and run it. You should see `Hello, World!` printed to the terminal. Use the following commands to assemble and run it:
 
 ```sh
 nasm -f elf64 hello.asm -o hello.o
@@ -194,6 +195,8 @@ Create a file named `arithmetic.asm`. Compute a value and verify it with `echo $
 
 ```nasm
 ; arithmetic.asm
+BITS 64
+
 section .text
     global _start
 
@@ -231,6 +234,14 @@ jge ge          ; jump if rax >= 10
 jle le          ; jump if rax <= 10
 ```
 
+In practice only one of these jumps would follow a given `cmp`; they are listed together here for reference.
+
+:::{.callout-tip}
+# Signed vs. Unsigned Jumps
+
+`jg`, `jl`, `jge`, and `jle` treat the values as **signed** integers. Compilers use `ja` (above), `jb` (below), `jae`, and `jbe` for **unsigned** comparisons. They behave the same way for small positive numbers, so expect to see both families in Cutter.
+:::
+
 :::{.callout-note}
 # This is What You Will See in Cutter
 
@@ -240,6 +251,9 @@ When you open a compiled binary in Cutter and see a `cmp` followed by a `je` or 
 Create a file named `compare.asm`. The program checks a value and exits with a different code depending on the result:
 
 ```nasm
+; compare.asm
+BITS 64
+
 section .text
     global _start
 
@@ -277,6 +291,7 @@ This structure, a block with a backward edge, is exactly what you will see in Cu
 Create a file named `loop.asm`. This loop accumulates a sum:
 
 ```nasm
+; loop.asm
 BITS 64
 
 section .text

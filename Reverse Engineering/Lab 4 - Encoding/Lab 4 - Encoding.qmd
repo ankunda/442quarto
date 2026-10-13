@@ -1,5 +1,6 @@
 ---
 title: "Reverse Engineering: Encoding"
+date: "October 13, 2026"
 format:
     pdf:
         toc: true
@@ -57,7 +58,7 @@ You are now looking at the function that processes the hidden data. Analyze it i
 :::{.callout-tip}
 # Opening the Decompiler
 
-With the function visible in the Graph or Disassembly view, open the decompiler by clicking `View > Decompiler` or pressing `F5`. The decompiler panel shows a C-like approximation of the function's logic. It is not always perfectly accurate, but it is a useful starting point.
+With the function visible in the Graph or Disassembly view, select the `Decompiler` tab at the bottom of the screen. If the tab is not visible, enable it from the `Windows` menu. The decompiler panel shows a C-like approximation of the function's logic. It is not always perfectly accurate, but it is a useful starting point.
 :::
 
 ## Understand the Loop
@@ -82,14 +83,14 @@ Now you need to find the actual bytes that the function operates on. These are t
 
 Go back to the call site in `main` where this decode function is called. Look at the instruction that loads the first argument (the buffer address). In x86-64, this will be a `lea rdi, [...]` or `mov rdi, ...` instruction loading an address. On arm64, it will load into `x0`.
 
-Double-click the data address referenced in that instruction to navigate to the data section in the `Hex View`. You should see a row of bytes beginning at that address. Read off the bytes for the length you identified earlier.
+Double-click the data address referenced in that instruction to navigate to that address, then switch to the `Hexdump` tab (as you did in the Cutter lab, you can also paste the address into the search bar at the top). You should see a row of bytes beginning at that address. Read off the bytes for the length you identified earlier.
 
 Write them down as a list. They will look like a series of hex values with no obvious pattern.
 
 :::{.callout-tip}
-# Reading the Hex View
+# Reading the Hexdump
 
-In Cutter's Hex view, bytes are displayed in rows of 16. The address on the left tells you where each row starts. Identify the starting address of the encoded array and read off exactly as many bytes as the length you found. Ignore any bytes after that count.
+In Cutter's Hexdump tab, bytes are displayed in rows of 16. The address on the left tells you where each row starts. Identify the starting address of the encoded array and read off exactly as many bytes as the length you found. Ignore any bytes after that count.
 :::
 
 # Recover the Message
@@ -102,7 +103,7 @@ You now have everything you need:
 
 Apply the inverse operation to each byte to recover the original message. The easiest way to do this is with a short Python one-liner in your terminal. Replace the byte list and key with what you found:
 
-```python
+```sh
 python3 -c "
 data = [0x??, 0x??, ...]
 print(''.join(chr(b ^ 0x??) for b in data))
@@ -121,4 +122,4 @@ Now run the binary to confirm your result:
 
 The program decodes the message at runtime and prints it. Compare the output to what you recovered through static analysis — they should match exactly.
 
-If they do not match, revisit the key constant and the byte list. A single transposed digit in one of the hex values is the most common mistake.
+If they do not match, revisit the key constant and the byte list. A single mistyped or transposed digit in one of the hex values is the most common mistake.

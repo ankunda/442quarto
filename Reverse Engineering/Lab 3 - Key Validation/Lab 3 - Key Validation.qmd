@@ -1,5 +1,6 @@
 ---
 title: "Reverse Engineering: Key Validation"
+date: "October 13, 2026"
 format:
     pdf:
         toc: true
@@ -12,16 +13,16 @@ format:
 
 Software vendors often protect their products with license keys; that is, they make short strings that a program validates before granting access. Understanding how these validators work is a core reverse engineering skill. Rather than patching around the check by reversing a jump (as you did in an earlier lab), your goals in this lab are:
 
-1. To read and understand the validation algorithm well enough to produce keys that genuinely satisfies it
+1. To read and understand the validation algorithm well enough to produce keys that genuinely satisfy it.
 
-2. Reconstruct the original c program that produced the `validate` executable.
+2. To reconstruct the original C program that produced the `validate` executable.
 
 
 # Download the File
 
 The files needed for this lab are located on Canvas as `key-validation-executables.zip`. 
 
-Download `key-validation-executables.zip` from Canvas onto your VM and unzip it. Inside you will find one file named `validate-cutter` and several others named `validate-*-*`, where the `*` indicates the architecture and OS where that file was compiled for your convenience. You may need to use your vitual machine to run a `validate-*-*` executable. 
+Download `key-validation-executables.zip` from Canvas onto your VM and unzip it. Inside you will find one file named `validate-cutter` and several others named `validate-*-*`, where the `*` indicates the architecture and OS that the file was compiled for. You may need to use your virtual machine to run a `validate-*-*` executable. 
 
 **For reference, we will only use the file titled `validate-cutter` for analysis with Cutter. When asked to run the file, use the appropriate one for your machine's architecture.**
 
@@ -34,8 +35,10 @@ For any file you plan on executing, be sure to use `chmod +x [filename]` to make
 Run the program and try a few inputs:
 
 ```sh
-./validate
+./validate-[arch]-[os]
 ```
+
+Replace `[arch]` and `[os]` with the values in the filename that match your machine.
 
 The program prompts for a license key. Any input you try will likely print `Invalid key.` Your goal is to use Cutter to find a key that the program accepts.
 
@@ -55,7 +58,7 @@ Open the `validate-cutter` binary in Cutter. At the `Load Options` dialog, leave
 
 Navigate to the `Graph` tab and select `entry0` (or `main`) from the left panel. This represents the main function.
 
-With respect to the contents of `entry0` (or `main`), you should see that it is short. You should see that there is a block of instructions with three variables at the top (via comments (marked by a `;`)). Note that some of these variables may not be necessary when reconstructing the `C` code. Some example variables you may see are:
+With respect to the contents of `entry0` (or `main`), you should see that it is short. You should see that there is a block of instructions with three variables at the top (shown as comments, which are marked by a `;`). Note that some of these variables may not be necessary when reconstructing the `C` code. Some example variables you may see are:
 
 - `var_5ch` as an `int64_t`
 
@@ -101,14 +104,18 @@ Some possible realizations you may have had are:
 
 4. The variable that is acted on by `scanf` is the same variable that is passed into the custom function. Cutter places a comment showing it as `char *arg1`.
 
-Here is some possible c code that covers what we've seen so far:
+Here is some possible C code that covers what we've seen so far:
 
 ```c 
+#include <stdio.h>
+
+int validate(char *key); // defined later
+
 int main(){
     char key[64]; // 64 characters for the key
 
     // prompt for key
-    printf("Enter license key: ")
+    printf("Enter license key: ");
     scanf("%63s", key);  // store input into key
 
     // call the custom function
@@ -126,9 +133,9 @@ int main(){
 
 After the custom function is called, the top block in `main` ends with a jump if equal (`je`) command which comes right after a `cmp` instruction and right before a **branch**. 
 
-The green line (i.e. the "comparison was equal" branch) leads to a block where a string `Invalid key` is found, followed by a call to `printf`.
+The green line (i.e. the "comparison was equal" branch) leads to a block where the string `Invalid key.` is found, followed by a call to `printf`.
 
-The red line (i.e. the "was not equal" branch) leads to a block where a string `License Accepted` is found, followed by a call to `printf`.
+The red line (i.e. the "was not equal" branch) leads to a block where the string `License accepted.` is found, followed by a call to `printf`.
 
 Notice the values being compared immediately before the jump, that is the register and the immediate value (constant).
 
@@ -156,33 +163,36 @@ Here are some possible solutions/realizations you may have had.
 
 1. The custom `validate` function is storing its return value in the register `eax`. 
 
-2. Open the instructions for the custom function in the graph view. Scroll to the bottom/last block of code where the `ret` instruction lives. You can that `eax` is asked to store `dword [var_ch]` with the instruction `mov eax, dword [var_ch]`. 
+2. Open the instructions for the custom function in the graph view. Scroll to the bottom/last block of code where the `ret` instruction lives. You can see that `eax` is asked to store `dword [var_ch]` with the instruction `mov eax, dword [var_ch]`. 
 
-The first block (at the top) of the custom function's graph view shows `[var_ch]` as an `int`. 
+    The first block (at the top) of the custom function's graph view shows `[var_ch]` as an `int`. 
 
-Further exploring locations where `var_ch` is set to a value via `mov` inside of the custom function shows that it only takes on the values of `0` and `1`.
+    Further exploring locations where `var_ch` is set to a value via `mov` inside of the custom function shows that it only takes on the values of `0` and `1`.
 
-2. Back in `main`/`entry0`, the value stored in `eax` is being compared to the value `0` imediately before the jump.
+3. Back in `main`/`entry0`, the value stored in `eax` is being compared to the value `0` immediately before the jump.
 
-3. The green path is taken if the two values were equal (i.e. a jump is made). To see the actual jump, investigate the **Disassembly** tab. If the jump is made, then a return of 0 from `validate` means the key was invalid since the `Invalid String` key is output. A return of anything else means the key was valid.
+4. The green path is taken if the two values were equal (i.e. a jump is made). To see the actual jump, investigate the **Disassembly** tab. If the jump is made, then a return of 0 from `validate` means the key was invalid since the `Invalid key.` string is output. A return of anything else means the key was valid.
 
 A possible solution follows for you to check your work so far.
 
 ```c 
+#include <stdio.h>
+
+int validate(char *key); // defined later
+
 int main(){
     char key[64]; 
 
- 
-    printf("Enter license key: ")
+    printf("Enter license key: ");
     scanf("%63s", key);  
 
     int result = validate(key);
 
     // print the proper message
     if (result == 0){            // cmp eax, 0; je
-        printf("Invalid Key\n"); 
+        printf("Invalid key.\n"); 
     } else {
-        pritf("License Accepted\n");
+        printf("License accepted.\n");
     }
 
     // We are not concerned with what comes after the branches
@@ -215,7 +225,7 @@ The validation function is the heart of this lab.
 
 Let's work through it systematically in the **Graph** view. There are various branches throughout because the function will complete multiple checks to validate the license key. 
 
-As you have already determined, the function returns `0` if the key is invalid, following the branch toward "Invalid Key" to be printed. Only if all checks pass does it return `1` (valid). Be sure to navigate to the **Graph** view once you've opened it.
+As you have already determined, the function returns `0` if the key is invalid, following the branch toward `Invalid key.` being printed. Only if all checks pass does it return `1` (valid). Be sure to navigate to the **Graph** view once you've opened it.
 
 We will work from the bottom up.
 
@@ -226,9 +236,9 @@ Let's start by finding the block where the function returns (this should be at t
 
 Note that the register that stores the return value of a custom function will be labeled `eax` (32-bits) or `rax` (64-bits) depending on the number of bits we are returning.
 
-Also, keep in mind that in x86 assembly a `double word` (or `dword`) is a 32 bit value (regardless of type) eventhough we typically associate the word `double` with a 64 bit floating point value. In addition, a `quadword` would be 64 bits (regardless of type).
+Also, keep in mind that in x86 assembly a `double word` (or `dword`) is a 32-bit value (regardless of type) even though we typically associate the word `double` with a 64-bit floating point value. In addition, a `quadword` would be 64 bits (regardless of type).
 
-Be sure to note how Cutter is identifying the return value with `dword [var_ch]`
+Be sure to note how Cutter is identifying the return value with `dword [var_ch]`.
 
 
 
@@ -244,9 +254,9 @@ Answer the following questions, take notes, and discuss it with your group. You 
 
 3. You've probably identified a block that has 2 arrows coming into it: one block from higher up in the graph view and another from lower in the graph view. 
 
-What common programming language construct do you think having an arrow come from below is indicative of? 
+    What common programming language construct do you think having an arrow come from below is indicative of? 
 
-We will refer to this block that has two arrows coming into it as the **double-in** block.
+    We will refer to this block that has two arrows coming into it as the **double-in** block.
 
 
 4. Look at both the parents of the **double-in** block. 
@@ -258,9 +268,9 @@ We will refer to this block that has two arrows coming into it as the **double-i
     * How is this variable being operated on in the lower parent?
 
 
-3. Can you find a path that might start at the **double-in** block and then end up back at the **double-in** block?
+5. Can you find a path that might start at the **double-in** block and then end up back at the **double-in** block?
 
-4. Can you write a portion of a code block in `C` that represents what is going on here?
+6. Can you write a portion of a code block in `C` that represents what is going on here?
 :::
 
 
@@ -272,13 +282,13 @@ Now that you've discussed what may be happening with your team, consider the fol
 
 * It appears a loop is occurring.
 
-* The upper parent appears to set some variable, let's say `i`, to 2. (example: `mov dword[var_28h], 2`)
+* The upper parent appears to set some variable, let's say `i`, to 2. (example: `mov dword [var_28h], 2`)
 
 * In a situation where success happens, that loop will execute until `i` reaches 8. Then the code moves on to indicate success has happened and the key has been validated.
 
 * You might have noticed that this variable, `i`, is being incremented by 2 in the lower parent (example: `add eax, 2`).
 
-Perhaps the source for the portion of this function that we have investigated looks something as follows:
+Perhaps the source for the portion of this function that we have investigated looks something like the following:
 
 ```c 
 int validate(char *key){
@@ -321,7 +331,7 @@ Read through the following guiding questions and discuss your thoughts with your
 
 5. What could `rax` be referring to? Note the label Cutter uses (`qword [s]` or similar) and scroll back to the beginning of the `validate` function to see if there is a hint.
 
-6. Try modifying your previously written c to accommodate your discoveries here.
+6. Try modifying your previously written C to accommodate your discoveries here.
 :::
 
 :::{.callout-tip}
@@ -358,11 +368,11 @@ int validate(char *key){
 }
 ```
 
-You may have noticed that the value being compared is placed into `eax`. Right before each comparison, there is a value associated with `rax` and `rcx` placed into eax. 
+You may have noticed that the value being compared is placed into `eax`. Right before each comparison, there is a value associated with `rax` and `rcx` placed into `eax`. 
 
 Immediately before that, `rcx` takes on the value of the iterator, `i`. Investigation into the very first block of this function shows us that the argument passed into the function is given a label that then ends up in `rax` for these two comparison blocks. 
 
-Since the argument being passed into the function is the a string that represents the key we are trying to validate, you might assume we are iterating over the characters of this key string resulting in the following code.
+Since the argument being passed into the function is a string that represents the key we are trying to validate, you might assume we are iterating over the characters of this key string resulting in the following code.
 
 ```c 
 
@@ -389,9 +399,9 @@ int validate(char *key){
 
 # Assignment
 
-The rest of the reconstruction of this code in C and determining a valid key is left as an exercise. Your goal is to reconstruct the C program that resulted in this machine code. Each of the sections that follow assist you as you work backward toward the top of the `validate` function.
+The rest of the reconstruction of this code in C and determining a valid key is left as an exercise. Your goal is to reconstruct the C program that resulted in this machine code. Each of the sections that follow assists you as you work backward toward the top of the `validate` function.
 
-Note that the **Decompiler** tab in Cutter can be helpful. In the bottom right corner of this tab, check out the options you have for the decompiler. Ghidra is rather powerful.
+Note that the **Decompiler** tab in Cutter can be helpful. In the bottom right corner of this tab, check out the options you have for the decompiler. The Ghidra decompiler is rather powerful.
 
 
 ## The Other Loop
@@ -426,8 +436,8 @@ Before the first character check, the first thing the function checks is the len
 What length does the key need to be?
 
 
-# Construct a Valid Key and Verify it
+# Construct a Valid Key and Verify It
 
-Design a key that satisfies the program you wrote and test it against the appropriate `validate-*-*` file for your machine. Recall that the file you examined (`validate-cutter`) will most likely not run on your host or VM. If you were curious, Cutter does tell you the OS and architecture a compiled file targeted on the **Dashboard** tab.
+Design a key that satisfies the program you wrote and test it against the appropriate `validate-*-*` file for your machine. Recall that the file you examined (`validate-cutter`) will most likely not run on your host or VM. If you were curious, Cutter shows the OS and architecture a compiled file targets on the **Dashboard** tab.
 
 You should see `License accepted.` If you see `Invalid key.`, re-examine each check. One of your digits may be off, or a position may be wrong. Work through the checks one at a time against your key to find the mismatch.
