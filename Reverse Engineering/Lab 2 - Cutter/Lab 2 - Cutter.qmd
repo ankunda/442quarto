@@ -11,7 +11,7 @@ format:
 
 # Introduction
 
-In this lab you will use Cutter to view and manipulate assembly to get the desired output from compiled code. It is recommended that you do this lab on your virtual machine. The files needed for this lab are located on Canvas as `cutter-executables.zip`.
+In this lab you will use Cutter to view and manipulate assembly to get the desired output from compiled code. It is recommended that you do this lab on your virtual machine. The files needed for this lab are located on Canvas as `cutter-lab-executables.zip`.
 
 # Download and Install Cutter
 
@@ -55,7 +55,25 @@ chmod +x cutter
 
 # File Manipulation
 
-Download the `cutter-executables.zip` from Canvas onto your VM. When you unzip this file, you should find multiple folders inside indicating the architecture and OS for the machine that compiled the files. Note that the source code used to create these files is identical. When running the files, you should use the ones that correspond to your Virtual Machine's architecture.
+Download the `cutter-lab-executables.zip` from Canvas onto your VM. When you unzip this file, you should find multiple folders inside indicating the architecture and OS for the machine that compiled the files. Note that the source code used to create these files is identical. When running the files, you should use the ones that correspond to your Virtual Machine's architecture.
+
+Use the table below to find the folder that matches your setup. If you are not sure of your VM's architecture, run `uname -m` in its terminal: `x86_64` means x86-64 and `aarch64` means arm64.
+
+| Host Machine | Virtual Machine | Folder |
+|---|---|---|
+| Windows PC (Intel/AMD) | Linux (x86-64) | `x86-64-ubuntu` or `x86-64-mint` |
+| Intel Mac | Linux (x86-64) | `x86-64-ubuntu` or `x86-64-mint` |
+| M-series Mac | Linux (arm64) | `arm64-ubuntu` |
+| M-series Mac | None (running Cutter on macOS) | `arm64-mac` |
+| M-series Mac | Windows 11 (arm) | `arm-win11` |
+| Windows on ARM (ex: Snapdragon laptop) | Linux (arm64) | `arm64-ubuntu` |
+| Windows on ARM (ex: Snapdragon laptop) | None (running Cutter on Windows) | `arm-win11` |
+
+: Choosing the correct folder of executables {#tbl-folders}
+
+:::{.callout-note}
+The two x86-64 Linux folders both work on any recent x86-64 Linux distribution. They differ only in the compiler version used, so the assembly may look slightly different. The `arm-win11` executables were compiled on an arm machine but contain x86-64 instructions, which Windows runs through emulation. If you use them, follow the x86 instructions in this lab.
+:::
 
 ## File 1.exe
 
