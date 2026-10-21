@@ -1,6 +1,6 @@
 ---
 title: "DBMS: SQL Injection"
-date: "October 20, 2026"
+date: "October 21, 2026"
 format:
     pdf:
         toc: true
@@ -284,10 +284,10 @@ In this section, you will setup a database and a website to interact with that d
     cd /var/www/html
     ```
 
-3. If a file named `index.html` exists in this directory, remove it.
+3. If a file named `index.html` exists in this directory, rename it. Apache serves `index.html` ahead of `index.php`, so leaving it in place would hide the webapp. Renaming it (instead of deleting it) lets you restore the default page later if needed.
 
     ```sh 
-    sudo rm index.html
+    sudo mv index.html index.html.orig
     ``` 
 
 4. Go to canvas, download the following files:
@@ -304,7 +304,24 @@ In this section, you will setup a database and a website to interact with that d
     sudo mv ~/Downloads/index.php /var/www/html/
     ```
 
-6. Open the config.php file and make sure the values for `$_ADMIN["MYSQL_USER"]`, `$_ADMIN["MYSQL_PASS"]` and `$_ADMIN["MYSQL_DATABASE"]` match the values for the user and database you created earlier. If you used a different username, password, or database name, update them here.
+6. Set the ownership and permissions of the PHP files. `mv` keeps the original owner and permissions of the downloaded files, which may prevent Apache (running as the `www-data` user) from reading them. Make the files owned by root and readable by everyone (`644` = owner read/write, group and others read-only):
+
+    ```sh 
+    sudo chown root:root /var/www/html/*.php
+    sudo chmod 644 /var/www/html/*.php
+    ```
+
+    Verify the permissions. Each PHP file should show `-rw-r--r-- 1 root root`:
+
+    ```sh 
+    ls -l /var/www/html
+    ```
+
+7. Open the config.php file and make sure the values for `$_ADMIN["MYSQL_USER"]`, `$_ADMIN["MYSQL_PASS"]` and `$_ADMIN["MYSQL_DATABASE"]` match the values for the user and database you created earlier. If you used a different username, password, or database name, update them here. Since the file is now owned by root, open it with `sudo`:
+
+    ```sh 
+    sudo nano /var/www/html/config.php
+    ```
 
     ```php
     ...
@@ -314,11 +331,15 @@ In this section, you will setup a database and a website to interact with that d
     ...
     ```
 
-7. Open a web browser and navigate to http://localhost. You should see a webpage with a form expecting a Team Name.
+8. Open a web browser and navigate to http://localhost. You should see a webpage with a form expecting a Team Name. If the page is blank or shows an error, check the Apache error log for clues (permission denied, database login failures, etc.):
 
-8. In the Team Name field, type one of the team's names to see the score of that team (ex: type `WHALE` or `SEAHORSE`).
+    ```sh 
+    sudo tail /var/log/apache2/error.log
+    ```
 
-9. Click the "Submit Query" button or hit enter to see the score. 
+9. In the Team Name field, type one of the team's names to see the score of that team (ex: type `WHALE` or `SEAHORSE`).
+
+10. Click the "Submit Query" button or hit enter to see the score. 
 
 
 ## Injecting a Query 
