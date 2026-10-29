@@ -47,14 +47,37 @@ The lab is designed around the Pi being reachable at a known address in the
 `10.7.7.0/24` subnet. A static IP prevents the Pi from disappearing between
 lab sessions if the DHCP lease changes.
 
-Edit the DHCP client configuration:
+Current Raspberry Pi OS (Bookworm and later) manages networking with
+**NetworkManager**, not `dhcpcd`. The `/etc/dhcpcd.conf` file no longer
+exists on a fresh image, so configure the static address with `nmcli`.
+
+First, find the name of the wired connection:
 
 ```sh
-sudo nano /etc/dhcpcd.conf
+nmcli device status          # note the DEVICE (usually eth0)
+nmcli connection show        # note the connection NAME (usually "Wired connection 1")
 ```
 
-Add the following block at the end of the file, adjusting the address if
-needed:
+Set the static address, gateway, and DNS on that connection, then bring it
+back up to apply:
+
+```sh
+sudo nmcli connection modify "Wired connection 1" \
+    ipv4.method manual \
+    ipv4.addresses 10.7.7.200/24 \
+    ipv4.gateway 10.7.7.7 \
+    ipv4.dns 10.7.7.7
+sudo nmcli connection up "Wired connection 1"
+ip addr show eth0   # confirm the address is now 10.7.7.200
+```
+
+The setting is stored under `/etc/NetworkManager/system-connections/` and
+persists across reboots. If you prefer a menu-driven interface, `sudo nmtui`
+does the same thing interactively.
+
+:::{.callout-note title="Older Pi OS images (Bullseye and earlier)"}
+Images from before Bookworm (released October 2023) still use `dhcpcd`.
+On those, edit `/etc/dhcpcd.conf` instead and append:
 
 ```default
 interface eth0
@@ -63,12 +86,8 @@ static routers=10.7.7.7
 static domain_name_servers=10.7.7.7
 ```
 
-Restart the networking service to apply the change:
-
-```sh
-sudo systemctl restart dhcpcd
-ip addr show eth0   # confirm the address is now 10.7.7.200
-```
+then `sudo systemctl restart dhcpcd`.
+:::
 
 :::{.callout-note}
 `10.7.7.200` is used throughout both student lab documents as the Pi's address.
@@ -91,7 +110,7 @@ share it with students.
 |---|---|---|---|
 | `labuser` | `sunshine1` | Hydra (Lab 1), then confirms setup in Lab 2 | Must be in rockyou; used for SSH/FTP |
 | `alice` | `dragon` | Dictionary (rockyou, no rules) | Near the top of rockyou -- cracks in seconds |
-| `bob` | `Dr@gon99` | Rule-based (`best64`) | Not in rockyou as-is; rules capitalise and substitute |
+| `bob` | `c0bra` | Rule-based (`best64`) | Leet form not in rockyou; best64's `o`->`0` rule derives it from `cobra` |
 | `carol` | `abc123` | Dictionary (rockyou, no rules) | Mid-list rockyou entry -- takes a moment |
 
 ## Create labuser and Grant Sudo Access
@@ -142,7 +161,7 @@ echo "alice:dragon" | sudo chpasswd
 
 # bob -- requires rule-based attack to crack
 sudo adduser --disabled-login bob
-echo "bob:Dr@gon99" | sudo chpasswd
+echo "bob:c0bra" | sudo chpasswd
 
 # carol -- plain dictionary password
 sudo adduser --disabled-login carol
@@ -189,8 +208,12 @@ password from the suggestions below and update `labuser` accordingly:
 sunshine1   dragon99   password1   princess   monkey123
 ```
 
-The practice account passwords (`dragon`, `Passw0rd`, `abc123`) are all
-confirmed entries in rockyou and do not need checking.
+Alice's and carol's passwords (`dragon` and `abc123`) are confirmed entries
+in rockyou and do not need checking. Bob's password (`c0bra`) is
+*intentionally* absent from rockyou in that exact form -- its leetspeak
+spelling (`o`->`0`) does not appear in the list, which is what forces a
+rule-based attack. The base word `cobra` *is* in rockyou, and that is what
+lets `best64` derive `c0bra` from it.
 
 # Installing and Configuring SSH
 
@@ -212,11 +235,13 @@ sudo systemctl start ssh
 Confirm it is listening:
 
 ```sh
-sudo netstat -tlnp | grep :22
+sudo ss -tlnp | grep :22
 ```
 
 :::{.callout-tip}
-If `netstat` is not available: `sudo apt install net-tools -y`
+`ss` (from the `iproute2` package) is the modern replacement for the
+deprecated `netstat`; it is preinstalled on current Pi OS. If you still
+prefer `netstat`, install it with `sudo apt install net-tools -y`.
 :::
 
 ## Allow Password Authentication
@@ -291,7 +316,7 @@ sudo systemctl restart vsftpd
 Verify it is listening on port 21:
 
 ```sh
-sudo netstat -tlnp | grep :21
+sudo ss -tlnp | grep :21
 ```
 
 # Final Verification
@@ -340,8 +365,18 @@ user accounts section above.
 grep -n "^dragon$"   /usr/share/wordlists/rockyou.txt   # alice
 grep -n "^abc123$"   /usr/share/wordlists/rockyou.txt   # carol
 ```
-`bob`'s password (`Dr@gon99`) is intentionally absent from rockyou -- it
-should return nothing, confirming that a rule-based attack is required.
+For `bob`, the rule-based attack depends on two things being true: the
+leet form `c0bra` must be *absent* from rockyou, while the base word
+`cobra` must be *present* so `best64` can derive it:
+
+```sh
+grep -n "^c0bra$"   /usr/share/wordlists/rockyou.txt   # bob -- should return NOTHING
+grep -n "^cobra$"   /usr/share/wordlists/rockyou.txt   # should return a line number
+```
+
+If `c0bra` ever turns up in your copy of rockyou, pick another leet word
+whose plain form is in the list but whose substituted form is not (e.g.
+`v1per` from `viper`) and update `bob` accordingly.
 
 Once all seven checks pass, the Pi is ready.
 

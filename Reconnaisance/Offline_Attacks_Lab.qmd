@@ -308,7 +308,9 @@ sudo hashcat -a 0 -m 1800 -r /usr/share/hashcat/rules/best64.rule \
 ```
 
 :::{.callout-note}
-hashcat caches cracked passwords in a **potfile** (`~/.hashcat/hashcat.potfile`).
+hashcat caches cracked passwords in a **potfile**. Since hashcat 6 this
+lives at `~/.local/share/hashcat/hashcat.potfile` (older versions, and
+systems with a leftover `~/.hashcat/` directory, use `~/.hashcat/hashcat.potfile`).
 If you try to crack a hash you have already cracked, hashcat will say
 `All hashes found in potfile` and skip it. Use `--show` to display cached
 results:
@@ -467,8 +469,8 @@ sudo hashcat -a 0 -m 1800 hashes_only.txt /usr/share/wordlists/rockyou.txt
 ```
 
 Watch the output. You should see `alice`, `labuser`, and `carol` crack
-relatively quickly. `bob`'s hash will likely remain uncracked -- the
-password `Passw0rd` does not appear in rockyou verbatim.
+relatively quickly. `bob`'s hash will likely remain uncracked -- his
+password does not appear in rockyou verbatim.
 
 Check what has been cracked so far:
 
@@ -479,19 +481,20 @@ sudo hashcat -m 1800 hashes_only.txt --show
 :::{.callout-note}
 hashcat prints the cracked result as `hash:password`. To identify *which
 user* a hash belongs to, compare the hash string against the entries in
-`all_hashes.txt`. The Go script at the end of this lab automates exactly
-this matching step.
+`all_hashes.txt`. The Rust program in the appendix at the end of this lab
+automates exactly this matching step.
 :::
 
 ## Round 2 -- Rule-Based Attack for bob
 
-`bob`'s password is a common word with character substitutions and
-capitalisation -- exactly what `best64.rule` is designed to handle.
+`bob`'s password is an ordinary dictionary word with a letter-to-number
+substitution (`o` replaced by `0`) -- exactly the kind of mutation
+`best64.rule` applies automatically to every word in the list.
 Run the rule-based attack against only the remaining uncracked hash:
 
 ```sh
-sudo hashcat -a 0 -m 1800 -r /usr/share/wordlists/rockyou.txt \
-    /usr/share/hashcat/rules/best64.rule hashes_only.txt
+sudo hashcat -a 0 -m 1800 -r /usr/share/hashcat/rules/best64.rule \
+    hashes_only.txt /usr/share/wordlists/rockyou.txt
 ```
 
 :::{.callout-tip}
@@ -547,12 +550,15 @@ john --show unshadowed_all.txt
 You should see all four users listed with their recovered passwords.
 
 :::{.callout-note title="Something to think about"}
-`bob` used a password that felt strong -- mixed case, letter-to-number
-substitution, no obvious dictionary word. Yet it fell to a rule-based
-attack in seconds. This is why security guidelines have moved away from
-"complexity rules" (must contain uppercase, number, symbol) toward
-**length and randomness**. A short complex password is far weaker than a
-long random passphrase against a rule-aware offline attack.
+`bob` disguised a dictionary word with a leetspeak substitution
+(`cobra` -> `c0bra`) -- the kind of trick that feels clever and is easy to
+remember. Yet it fell the moment a rule set was applied, because swapping
+digits for look-alike letters is one of the very first transformations a
+rule like `best64` tries. A plain dictionary attack missed it; adding a
+single rule file caught it in seconds. This is why security guidelines have
+moved away from "complexity rules" (must contain uppercase, number, symbol)
+toward **length and randomness**. A short, cleverly-mangled word is far
+weaker than a long random passphrase against a rule-aware offline attack.
 :::
 
 # Legal and Ethical Considerations {#sec-legal}
@@ -682,3 +688,108 @@ There are no clean answers to most of them -- that is the point.
    what order?
 :::
 
+# Appendix: Matching Cracked Hashes to Users {#sec-appendix}
+
+When you crack several hashes at once, `hashcat --show` reports results as
+`hash:password` -- it has no idea which *user* each hash belongs to. The
+owning username lives back in `all_hashes.txt` (the shadow lines you pulled
+off the Pi). The short Rust program below joins the two together and prints
+a clean `user:password` list.
+
+## The Program
+
+Save this as `match_users.rs`:
+
+```rust
+use std::collections::HashMap;
+use std::env;
+use std::fs;
+use std::io::{self, BufRead};
+use std::process;
+
+fn main() {
+    // The shadow-format file (user:hash:...) is passed as the first argument.
+    // hashcat's `--show` output (hash:password) is read from standard input,
+    // so this tool drops straight into a pipe:
+    //
+    //   hashcat -m 1800 hashes_only.txt --show | ./match_users all_hashes.txt
+    let shadow_path = env::args().nth(1).unwrap_or_else(|| {
+        eprintln!("usage: match_users <all_hashes.txt>   (hashcat --show on stdin)");
+        process::exit(1);
+    });
+
+    let shadow = fs::read_to_string(&shadow_path).unwrap_or_else(|e| {
+        eprintln!("cannot read {shadow_path}: {e}");
+        process::exit(1);
+    });
+
+    // Map each hash back to the username that owns it. A shadow line is
+    // user:hash:..., and the $6$ hash itself never contains a colon.
+    let mut owner: HashMap<&str, &str> = HashMap::new();
+    for line in shadow.lines() {
+        let mut fields = line.splitn(3, ':');
+        if let (Some(user), Some(hash)) = (fields.next(), fields.next()) {
+            if hash.starts_with('$') {
+                owner.insert(hash, user);
+            }
+        }
+    }
+
+    // Each hashcat line is `hash:password`; split on the first colon.
+    for line in io::stdin().lock().lines() {
+        let line = line.unwrap_or_default();
+        let line = line.trim();
+        if line.is_empty() {
+            continue;
+        }
+        match line.split_once(':') {
+            Some((hash, password)) => match owner.get(hash) {
+                Some(user) => println!("{user}:{password}"),
+                None => eprintln!("no user matches hash: {hash}"),
+            },
+            None => eprintln!("unrecognised line: {line}"),
+        }
+    }
+}
+```
+
+## Building and Running
+
+Rust's standard library covers everything here, so no external crates and no
+`cargo` project are needed -- compile the single file directly with `rustc`.
+If the compiler is not installed:
+
+```sh
+sudo apt install rustc -y     # or install via rustup: https://rustup.rs
+```
+
+Compile it:
+
+```sh
+rustc match_users.rs          # produces an executable called ./match_users
+```
+
+Then pipe `hashcat --show` straight into it, passing `all_hashes.txt` as the
+argument:
+
+```sh
+sudo hashcat -m 1800 hashes_only.txt --show | ./match_users all_hashes.txt
+```
+
+You should get a tidy, labelled list:
+
+```default
+labuser:sunshine1
+alice:dragon
+carol:abc123
+bob:c0bra
+```
+
+:::{.callout-note}
+The program matches on the exact hash string, so it works regardless of the
+order hashcat cracked the passwords in, and it will flag any hash it cannot
+place rather than guessing. The same approach works for john's output -- run
+`john --show` against the unshadowed file instead, which already prints
+`user:password` directly, so this helper is mainly useful for hashcat's
+hash-keyed output.
+:::
