@@ -31,6 +31,47 @@ time-sensitive steps are connecting the Pi to the LAN and noting its IP address,
 which students will need at the start of Lab 1.
 :::
 
+# Automated Setup (Recommended)
+
+The companion script **`setup_victim.sh`** (in this folder) performs every
+step in this guide except assigning the static IP, which you still do by hand.
+It runs in two phases so that the deliberately weak configuration is **never
+exposed while the Pi is on the school/public network**.
+
+Copy the script to the Pi:
+
+```sh
+scp setup_victim.sh <your-admin-user>@<pi-address>:~
+```
+
+**Phase 1 -- run now, while the Pi is still on the school network.** Creates
+the four lab accounts with their login *disabled* (no passwords yet), forces
+SHA-512 hashing, and installs/configures SSH and FTP but leaves them locked
+down:
+
+```sh
+sudo ./setup_victim.sh
+```
+
+**Phase 2 -- run last, only after the Pi has been moved to the isolated,
+no-internet LAN.** Sets the weak lab passwords, enables SSH password + root
+login, starts FTP, and prints the verification checklist:
+
+```sh
+sudo ./setup_victim.sh --go-live
+```
+
+`--go-live` refuses to run if the Pi still has a public IP address (override
+with `--go-live --force`). Set the static IP by hand just before this phase
+(see @sec-static-ip). Run `./setup_victim.sh --help` for the full description.
+
+:::{.callout-note}
+The rest of this document is the manual, step-by-step equivalent of what the
+script does -- use it to understand each step, to verify the result, or to set
+the Pi up entirely by hand. A companion `teardown_victim.sh` reverses it all
+when the labs are over (see @sec-teardown).
+:::
+
 # System Preparation
 
 ## Update the Pi
@@ -41,11 +82,53 @@ Start with a clean, up-to-date system:
 sudo apt update && sudo apt upgrade -y
 ```
 
-## Assign a Static IP Address
+## Force SHA-512 Password Hashing
 
-The lab is designed around the Pi being reachable at a known address in the
-`10.7.7.0/24` subnet. A static IP prevents the Pi from disappearing between
+The labs assume every password hash is **sha512crypt** (`$6$`, hashcat mode
+`1800`). Current Raspberry Pi OS does not produce `$6$` by default, and -- this
+trips people up -- *two different subsystems* choose the algorithm depending on
+how each password is set:
+
+* **`chpasswd` and `useradd`** read `ENCRYPT_METHOD` from `/etc/login.defs`
+  (default `YESCRYPT`, giving `$y$`).
+* **interactive `passwd` and `adduser`'s password prompt** go through PAM
+  (`/etc/pam.d/common-password`), which chooses the algorithm independently
+  (often MD5, giving `$1$`, when no algorithm is named on the `pam_unix.so`
+  line).
+
+If you fix only one of them you get a *mix* of hash types. Do this **before
+creating any accounts** so every account below comes out as `$6$`:
+
+```sh
+# chpasswd / useradd path -- robust against a commented or differently-set line
+sudo sed -i -E 's/^[# ]*ENCRYPT_METHOD\b.*/ENCRYPT_METHOD SHA512/' /etc/login.defs
+grep -q '^ENCRYPT_METHOD SHA512' /etc/login.defs || echo 'ENCRYPT_METHOD SHA512' | sudo tee -a /etc/login.defs
+
+# interactive passwd / adduser path -- PAM
+sudo sed -i -E '/^password[[:space:]].*pam_unix\.so/ s/\b(yescrypt|gost_yescrypt|md5|sha256|bigcrypt|blowfish|des)\b/sha512/g' /etc/pam.d/common-password
+sudo sed -i -E '/^password[[:space:]].*pam_unix\.so/ { /sha512/! s/pam_unix\.so/pam_unix.so sha512/ }' /etc/pam.d/common-password
+```
+
+:::{.callout-tip}
+Regardless of the system default, you can always force the algorithm when
+setting a password with `chpasswd -c SHA512` (used throughout this guide). That
+is the surest way to guarantee a `$6$` hash on one specific account.
+:::
+
+## Assign a Static IP Address {#sec-static-ip}
+
+The lab network is a flat `10.0.0.0/8`, and the Pi lives at the fixed address
+`10.7.7.200` within it. A static IP prevents the Pi from disappearing between
 lab sessions if the DHCP lease changes.
+
+:::{.callout-note title="Why /8 here but /24 in the student scan"}
+The Pi (and every lab machine) is configured with a `/8` mask so that, on a
+flat LAN, all `10.x.x.x` hosts are treated as directly reachable. Students,
+however, are told to *scan* only `10.7.7.0/24` -- every machine that matters
+sits in that `/24`, so the narrower scan finds them all without probing the
+other ~16 million addresses in the `/8`. Keep the interface mask (`/8`) and
+the scan scope (`/24`) distinct; they serve different purposes.
+:::
 
 Current Raspberry Pi OS (Bookworm and later) manages networking with
 **NetworkManager**, not `dhcpcd`. The `/etc/dhcpcd.conf` file no longer
@@ -64,7 +147,7 @@ back up to apply:
 ```sh
 sudo nmcli connection modify "Wired connection 1" \
     ipv4.method manual \
-    ipv4.addresses 10.7.7.200/24 \
+    ipv4.addresses 10.7.7.200/8 \
     ipv4.gateway 10.7.7.7 \
     ipv4.dns 10.7.7.7
 sudo nmcli connection up "Wired connection 1"
@@ -81,7 +164,7 @@ On those, edit `/etc/dhcpcd.conf` instead and append:
 
 ```default
 interface eth0
-static ip_address=10.7.7.200/24
+static ip_address=10.7.7.200/8
 static routers=10.7.7.7
 static domain_name_servers=10.7.7.7
 ```
@@ -152,25 +235,31 @@ try to read `/etc/shadow`.
 ## Create the Practice Accounts
 
 These accounts do not need sudo access -- they exist only to add entries to
-the shadow file.
+the shadow file. They are created with a `nologin` shell so they cannot be
+used to log in, while their password hashes still appear in `/etc/shadow` for
+the offline cracking exercises.
 
 ```sh
 # alice -- plain dictionary password
-sudo adduser --disabled-login alice
-echo "alice:dragon" | sudo chpasswd
+sudo adduser --disabled-login --shell /usr/sbin/nologin alice
+echo "alice:dragon" | sudo chpasswd -c SHA512
 
 # bob -- requires rule-based attack to crack
-sudo adduser --disabled-login bob
-echo "bob:c0bra" | sudo chpasswd
+sudo adduser --disabled-login --shell /usr/sbin/nologin bob
+echo "bob:c0bra" | sudo chpasswd -c SHA512
 
 # carol -- plain dictionary password
-sudo adduser --disabled-login carol
-echo "carol:abc123" | sudo chpasswd
+sudo adduser --disabled-login --shell /usr/sbin/nologin carol
+echo "carol:abc123" | sudo chpasswd -c SHA512
 ```
 
-The `--disabled-login` flag prevents these accounts from being used to log
-in interactively via SSH, so students cannot simply try to connect as alice,
-bob, or carol -- they must crack the hashes offline.
+The `nologin` shell is what actually stops these accounts being used to log
+in -- over SSH *or* FTP -- so students cannot simply connect as alice, bob, or
+carol; they must crack the hashes offline. (On its own, `--disabled-login`
+only skips the initial password prompt; once `chpasswd` sets a password the
+account would otherwise be usable, which is why the shell is set explicitly.)
+Setting the shell does not affect the stored hash, so cracking still works
+exactly as described in the offline lab.
 
 ## Verify All Shadow Entries
 
@@ -178,21 +267,29 @@ bob, or carol -- they must crack the hashes offline.
 sudo grep -E "labuser|alice|bob|carol" /etc/shadow
 ```
 
-You should see four lines, each with a hash beginning with `$6$` (or `$y$`
-on newer Pi OS images -- see note below). Confirm no entry has `*` or `!`
-in the hash field, which would indicate no password is set.
+You should see four lines, each with a hash beginning with `$6$`. Confirm no
+entry has `*` or `!` in the hash field, which would indicate no password is
+set.
 
-:::{.callout-note}
-If any hash begins with `$y$` rather than `$6$`, the system is using
-yescrypt (hashcat mode `400`) instead of sha512crypt (mode `1800`). Either
-update both student lab documents to use `-m 400`, or force SHA-512 by
-setting the password hashing algorithm explicitly:
+:::{.callout-important}
+If any hash begins with `$y$` (yescrypt) or `$1$` (MD5) instead of `$6$`, the
+*Force SHA-512 Password Hashing* step above was skipped or did not take effect
+for that account -- see that section for why the two subsystems disagree. The
+labs assume `$6$` (hashcat mode `1800`), so recreate all four passwords,
+forcing the algorithm explicitly:
 
 ```sh
-sudo sed -i 's/^ENCRYPT_METHOD.*/ENCRYPT_METHOD SHA512/' /etc/login.defs
+printf '%s\n' \
+  'labuser:sunshine1' \
+  'alice:dragon' \
+  'bob:c0bra' \
+  'carol:abc123' | sudo chpasswd -c SHA512
 ```
 
-Then recreate the affected passwords with `chpasswd` as above.
+Then re-run the `grep` above and confirm all four hashes now start with `$6$`.
+(Only as a last resort, if you genuinely cannot get `$6$`, you could instead
+change both student labs to the matching hashcat mode -- `400` for `$y$`,
+`500` for `$1$` -- but keeping everything on `$6$` is far simpler.)
 :::
 
 ## Verify labuser's Password is in rockyou
@@ -380,14 +477,31 @@ whose plain form is in the list but whose substituted form is not (e.g.
 
 Once all seven checks pass, the Pi is ready.
 
-# Teardown After the Lab
+# Teardown After the Lab {#sec-teardown}
 
-When the lab sessions are over, revert the security-sensitive changes:
+When the lab sessions are over, revert the security-sensitive changes. The
+companion script **`teardown_victim.sh`** (in this folder) reverses everything
+`setup_victim.sh` did:
 
 ```sh
-# Disable root SSH login
-sudo nano /etc/ssh/sshd_config
-# Set: PermitRootLogin no
+sudo ./teardown_victim.sh
+```
+
+It removes the lab SSH drop-in (disabling root/password login) and restarts
+SSH, stops and disables FTP (restoring the original `vsftpd.conf` if a backup
+was saved), and deletes the four lab accounts and their home directories --
+prompting once before the deletion. Use `--yes` to skip the prompt, or
+`--keep-users` to revert the exposure but keep the accounts. It deliberately
+leaves the static IP (revert that by hand) and the SHA-512 hashing settings
+(harmless) alone. Run `./teardown_victim.sh --help` for details.
+
+## Manual Teardown
+
+To do it by hand instead:
+
+```sh
+# Disable root SSH login (remove the lab drop-in, or edit the main config)
+sudo rm -f /etc/ssh/sshd_config.d/00-lab.conf
 sudo systemctl restart ssh
 
 # Remove all lab user accounts
@@ -396,7 +510,13 @@ sudo deluser --remove-home alice
 sudo deluser --remove-home bob
 sudo deluser --remove-home carol
 
-# Optionally stop vsftpd if not needed outside the lab
+# Stop and disable vsftpd if not needed outside the lab
 sudo systemctl disable vsftpd
 sudo systemctl stop vsftpd
 ```
+
+:::{.callout-note}
+If you set the Pi up entirely by hand (without `setup_victim.sh`), the SSH
+drop-in may not exist; in that case edit `/etc/ssh/sshd_config` directly and
+set `PermitRootLogin no` (and `PasswordAuthentication no` if you enabled it).
+:::
