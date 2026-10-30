@@ -29,46 +29,41 @@ only by your hardware, and can be run at leisure.
 This lab covers how to locate and extract the hash, understand its structure,
 and crack it using two different tools: **hashcat** and **john**.
 
-# Gaining Access and Finding the Shadow File {#sec-access}
+# Gaining Access and Finding Files {#sec-access}
 
-At the end of Lab 1 you had a shell on the Pi as `labuser`. To read the
-password hashes we need **root** access. If your session has timed out,
-reconnect and escalate:
+At the end of Lab 1 you had a shell on the Pi as `labuser`. Reconnect if your
+session has timed out:
 
 ```sh
 ssh labuser@10.7.7.200    # password from Lab 1
-sudo -i                 # escalate to root (labuser has sudo rights on this Pi)
 ```
 
-You should now have a root shell:
+An attacker who lands even an unprivileged foothold immediately looks around
+for two things: files worth stealing that this account can already read, and a
+route to escalate privileges. You will do both -- starting as `labuser`, with
+no special rights, and only later escalating to root to reach the password
+hashes.
 
-```default
-root@raspberrypi:~#
-```
+## Finding Files with find
 
-## Locating the Shadow File with find
-
-On Linux, password hashes are stored in `/etc/shadow`. You could navigate
-there directly -- but let's use this as an opportunity to practise `find`,
-a tool that becomes indispensable once you have access to an unfamiliar
-system and need to locate specific files.
-
-`find` searches the filesystem recursively from a starting point. The basic
-syntax is:
+`find` becomes indispensable once you have access to an unfamiliar system and
+need to locate specific files. It searches the filesystem recursively from a
+starting point:
 
 ```sh
 find <where to search> <what to look for>
 ```
 
-Search the entire filesystem for any file named `shadow`:
+For example, search the whole filesystem for any file named `shadow` (the
+password-hash file you will return to shortly):
 
 ```sh
 find / -name "shadow" 2>/dev/null
 ```
 
-The `2>/dev/null` suppresses permission error messages for directories root
-cannot read. You should see `/etc/shadow` in the results, confirming its
-location.
+The `2>/dev/null` suppresses permission-denied messages for directories your
+account cannot read. You should still see `/etc/shadow` in the results -- you
+have found *where* it is, even though as `labuser` you cannot read it yet.
 
 You can narrow the search in many ways. Some useful flags:
 
@@ -99,6 +94,59 @@ every SUID binary on the system. SUID files run with the file owner's
 privileges regardless of who executes them, and misconfigured SUID
 binaries are a common privilege escalation path.
 :::
+
+## Trophy: Find and Download a Sensitive File
+
+Before escalating, hunt through `labuser`'s own home directory -- a very
+common place to find secrets left in plaintext. List the files there:
+
+```sh
+find /home/labuser -type f 2>/dev/null
+```
+
+You can also search file *contents* across a directory tree with a recursive
+grep, looking for tell-tale keywords:
+
+```sh
+grep -rniE "password|secret|confidential|key" /home/labuser 2>/dev/null
+```
+
+Either approach points you at a file such as
+`/home/labuser/notes/credentials.txt`. Read it:
+
+```sh
+cat /home/labuser/notes/credentials.txt
+```
+
+Then download it to your own machine. Note you need **no root access** for
+this -- `labuser` owns the file:
+
+```sh
+# Run this on YOUR machine, not the Pi
+scp labuser@10.7.7.200:/home/labuser/notes/credentials.txt .
+```
+
+:::{.callout-note}
+You exfiltrated this with nothing more than the low-privilege `labuser`
+foothold from Lab 1. Secrets stored in plaintext in a home directory are
+exposed the instant a single account is compromised -- which is exactly why
+credentials belong in a protected secrets store, not a text file.
+:::
+
+## Escalating to root
+
+To read the password hashes you now need **root**. `labuser` has sudo rights
+on this Pi, so escalate:
+
+```sh
+sudo -i
+```
+
+You should now have a root shell:
+
+```default
+root@raspberrypi:~#
+```
 
 ## Extracting the Hash with grep
 

@@ -45,6 +45,9 @@ ACCOUNTS=(
 NOLOGIN=/usr/sbin/nologin
 [[ -x "$NOLOGIN" ]] || NOLOGIN=/sbin/nologin
 
+# Trophy file students find and download in Lab 2 (must match the student lab).
+TROPHY=/home/labuser/notes/credentials.txt
+
 GO_LIVE=0
 FORCE=0
 for arg in "$@"; do
@@ -134,6 +137,28 @@ create_accounts(){
       ok "'$user' added to the sudo group"
     fi
   done
+}
+
+plant_trophy(){
+  # A fictional "sensitive" file in labuser's home for the Lab 2 find/grep
+  # exercise. Owned by labuser (readable with the Lab 1 foothold, no root).
+  if ! id labuser &>/dev/null; then
+    warn "labuser missing -- skipping trophy file"; return 0
+  fi
+  install -d -o labuser -g labuser -m 755 "$(dirname "$TROPHY")"
+  cat >"$TROPHY" <<'EOF'
+CONFIDENTIAL -- internal use only. Do not share.
+
+Backup server login (reused from my main account, I know, I know):
+  host     : 10.7.7.50
+  username : admin
+  password : hunter2-backup!
+
+TODO: stop keeping passwords in plaintext files.
+EOF
+  chown labuser:labuser "$TROPHY"
+  chmod 600 "$TROPHY"
+  ok "planted trophy file at $TROPHY"
 }
 
 install_ssh_locked(){
@@ -284,6 +309,7 @@ else
   apt-get update -y >/dev/null 2>&1 || warn "apt update failed (continuing)"
   force_sha512
   create_accounts
+  plant_trophy
   install_ssh_locked
   install_ftp_stopped
   cat <<EOF

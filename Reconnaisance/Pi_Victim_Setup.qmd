@@ -261,6 +261,35 @@ account would otherwise be usable, which is why the shell is set explicitly.)
 Setting the shell does not affect the stored hash, so cracking still works
 exactly as described in the offline lab.
 
+## Plant the Trophy File
+
+Lab 2 has students practise `find` and `grep` by locating a sensitive file in
+`labuser`'s home directory and downloading it with `scp`. Create that file
+now:
+
+```sh
+sudo mkdir -p /home/labuser/notes
+sudo tee /home/labuser/notes/credentials.txt >/dev/null <<'EOF'
+CONFIDENTIAL -- internal use only. Do not share.
+
+Backup server login (reused from my main account, I know, I know):
+  host     : 10.7.7.50
+  username : admin
+  password : hunter2-backup!
+
+TODO: stop keeping passwords in plaintext files.
+EOF
+sudo chown -R labuser:labuser /home/labuser/notes
+sudo chmod 600 /home/labuser/notes/credentials.txt
+```
+
+`labuser` owns the file, so students can retrieve it with the Lab 1 foothold
+alone -- no root required. The contents are fictional; change them if you
+like, but keep a keyword such as `password` or `CONFIDENTIAL` so the recursive
+`grep` in the lab finds it, and keep the path at
+`/home/labuser/notes/credentials.txt` (it is named explicitly in the student
+lab).
+
 ## Verify All Shadow Entries
 
 ```sh

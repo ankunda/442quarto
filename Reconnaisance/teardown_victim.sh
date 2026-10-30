@@ -33,6 +33,7 @@ set -euo pipefail
 USERS=(labuser alice bob carol)
 SSH_DROPIN=/etc/ssh/sshd_config.d/00-lab.conf
 VSFTPD_CONF=/etc/vsftpd.conf
+TROPHY=/home/labuser/notes/credentials.txt
 
 ASSUME_YES=0
 KEEP_USERS=0
@@ -115,6 +116,12 @@ remove_users(){
 say "Teardown"
 revert_ssh
 revert_ftp
+# Remove the planted trophy file (a full account removal would delete it with
+# the home directory, but this covers --keep-users too).
+if [[ -e "$TROPHY" ]]; then
+  rm -f "$TROPHY"
+  ok "removed trophy file ($TROPHY)"
+fi
 if [[ $KEEP_USERS -eq 1 ]]; then
   ok "keeping lab accounts (--keep-users)"
 else
