@@ -421,6 +421,8 @@ sudo nano /etc/vsftpd.conf
 Find and set the following options:
 
 ```default
+listen=YES
+listen_ipv6=NO
 anonymous_enable=NO
 local_enable=YES
 write_enable=NO
@@ -431,6 +433,13 @@ allow_writeable_chroot=YES
 
 Setting `local_enable=YES` allows system users (including `labuser`) to
 log in with their system credentials. This is what hydra will attack.
+
+The `listen=YES` / `listen_ipv6=NO` pair is required. By default vsftpd
+runs in IPv6 listen mode (`listen_ipv6=YES`), which does not accept the
+IPv4 connections the lab uses, so the service appears up but refuses
+connections. Setting `listen=YES` makes vsftpd listen as a standalone
+IPv4 daemon, and `listen_ipv6=NO` is needed because the two options are
+mutually exclusive — only one may be set to `YES`.
 
 Restart vsftpd:
 

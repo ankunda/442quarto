@@ -187,6 +187,8 @@ install_ftp_stopped(){
     cp /etc/vsftpd.conf /etc/vsftpd.conf.orig
   fi
   cat >/etc/vsftpd.conf <<'EOF'
+listen=YES
+listen_ipv6=NO
 anonymous_enable=NO
 local_enable=YES
 write_enable=NO
