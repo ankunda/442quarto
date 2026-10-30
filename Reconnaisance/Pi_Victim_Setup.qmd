@@ -1,7 +1,7 @@
 ---
 title: "Victim Machine Setup Guide"
 subtitle: "Raspberry Pi Configuration for Recon & Password Cracking Labs"
-date: "April 29, 2026"
+date: today
 title-block-banner: "#002f8b"
 toc: true
 toc-depth: 2

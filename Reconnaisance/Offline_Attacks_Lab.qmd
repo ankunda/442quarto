@@ -1,7 +1,7 @@
 ---
 title: "Offline Attacks Lab"
 subtitle: "Hash Extraction, hashcat, and john"
-date: "April 29, 2026"
+date: today
 title-block-banner: "#002f8b"
 toc: true
 toc-depth: 2
