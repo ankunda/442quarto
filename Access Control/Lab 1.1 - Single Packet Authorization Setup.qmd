@@ -15,9 +15,36 @@ format:
 
 This lab contains the setup for a brief tutorial for implementing Single Packet Authorization (SPA) with Firewall Knock Operator (or fwknop for short, pronounced eff - double u - nop). 
 
-In this activity, it is recommended that you partner up, or have multiple machines available for use. You will need to designate one machine as the "client" in the following steps and another machine as the "server". It is recommended that you step through it twice where one machine is the client and the other machine is the server and then reverse roles for the second run through.
+This lab requires two machines: one designated as the "client" and the other as the "server". See **Working With a Partner** below for how to set this up.
 
 Note that this lab only includes the setup. Lab 1.2 includes the execution of SPA.
+
+## Working With a Partner
+
+**Forming groups.** Work in groups of three if possible: one server, one client, and one "outsider" machine. The outsider is only needed for a single step in Lab 1.2, where you confirm that the server refuses machines other than the client. If you are in a pair, team up with a neighboring pair for that step, or run a third virtual machine.
+
+**Working alone.** If you do not have a partner, run both the client and the server as virtual machines on your own computer, connected with a NAT Network. See the **If Bridged Networking Does Not Work** tip in the Network Setup section.
+
+**Choosing roles.** Decide on roles before installing anything, since each role installs different software:
+
+| Role | Installs | Needs |
+|------|----------|-------|
+| Server | `fwknop-server`, `openssh-server` | `sudo` access (to edit config files and firewall rules) |
+| Client | `fwknop-client`, `nmap` | The server's ip address and a login on the server |
+
+If you cannot decide, whoever's machine already has `openssh-server` running (see the openssh-server section) should be the server.
+
+**Creating a lab login on the server.** The client logs in to the server with `ssh` and `scp`, so the client needs a username and password on the server. Do **not** share the password to your own account. Instead, the server should create a temporary account for the lab:
+
+```sh
+sudo adduser spauser
+```
+
+Choose a simple password and give it to your partner. Use `spauser` wherever this lab says `username` for the server. You will delete this account during the clean up at the end of Lab 1.2.
+
+**Swapping roles.** Each partner should get to be both client and server, but only swap after completing **both** Lab 1.1 and Lab 1.2 together, including the Lab 1.2 clean up. When you swap, the new server installs `fwknop-server` and `openssh-server`, the new client installs `fwknop-client` and `nmap`, and you repeat Lab 1.1 and Lab 1.2 from the beginning. If there is not enough class time, finish the first run through and swap during the next class period.
+
+**Keep the same groups.** If Lab 1.2 is completed on a different day, sit with the same partner(s) and use the same machines, since the keys and configuration from this lab only exist on those machines.
 
 :::{.callout-tip}
 # Note On Timing
@@ -276,7 +303,7 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
     i. Remove `ANY` and replace it with the ip address for the client machine.
 
-    ii. Replace both instances of `__CHANGE_ME__` by copying and pasting the keys from the ~/copied-file.conf file you moved onto the server. 
+    ii. Replace both instances of `__CHANGE_ME__` by copying and pasting the keys from the `copied-file.conf` file you moved onto the server. If you copied it using the temporary `spauser` account, the file is in `spauser`'s home directory, so view it from your own account with `sudo cat /home/spauser/copied-file.conf`.
 
     iii. Add a line after SOURCE that is labeled OPEN_PORTS with a value of tcp/22. 
 
@@ -291,10 +318,11 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
     v. Save and close the file.
 
-3. On the server, remove the file you placed at the home directory. That is, remove `~/copied-file.conf`.
+3. On the server, remove the copy of the keys you placed in the home directory.
 
     ```sh
-    rm ~/copied-file.conf
+    sudo rm /home/spauser/copied-file.conf   # if you used the spauser account
+    rm ~/copied-file.conf                    # if you copied it to your own account
     ```
 
 4. On the server, find the name of the network interface that has your ip address. fwknopd needs to know which interface to watch for SPA packets.

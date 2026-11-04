@@ -25,6 +25,15 @@ SSH_PORT=22
 
 You can confirm the variables are set with `echo $CLIENT_IP`, `echo $SERVER_IP`, and `echo $SSH_PORT`.
 
+:::{.callout-important}
+# Check Your IP Addresses
+
+If you are completing this lab on a different day than Lab 1.1, make sure you are with the same partner(s) and machines, and re-check both machines' ip addresses with `ip -br addr`. Addresses handed out by DHCP can change from day to day.
+
+- If the **client's** ip address changed, the server will silently ignore its SPA packets, since `SOURCE` in `/etc/fwknop/access.conf` no longer matches. On the server, update `SOURCE` to the client's new ip address, then restart fwknopd with `sudo systemctl restart fwknop-server`.
+- If the **server's** ip address changed, the client's saved stanza in `~/.fwknoprc` still points at the old address. On the client, open `~/.fwknoprc`, update the stanza name (in square brackets) and the `SPA_SERVER` line to the server's new ip address, and set `SERVER_IP` to the new address.
+:::
+
 You will also set two variables on the **server** in this lab (`SSH_PORT` and `INTERFACE`). Variables only last for the terminal they were set in, so if you open a new terminal on the server at any point, including for the Clean Up section, set them again first. An empty variable can cause an `iptables` command to fail or to match the wrong rule.
 
 
@@ -134,7 +143,7 @@ This portion will require you to go back and forth from client to server. As an 
 
     You should have access. Stay connected, and after the time limit expires, try typing a few commands. The session will freeze, because the temporary rule that let your packets through has been removed and the DROP rule now applies to them. Press `Enter`, then `~` and `.` to force the frozen ssh session to close.
 
-14. Confirm that the opening only applies to the client's ip address. While the port is open for the client (resend the SPA packet if needed), try to ssh into the server from a **different** machine, such as a classmate's machine or a third virtual machine.
+14. Confirm that the opening only applies to the client's ip address. While the port is open for the client (resend the SPA packet if needed), try to ssh into the server from a **different** machine. This is the "outsider" machine described in **Working With a Partner** in Lab 1.1: the third member of your group, a neighboring pair's machine, or a third virtual machine.
 
     ```sh
     ssh -p 22 username@138.47.x.x   # the server's ip address
@@ -265,7 +274,15 @@ Once you've completed the lab, reset the server back to how it was before.
     rm ~/.fwknoprc
     ```
 
-6. (If you completed the optional key-based authentication step) On the server, remove the client's key from `~/.ssh/authorized_keys` if you do not want to keep it.
+6. (If you completed the optional key-based authentication step) On the server, remove the client's key from `~/.ssh/authorized_keys` if you do not want to keep it. If you used the temporary `spauser` account, the key is removed along with the account in the next step.
+
+7. On the server, delete the temporary account you created for your partner in Lab 1.1 (skip this if you did not create one). The `--remove-home` option also deletes the account's home directory.
+
+    ```sh
+    sudo deluser --remove-home spauser
+    ```
+
+If you are going to swap roles, complete all of the steps above first, then go back to the beginning of Lab 1.1 with the roles reversed.
 
 Note that rules added with `iptables` are not saved, so they are also cleared when the machine reboots. If you ever lock yourself out of a machine while experimenting with firewall rules, restarting it will restore access (as long as you have not made the rules persistent).
 
