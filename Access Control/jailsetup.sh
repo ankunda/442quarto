@@ -6,14 +6,16 @@ mkdir -p "$CHROOT"
 # these args are the files we want available in the jail
 for file in "$@";
 do 
-    if [ -x "$file" ] && file "$file" | grep -q 'ELF'
+    # file -L follows symlinks (e.g., /usr/bin/vim -> /etc/alternatives/vim)
+    # so that symlinked programs are still detected as ELF executables
+    if [ -x "$file" ] && file -L "$file" | grep -q 'ELF'
     then
     # For executable files:
         ldd "$file" |      # get the shared libraries for the file
-    awk '{print $3}' |     # extract 3rd column (the library filepath)
+        awk '{print $3}' | # extract 3rd column (the library filepath)
         grep -E '^/' |     # keep absolute paths (lines starting with /)
         sort -u |          # remove duplicates 
-        while read lib;
+        while read -r lib;
         do 
            # copy the library and preserve its directory structure
            cp --parents "$lib" "$CHROOT"

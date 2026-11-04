@@ -1,5 +1,6 @@
 ---
 title: "Lab 1.1 - Single Packet Authorization Setup"
+date: "November 4, 2026"
 format:
     pdf:
         toc: true
@@ -21,7 +22,7 @@ Note that this lab only includes the setup. Lab 1.2 includes the execution of SP
 :::{.callout-tip}
 # Note On Timing
 
-If **Lab: Single Packet Authorization Setup** (this document) is completed within 15 minutes until the end of class, do not begin **Lab: Single Packet Authorization Execution** (part 2). Instead, wait until the next class period to complete part 2.
+If you finish **Lab: Single Packet Authorization Setup** (this document) with less than 15 minutes left in class, do not begin **Lab: Single Packet Authorization Execution** (part 2). Instead, wait until the next class period to complete part 2.
 :::
 
 # Overview of Commands and Relevant Bash Tips
@@ -48,7 +49,9 @@ Common flags used with `iptables` are as follows:
 -j      used to specify an action to take if a packet matches (j for jump)
 ```
 
-As part of this lab, you will eventually setup a firewall rule that blocks all traffic in order to work with fwknop.
+As part of this lab, you will eventually set up a firewall rule that blocks all incoming SSH traffic, so that only fwknop can open the port.
+
+On current Ubuntu, Debian, and Mint releases, `iptables` is a front end for the newer nftables framework. The commands in this lab work the same either way. See the Access Control notes for details.
 
 ## ssh 
 
@@ -80,7 +83,7 @@ x=10    # correct
 y = 12  # incorrect
 ```
 
-# Wifi Setup
+# Network Setup
 
 In order for this lab to work as intended, you may need to modify the settings in your virtualization software and in the network options within your virtual machine. Complete the following to ensure that everything is in working order. 
 
@@ -94,23 +97,34 @@ In order for this lab to work as intended, you may need to modify the settings i
 
 5. Once complete, check that your ip address is in the form 138.47.X.X if on campus.
 
+:::{.callout-tip}
+# If Bridged Networking Does Not Work
+
+Many campus Wi-Fi networks do not allow bridged virtual machines, because the VM appears with an extra hardware (MAC) address. If your VM does not get a 138.47.X.X address, or the two machines cannot reach each other, run both the client and the server as virtual machines on the same computer and connect them with a private network instead:
+
+- In VirtualBox, open **File > Tools > Network Manager**, select the **NAT Networks** tab, and create a NAT Network. Then, in each VM's `Network` settings, set "Attached to" to **NAT Network** and select the network you created. (A **Host-only Adapter** also works, but those VMs will not have internet access for `apt install`.)
+- Each VM will receive an address such as 10.0.2.X instead of 138.47.X.X. Use those addresses everywhere this lab says 138.47.x.x.
+
+This also keeps the lab's port scanning off the campus network.
+:::
+
 
 # Client Installations
 
 ## fwknop-client
 
-1. On the client, search for fwknop in package directory:
+1. On the client, update the package lists and search for fwknop in the package directory:
 
     ```sh
-    sudo apt search fwknop
+    sudo apt update
+    apt search fwknop
     ```
 
 2. In the output, you should see some of the following (results may vary):
 
-- fwknop-apparmor-profile
-- fwknop-client
-- fwknop-server
- 
+    - fwknop-apparmor-profile
+    - fwknop-client
+    - fwknop-server
 
 3. Install fwknop-client.
 
@@ -132,17 +146,18 @@ sudo apt install nmap
 
 ## fwknop-server
 
-1. On the server, search for fwknop in package directory:
+1. On the server, update the package lists and search for fwknop in the package directory:
 
     ```sh
-    sudo apt search fwknop
+    sudo apt update
+    apt search fwknop
     ```
 
 2. In the output, you should see some of the following (results may vary):
 
-- fwknop-apparmor-profile
-- fwknop-client
-- fwknop-server
+    - fwknop-apparmor-profile
+    - fwknop-client
+    - fwknop-server
 
 3. Install fwknop-server.
 
@@ -186,14 +201,16 @@ After installing it, confirm it is running with the `ss` command shown previousl
 
 # Client Setup 
 
-1. On the client, get your ip address with the command `ip addr`, `ip address`, or `ifconfig` and note it elsewhere (a text file or a piece of paper) as your client's ip address.
+1. On the client, get your ip address with the `ip` command and note it elsewhere (a text file or a piece of paper) as your client's ip address.
 
     ```sh
-    # run one of the following to get your ip address
-    ip addr 
-    ip address
-    ifconfig 
+    # brief, one line per interface
+    ip -br addr
+    # full details
+    ip addr
     ```
+
+    The older `ifconfig` command also works if the `net-tools` package is installed, but it is not installed by default on recent Ubuntu and Mint releases.
 
 2. On the server, get the ip address and note it somewhere (a text file or a piece of paper).
 
@@ -211,18 +228,17 @@ After installing it, confirm it is running with the `ss` command shown previousl
     ```
 
 
-5. On the client, generate a key for the ssh port using the client's ip and the server's ip. Note that this should all be typed on one single line.
+5. On the client, generate the keys and save the settings for this server. This command creates two keys: an encryption key (used to encrypt the SPA packet) and an HMAC key (used to prove the packet was not altered). The keys are not tied to a port. The `--save-rc-stanza` option saves the keys, along with the port to request (`-A`), the client ip (`-a`), and the server ip (`-D`), as a named section ("stanza") in `~/.fwknoprc`. The stanza is named after the server's ip, which is why `fwknop -n $SERVER_IP` works in Lab 1.2. The `\` at the end of the first line continues the command onto the next line, so you can type or paste both lines as shown.
 
-    ```sh 
-    # write the following on 1 single line
-    fwknop -A tcp/$SSH_PORT -a $CLIENT_IP -D $SERVER_IP 
-    --key-gen --use-hmac --save-rc-stanza
+    ```sh
+    fwknop -A tcp/$SSH_PORT -a $CLIENT_IP -D $SERVER_IP \
+        --key-gen --use-hmac --save-rc-stanza
     ```
 
     You should receive an output similar to the following:
 
     ```
-    [+] Wrote Rijndael and HMAC keys to rc file: /home/josh/.fwknoprc
+    [+] Wrote Rijndael and HMAC keys to rc file: /home/username/.fwknoprc
     ```
 
 6. On the client, to confirm the keys were generated, view the contents of the `.fwknoprc` file
@@ -281,31 +297,74 @@ After installing it, confirm it is running with the `ss` command shown previousl
     rm ~/copied-file.conf
     ```
 
-4. Complete the following on the server to enable fwknop 
+4. On the server, find the name of the network interface that has your ip address. fwknopd needs to know which interface to watch for SPA packets.
 
-    i. Open the file `/etc/default/fwknop-server` with nano or vim.
+    ```sh
+    ip -br addr
+    ```
 
-    ii. Change `START_DAEMON="no"` to `START_DAEMON="yes"`.
+    The interface is the first column of the line containing your ip address. It is typically in the form `enp0s3` (common for VirtualBox) or `eth0`. Values may differ. Note what it is.
+
+5. Complete the following on the server to enable fwknop
+
+    i. Open the file `/etc/default/fwknop-server` with nano or vim, if it exists.
+
+    ii. If it contains `START_DAEMON="no"`, change it to `START_DAEMON="yes"`.
 
     iii. Save and close the file.
 
+    On systemd-based releases, this setting may be ignored, and step vii (`systemctl enable`) is what actually makes the server start on boot. Changing it does no harm, and it matters on systems that use the older init scripts.
+
     iv. Open the file `/etc/fwknop/fwknopd.conf` with nano or vim. This is the fwknop daemon config.
 
-    v. Find the line with `PCAP_INTF`. If it exists, uncomment it. By default it shows `eth0`, which can stay as that for Linux machines. On newer distributions (Ubuntu 24.04+ and recent Mint releases), this line has been removed from the default config and fwknopd uses NFQ (NetFilter Queue) instead. If you do not see a `PCAP_INTF` line in the file, you can skip ahead — the default NFQ configuration will work without any edits.
+    v. Find the line with `PCAP_INTF`. Uncomment it (remove the leading `#`) and replace `eth0` with the interface you found in the previous step. If there is no `PCAP_INTF` line in the file, add one. Note that each line in this file ends with a semicolon. For example:
+
+    ```
+    PCAP_INTF                   enp0s3;
+    ```
+
+    If the interface listed here does not exist on your machine, fwknopd will fail to start.
 
     vi. Save and close the file.
 
-    vii. Restart the fwknop server.
+    vii. Enable the fwknop server so that it starts on boot, and restart it so that it picks up the new configuration.
 
-    ```sh 
-    sudo service fwknop-server restart
+    ```sh
+    sudo systemctl enable fwknop-server
+    sudo systemctl restart fwknop-server
     ```
 
-5. On the server, check the status of the fwknop-server to be sure it is running. This will also show some logs at the bottom. The status should show "active".
+6. On the server, check the status of the fwknop-server to be sure it is running. This will also show some logs at the bottom. The status should show "active (running)".
 
-    ```sh 
-    sudo service fwknop-server status
+    ```sh
+    sudo systemctl status fwknop-server
     ```
+
+    If it is not running, view the full logs to see why:
+
+    ```sh
+    sudo journalctl -u fwknop-server --no-pager | tail -n 30
+    ```
+
+7. On the server, confirm that `access.conf` is readable only by root, since it now holds your keys.
+
+    ```sh
+    sudo ls -l /etc/fwknop/access.conf
+    ```
+
+    The permissions should be `-rw-------` (owner root). If they are not, fix them with `sudo chmod 600 /etc/fwknop/access.conf`.
+
+:::{.callout-tip}
+# Troubleshooting Tip
+
+If fwknopd will not start or does not seem to see your SPA packets, you can stop the service and run fwknopd in the foreground with verbose output. It will print every packet it inspects and why it accepts or rejects it. Press `ctrl+c` to stop it, then start the service again.
+
+```sh
+sudo systemctl stop fwknop-server
+sudo fwknopd -f -vv -i enp0s3     # replace enp0s3 with your interface
+sudo systemctl start fwknop-server
+```
+:::
 
 
 

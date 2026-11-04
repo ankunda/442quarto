@@ -1,5 +1,6 @@
 ---
 title: "Lab 1.2 - Single Packet Authorization Execution"
+date: "November 4, 2026"
 format:
     pdf:
         toc: true
@@ -24,6 +25,8 @@ SSH_PORT=22
 
 You can confirm the variables are set with `echo $CLIENT_IP`, `echo $SERVER_IP`, and `echo $SSH_PORT`.
 
+You will also set two variables on the **server** in this lab (`SSH_PORT` and `INTERFACE`). Variables only last for the terminal they were set in, so if you open a new terminal on the server at any point, including for the Clean Up section, set them again first. An empty variable can cause an `iptables` command to fail or to match the wrong rule.
+
 
 
 # Performing SPA for SSH Access
@@ -47,18 +50,15 @@ This portion will require you to go back and forth from client to server. As an 
     SSH_PORT=22  # reminder: no spaces around = sign
     ```
 
-4. On the server, get the interface for the internet connection using `ip address`, `ip addr`, or `ifconfig`.
+4. On the server, get the interface for the network connection. This is the same interface you set as `PCAP_INTF` in Lab 1.1.
 
-    ```sh 
-    # run one of these. The output is similar for each
-    ip addr
-    ip address 
-    ifconfig  
+    ```sh
+    ip -br addr
     ```
 
-    Recall that the interface is typically in the form `eth0` or `enp0s3`. Values may differ. Note what it is.
+    Recall that the interface is the first column of the line containing your ip address, and is typically in the form `enp0s3` or `eth0`. Values may differ. Note what it is.
 
-5. On the server, set another variable that holds the value for the interface.
+5. On the server, set another variable that holds the value for the interface (replace `enp0s3` with your interface).
 
     ```sh 
     INTERFACE=enp0s3
@@ -100,7 +100,7 @@ This portion will require you to go back and forth from client to server. As an 
     sudo nmap -sS -p $SSH_PORT $SERVER_IP
     ``` 
 
-    It should show that the STATE is `filtered`.
+    It should show that the STATE is `filtered`. This means the probe received no reply at all, because the DROP rule silently discarded it. Compare this with `closed`, which nmap reports when the host replies that nothing is listening. A filtered port reveals less to an attacker.
 
 
 11. On the client, use fwknop to send an SPA packet to the server.
@@ -111,60 +111,163 @@ This portion will require you to go back and forth from client to server. As an 
 
 12. On the server, check that the SPA packet was accepted by checking the status of the fwknop server.
 
-    ```sh 
-    sudo service fwknop-server status
+    ```sh
+    sudo systemctl status fwknop-server
     ```
 
     You should see information concerning the acceptance of the SPA packet and a time limit for when it expires. For example, it may show the following:
 
     ```
-    Added access rule to FWKNOP_INPUT for x.x.x.x -> 0.0.0.0/0 tcp/22, 
+    Added access rule to FWKNOP_INPUT for x.x.x.x -> 0.0.0.0/0 tcp/22,
     expires at 1746380800.
     ```
 
+    The expiration is a Unix timestamp (seconds since January 1, 1970). You can convert it to a readable date and time with `date -d @1746380800` (replace the number with yours). By default, the port is only opened for 30 seconds (the `FW_ACCESS_TIMEOUT` setting), so move quickly to the next step. You can view the temporary rule with `sudo iptables -L FWKNOP_INPUT -nv` before it expires.
+
+    Tip: to watch the fwknop log live instead of re-running `systemctl status`, open a second terminal on the server and run `sudo journalctl -u fwknop-server -f`. New messages appear as they arrive. Press `ctrl+c` to stop.
+
 13. On the client, test ssh again to get access. Note that if the time limit expired, you will need to resend the SPA packet. Be sure to use the appropriate username for the server.
 
-    ```sh 
+    ```sh
     ssh -p $SSH_PORT username@$SERVER_IP
-    ``` 
+    ```
 
-    You should have access, however when the time limit expires, you'll need to re-establish the connection. 
+    You should have access. Stay connected, and after the time limit expires, try typing a few commands. The session will freeze, because the temporary rule that let your packets through has been removed and the DROP rule now applies to them. Press `Enter`, then `~` and `.` to force the frozen ssh session to close.
 
-14. On the client, if not already disconnected, disconnect from the server.
+14. Confirm that the opening only applies to the client's ip address. While the port is open for the client (resend the SPA packet if needed), try to ssh into the server from a **different** machine, such as a classmate's machine or a third virtual machine.
 
-15. On the server, to prevent the client from being locked out when the time limit expires, let's modify the firewall rules. 
+    ```sh
+    ssh -p 22 username@138.47.x.x   # the server's ip address
+    ```
+
+    It should not allow the other machine in, since the `SOURCE` in `access.conf` only allows the client's ip address, and the temporary rule fwknopd adds only matches that ip address.
+
+15. On the server, to prevent the client from being locked out when the time limit expires, let's modify the firewall rules so that connections that were already established are allowed to continue.
 
     i. First, delete the rule we already have.
 
-    ```sh 
-    sudo iptables -D INPUT -i $INTERFACE -p tcp --dport $SSH_PORT -j DROP 
-    ``` 
+    ```sh
+    sudo iptables -D INPUT -i $INTERFACE -p tcp --dport $SSH_PORT -j DROP
+    ```
 
     You can confirm that it was deleted with `sudo iptables -L -nv`.
 
-    ii. Next, add the following rule to allow related and established connections.
+    ii. Next, add the following rule to allow related and established connections. The `conntrack` module tracks the state of each connection, so packets belonging to a connection that was already accepted are allowed through.
 
-    ```sh 
+    ```sh
     sudo iptables -A INPUT -i $INTERFACE -p tcp --dport $SSH_PORT \
-    -m state --state RELATED,ESTABLISHED -j ACCEPT 
-    ``` 
+        -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    ```
 
     iii. Re-add the rule to drop all ssh connections.
 
-    ```sh 
+    ```sh
     sudo iptables -A INPUT -i $INTERFACE -p tcp --dport $SSH_PORT -j DROP
     ```
+
+    iv. View the rules again with `sudo iptables -L -nv`. The INPUT chain should now contain, in order: the jump to FWKNOP_INPUT, the ACCEPT rule for established connections, and the DROP rule. Order matters, since iptables uses the first rule that matches.
+
+16. Test the new rules.
+
+    i. On the client, send a new SPA packet and connect via ssh.
+
+    ```sh
+    fwknop -n $SERVER_IP
+    ssh -p $SSH_PORT username@$SERVER_IP
+    ```
+
+    ii. Stay connected until the time limit has expired, then run a few commands. The session should keep working this time.
+
+    iii. In a second terminal on the client, try to open a new ssh connection without sending a new SPA packet. It should not be allowed in, since new connections still require an SPA packet.
+
+    iv. Disconnect from the server.
+
+17. (Optional) Switch SSH to key-based authentication. SPA only opens the door; the client still has to log in to SSH, and an SSH key is much stronger than a password.
+
+    i. On the client, generate an SSH key pair. Press `Enter` to accept the default location, and choose a passphrase.
+
+    ```sh
+    ssh-keygen -t ed25519
+    ```
+
+    ii. On the client, send an SPA packet, then copy the public key to the server.
+
+    ```sh
+    fwknop -n $SERVER_IP
+    ssh-copy-id -p $SSH_PORT username@$SERVER_IP
+    ```
+
+    iii. On the client, send another SPA packet and log in. You should be asked for the key's passphrase instead of the server's password.
+
+    ```sh
+    fwknop -n $SERVER_IP
+    ssh -p $SSH_PORT username@$SERVER_IP
+    ```
+
+    Now an attacker would need your SPA keys **and** your SSH private key to get in. This is defense in depth.
+
+
+# Going Further (Optional)
+
+Take a look at what an SPA packet actually looks like on the wire. On the server, use `tcpdump` to capture packets sent to fwknop's default port (UDP 62201) and print their contents.
+
+```sh
+sudo tcpdump -i $INTERFACE -X udp port 62201
+```
+
+Then, on the client, send an SPA packet with `fwknop -n $SERVER_IP`. Notice that the payload is unreadable, since it is encrypted. Also notice that nothing on the server is listening on port 62201. You can confirm this with `sudo ss -aun` on the server (port 62201 will not appear), or with `sudo nmap -sU -p 62201 $SERVER_IP` on the client, which should report the port as `closed`. The port is closed rather than filtered because no firewall rule drops that traffic, so the server's kernel replies that nothing is listening there. Yet fwknopd still receives the packet, because it passively sniffs the traffic instead of accepting connections. There is nothing for an attacker to find with a port scan.
+
+Stop tcpdump with `ctrl+c`.
 
 
 # Clean Up
 
-Once you've completed the lab, you may want to consider resetting your firewall rules back to the default.
+Once you've completed the lab, reset the server back to how it was before.
 
-You can remove all the rules in all chains using the -F flag for flush.
+1. On the server, make sure the variables are still set. If either `echo` prints a blank line, set it again (replace `enp0s3` with your interface).
 
-```sh 
-sudo iptables -F 
-``` 
+    ```sh
+    echo $SSH_PORT
+    echo $INTERFACE
+    # if blank:
+    SSH_PORT=22
+    INTERFACE=enp0s3
+    ```
+
+2. On the server, delete the two rules you added to the INPUT chain.
+
+    ```sh
+    sudo iptables -D INPUT -i $INTERFACE -p tcp --dport $SSH_PORT \
+        -m conntrack --ctstate RELATED,ESTABLISHED -j ACCEPT
+    sudo iptables -D INPUT -i $INTERFACE -p tcp --dport $SSH_PORT -j DROP
+    ```
+
+3. On the server, stop the fwknop server and prevent it from starting on boot. When fwknopd stops, it removes its own FWKNOP_INPUT chain.
+
+    ```sh
+    sudo systemctl stop fwknop-server
+    sudo systemctl disable fwknop-server
+    ```
+
+4. On the server, confirm that the INPUT chain no longer contains any of the rules from this lab.
+
+    ```sh
+    sudo iptables -L -nv
+    ```
+
+5. Remove the SPA keys so they are not left on either machine.
+
+    i. On the server, open `/etc/fwknop/access.conf` and change the `KEY_BASE64` and `HMAC_KEY_BASE64` values back to `__CHANGE_ME__` (and `SOURCE` back to `ANY`), or delete the `OPEN_PORTS` line and the key lines you added.
+
+    ii. On the client, delete the saved stanza and keys.
+
+    ```sh
+    rm ~/.fwknoprc
+    ```
+
+6. (If you completed the optional key-based authentication step) On the server, remove the client's key from `~/.ssh/authorized_keys` if you do not want to keep it.
+
+Note that rules added with `iptables` are not saved, so they are also cleared when the machine reboots. If you ever lock yourself out of a machine while experimenting with firewall rules, restarting it will restore access (as long as you have not made the rules persistent).
 
 
 
